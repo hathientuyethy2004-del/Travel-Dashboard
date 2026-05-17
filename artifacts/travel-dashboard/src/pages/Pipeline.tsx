@@ -4,16 +4,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Play, RefreshCw, Clock, CheckCircle2, XCircle, Loader2,
   Plus, Trash2, GitBranch, ThumbsUp, ThumbsDown, AlertCircle,
+  Zap, Key, ToggleLeft, ToggleRight, TrendingUp,
 } from "lucide-react";
 import { Link } from "wouter";
 
 const API = "/api";
 
 const JOB_TYPES = [
+  { value: "nightly_sync",              label: "🌙 Nightly Sync",               desc: "Enrich a batch of records then auto-rebuild Silver + Gold layers" },
   { value: "collect_osm",               label: "🌍 Collect OSM",                desc: "Collect raw POI data from OpenStreetMap" },
-  { value: "collect_google_places",      label: "🗺️ Collect Google Places",      desc: "Discover POIs directly via Google Places Text Search" },
+  { value: "collect_google_places",     label: "🗺️ Collect Google Places",      desc: "Discover POIs directly via Google Places Text Search" },
   { value: "enrich_google",             label: "🔍 Enrich Google",              desc: "Enrich OSM POIs with Google Places data (fuzzy name match)" },
   { value: "retry_failed_enrichments",  label: "🔁 Retry Failed Enrichments",   desc: "Retry enrichment for records that previously had no name match" },
+  { value: "rebuild_layers",            label: "⚡ Rebuild Silver + Gold",       desc: "Fast aggregation-based rebuild of Silver and Gold from Bronze" },
   { value: "bronze_to_silver",          label: "🔄 Bronze → Silver",            desc: "Normalize and score bronze layer records" },
   { value: "silver_to_gold",            label: "⭐ Silver → Gold",               desc: "Promote quality-gated records; queues 0.3–0.5 for manual review" },
   { value: "reconcile",                 label: "🧹 Reconcile",                  desc: "Remove ghost records across Bronze/Silver/Gold" },
@@ -178,6 +181,39 @@ export default function Pipeline() {
     setSchedules((prev) => prev.filter((s) => (s as Record<string, string>).scheduleId !== id));
   }
 
+  async function toggleSchedule(id: string, currentlyEnabled: boolean) {
+    const enabled = !currentlyEnabled;
+    await fetch(`${API}/etl/schedules/${id}/toggle?enabled=${enabled}`, { method: "PATCH" });
+    setSchedules((prev) =>
+      prev.map((s) =>
+        (s as Record<string, unknown>).scheduleId === id ? { ...s, enabled } : s
+      )
+    );
+  }
+
+  async function runScheduleNow(s: Record<string, unknown>) {
+    setTriggering(true);
+    try {
+      const r = await fetch(`${API}/etl/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobType: s.jobType,
+          cities: s.cities || [],
+          categories: s.categories || [],
+          limit: s.limit || 500,
+        }),
+      });
+      const job = await r.json();
+      setJobs((prev) => [job, ...prev]);
+      setTab("jobs");
+    } catch {
+      alert("Failed to trigger job");
+    } finally {
+      setTriggering(false);
+    }
+  }
+
   async function deleteJob(id: string) {
     await fetch(`${API}/etl/jobs/${id}`, { method: "DELETE" });
     setJobs((prev) => prev.filter((j) => (j as Record<string, string>).jobId !== id));
@@ -197,7 +233,15 @@ export default function Pipeline() {
     setReviewCount((c) => Math.max(0, c - 1));
   }
 
-  const statusSummary = (etlStatus as { jobs?: Record<string, number> } | null)?.jobs;
+  const st = etlStatus as {
+    jobs?: Record<string, number>;
+    apiKeys?: { total: number; available: number; exhausted: number };
+    enrichment?: { total: number; enriched: number; pct: number; remaining: number };
+    schedules?: { total: number; active: number };
+  } | null;
+  const statusSummary = st?.jobs;
+  const keyStatus = st?.apiKeys;
+  const enrichStatus = st?.enrichment;
 
   return (
     <div className="px-6 pt-6 pb-8 max-w-[1400px] mx-auto">
@@ -211,7 +255,64 @@ export default function Pipeline() {
         <p className="text-muted-foreground text-sm ml-11">Trigger ETL jobs, track progress, manage schedules, and review borderline POIs</p>
       </div>
 
-      {/* ETL Status cards */}
+      {/* Automation Status Banner */}
+      {enrichStatus && (
+        <Card className="mb-4 border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-6 items-start">
+              {/* Enrichment Progress */}
+              <div className="flex-1 min-w-[200px]">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Google Enrichment Progress</span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {enrichStatus.enriched.toLocaleString()} / {enrichStatus.total.toLocaleString()}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${enrichStatus.pct}%`, background: "linear-gradient(90deg, #0079F2, #0d9488)" }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {enrichStatus.pct}% enriched · {enrichStatus.remaining.toLocaleString()} records remaining
+                </p>
+              </div>
+              {/* Key Status */}
+              {keyStatus && (
+                <div className="min-w-[140px]">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Key className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-xs font-medium">API Keys Today</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold text-green-600">{keyStatus.available}</span>
+                    <span className="text-xs text-muted-foreground">/ {keyStatus.total} available</span>
+                  </div>
+                  {keyStatus.exhausted > 0 && (
+                    <p className="text-xs text-red-500 mt-0.5">{keyStatus.exhausted} exhausted today</p>
+                  )}
+                </div>
+              )}
+              {/* Active Schedules */}
+              <div className="min-w-[130px]">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Zap className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-xs font-medium">Auto Schedules</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-emerald-600">{st?.schedules?.active ?? 0}</span>
+                  <span className="text-xs text-muted-foreground">/ {st?.schedules?.total ?? 0} active</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">runs automatically</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Job Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
           { label: "Total Jobs",   key: "total",     color: "#0079F2" },
@@ -412,25 +513,57 @@ export default function Pipeline() {
                   <div className="text-center py-8 text-sm text-muted-foreground">No schedules. Add one to automate ETL!</div>
                 ) : (
                   <div className="space-y-2">
-                    {schedules.map((s: Record<string, unknown>) => (
-                      <div key={s.scheduleId as string} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/20 transition-colors">
-                        <div>
-                          <p className="text-sm font-medium">{s.label as string || (s.jobType as string)}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.cron as string}</code>
-                            <span className="text-xs text-muted-foreground">{(s.jobType as string)?.replace(/_/g, " ")}</span>
+                    {schedules.map((s: Record<string, unknown>) => {
+                      const isEnabled = !!s.enabled;
+                      const lastRun = s.lastRun ? new Date(s.lastRun as string).toLocaleString("vi-VN") : "Never";
+                      return (
+                        <div key={s.scheduleId as string}
+                          className={`p-3 rounded-lg border transition-colors ${isEnabled ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20" : "border-border bg-muted/10"}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-medium">{s.label as string || (s.jobType as string)}</p>
+                                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${isEnabled ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" : "bg-gray-100 text-gray-500 dark:bg-gray-800"}`}>
+                                  {isEnabled ? "● active" : "○ paused"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">{s.cron as string}</code>
+                                <span className="text-xs text-muted-foreground">{(s.jobType as string)?.replace(/_/g, " ")}</span>
+                                <span className="text-xs text-muted-foreground">· limit {(s.limit as number)?.toLocaleString()}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">Last run: {lastRun}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {/* Run Now */}
+                              <button
+                                onClick={() => runScheduleNow(s)}
+                                disabled={triggering}
+                                title="Run now"
+                                className="flex items-center gap-1 px-2 py-1.5 rounded text-xs bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50">
+                                <Play className="w-3 h-3" /> Run
+                              </button>
+                              {/* Toggle enable/disable */}
+                              <button
+                                onClick={() => toggleSchedule(s.scheduleId as string, isEnabled)}
+                                title={isEnabled ? "Pause schedule" : "Enable schedule"}
+                                className={`p-1.5 rounded transition-colors ${isEnabled ? "text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+                                {isEnabled
+                                  ? <ToggleRight className="w-5 h-5" />
+                                  : <ToggleLeft className="w-5 h-5" />}
+                              </button>
+                              {/* Delete */}
+                              <button
+                                onClick={() => deleteSchedule(s.scheduleId as string)}
+                                title="Delete schedule"
+                                className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900 rounded transition-colors">
+                                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-0.5 rounded ${s.enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
-                            {s.enabled ? "active" : "paused"}
-                          </span>
-                          <button onClick={() => deleteSchedule(s.scheduleId as string)} className="p-1 hover:bg-red-100 rounded transition-colors">
-                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

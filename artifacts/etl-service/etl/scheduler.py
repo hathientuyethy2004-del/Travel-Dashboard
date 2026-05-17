@@ -11,6 +11,14 @@ _scheduler = BackgroundScheduler(timezone="Asia/Ho_Chi_Minh")
 def start_scheduler():
     _scheduler.start()
     _restore_schedules()
+    # Reset API key quota tracking every midnight (Vietnam time)
+    from etl.runners import reset_exhausted_keys
+    _scheduler.add_job(
+        reset_exhausted_keys,
+        CronTrigger.from_crontab("0 0 * * *"),
+        id="_system_key_reset_daily",
+        replace_existing=True,
+    )
 
 
 def stop_scheduler():
@@ -89,3 +97,45 @@ def toggle_schedule(schedule_id: str, enabled: bool) -> bool:
 
 def get_schedules() -> list:
     return list(get_col("etl_schedules").find({}, {"_id": 0}).sort("createdAt", -1))
+
+
+def seed_default_schedules():
+    """
+    Create sensible default automation schedules if none exist yet.
+    Called once at service startup.
+
+    Schedules (all times in Asia/Ho_Chi_Minh):
+      - 02:00 daily  — Nightly Sync: enrich 500 records + rebuild silver/gold
+      - 01:00 Sunday — Weekly OSM refresh (collect fresh POIs from OpenStreetMap)
+    """
+    col = get_col("etl_schedules")
+    if col.count_documents({}) > 0:
+        return  # already configured — don't overwrite user schedules
+
+    defaults = [
+        {
+            "jobType": "nightly_sync",
+            "cron": "0 2 * * *",
+            "label": "Nightly Enrich + Rebuild (2 AM daily)",
+            "limit": 500,
+            "cities": [],
+            "categories": [],
+        },
+        {
+            "jobType": "collect_osm",
+            "cron": "0 1 * * 0",
+            "label": "Weekly OSM Refresh (Sun 1 AM)",
+            "limit": 5000,
+            "cities": [],
+            "categories": [],
+        },
+    ]
+
+    for d in defaults:
+        create_schedule(
+            d["jobType"], d["cron"],
+            cities=d["cities"], categories=d["categories"],
+            limit=d["limit"], label=d["label"],
+        )
+
+    print(f"[scheduler] Seeded {len(defaults)} default automation schedules")

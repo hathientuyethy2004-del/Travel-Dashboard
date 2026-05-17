@@ -13,6 +13,8 @@ JOB_TYPES = [
     "silver_to_gold",
     "reconcile",
     "full_pipeline",
+    "nightly_sync",
+    "rebuild_layers",
 ]
 
 def create_job(job_type: str, cities: Optional[List[str]] = None, categories: Optional[List[str]] = None, limit: int = 200, triggered_by: str = "manual") -> dict:

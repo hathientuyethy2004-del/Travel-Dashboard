@@ -37,12 +37,18 @@ def _seed_config():
     print("[startup] Config seeded from defaults (if collections were empty)")
 
 
+def _seed_schedules():
+    """Seed default automation schedules if none are configured yet."""
+    sched.seed_default_schedules()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_indexes()
     _cleanup_stale_jobs()
     _seed_config()
     sched.start_scheduler()
+    _seed_schedules()
     yield
     sched.stop_scheduler()
 
@@ -66,18 +72,35 @@ app.include_router(review_router.router)
 def status():
     from etl.db import get_col
     from etl import config_db
+    from etl.runners import get_key_status
     jobs_col = get_col("etl_jobs")
+    bronze = get_col("bronze_pois")
     cities = config_db.get_cities()
     cats = config_db.get_categories()
-    from etl.config import RAPIDAPI_KEYS
     review_count = get_col("pending_review_pois").count_documents({})
+    schedules_count = get_col("etl_schedules").count_documents({})
+    active_schedules = get_col("etl_schedules").count_documents({"enabled": True})
+
+    bronze_total = bronze.count_documents({})
+    bronze_enriched = bronze.count_documents({"has_google_data": True})
+    enrich_pct = round(bronze_enriched / bronze_total * 100, 1) if bronze_total else 0
+
+    key_status = get_key_status()
+
     return {
         "service": "ETL Service",
         "status": "running",
-        "rapidApiKeys": len(RAPIDAPI_KEYS),
+        "apiKeys": key_status,
         "cities": len(cities),
         "categories": len(cats),
         "pendingReview": review_count,
+        "schedules": {"total": schedules_count, "active": active_schedules},
+        "enrichment": {
+            "total": bronze_total,
+            "enriched": bronze_enriched,
+            "pct": enrich_pct,
+            "remaining": bronze_total - bronze_enriched,
+        },
         "jobs": {
             "total": jobs_col.count_documents({}),
             "running": jobs_col.count_documents({"status": "running"}),

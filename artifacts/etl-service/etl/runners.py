@@ -114,6 +114,10 @@ def run_job(job_id: str, job_type: str, cities: list, categories: list, limit: i
             _reconcile(job_id, run_id)
         elif job_type == "full_pipeline":
             _run_full_pipeline(job_id, run_id, cities or all_cities, categories or all_cats, limit)
+        elif job_type == "nightly_sync":
+            _nightly_sync(job_id, run_id, cities or all_cities, categories or all_cats, limit)
+        elif job_type == "rebuild_layers":
+            _rebuild_silver_gold_fast(job_id, run_id)
         update_job(job_id, status="completed", completedAt=now_iso())
         append_log(job_id, "Job completed successfully", "info")
     except Exception as e:
@@ -295,6 +299,58 @@ def _collect_osm(job_id: str, run_id: str, cities: list, categories: list, limit
     return {"processed": total}
 
 
+# ─── Smart API Key Manager ────────────────────────────────────────────────────
+
+import threading as _threading
+from datetime import date as _date_type
+
+_key_lock = _threading.Lock()
+_key_idx = 0
+_exhausted_keys: set = set()      # keys that hit quota today
+_exhausted_date: "_date_type | None" = None
+
+def _reset_exhausted_if_new_day():
+    global _exhausted_keys, _exhausted_date
+    today = datetime.now(timezone.utc).date()
+    if _exhausted_date != today:
+        _exhausted_keys = set()
+        _exhausted_date = today
+
+def reset_exhausted_keys():
+    """Called daily at midnight by the scheduler to clear quota tracking."""
+    global _exhausted_keys, _exhausted_date
+    with _key_lock:
+        _exhausted_keys = set()
+        _exhausted_date = datetime.now(timezone.utc).date()
+    print("[runners] Daily key quota reset complete")
+
+def get_key_status() -> dict:
+    """Return current key availability (for status endpoints)."""
+    with _key_lock:
+        _reset_exhausted_if_new_day()
+        total = len(config.RAPIDAPI_KEYS)
+        exhausted = len(_exhausted_keys)
+        return {"total": total, "available": total - exhausted, "exhausted": exhausted}
+
+def _get_next_key() -> str:
+    global _key_idx
+    with _key_lock:
+        _reset_exhausted_if_new_day()
+        keys = config.RAPIDAPI_KEYS
+        if not keys:
+            raise RuntimeError("No RapidAPI keys configured")
+        available = [k for k in keys if k not in _exhausted_keys]
+        if not available:
+            raise RuntimeError("All RapidAPI keys exhausted for today")
+        k = available[_key_idx % len(available)]
+        _key_idx = (_key_idx + 1) % len(available)
+        return k
+
+def _mark_key_exhausted(key: str):
+    with _key_lock:
+        _exhausted_keys.add(key)
+
+
 # ─── Google Places Direct Collector ──────────────────────────────────────────
 
 def _collect_google_places(job_id: str, run_id: str, cities: list, categories: list, limit: int) -> dict:
@@ -396,37 +452,42 @@ def _collect_google_places(job_id: str, run_id: str, cities: list, categories: l
 
 # ─── Google Enricher ──────────────────────────────────────────────────────────
 
-_key_idx = 0
-
-def _get_key():
-    global _key_idx
-    keys = config.RAPIDAPI_KEYS
-    if not keys:
-        raise RuntimeError("No RapidAPI keys configured")
-    k = keys[_key_idx % len(keys)]
-    _key_idx += 1
-    return k
-
-
 def _rapidapi_get(url, params):
-    """Call RapidAPI with per-key retry (exponential backoff for transient errors)."""
-    num_keys = len(config.RAPIDAPI_KEYS) or 1
-    for _ in range(num_keys):
-        key = _get_key()
-        headers = {"x-rapidapi-key": key, "x-rapidapi-host": config.RAPIDAPI_HOST}
+    """
+    Call RapidAPI with smart key rotation.
+    - Skips keys already marked exhausted today
+    - Marks a key as exhausted on HTTP 429 or quota message
+    - Returns {"status": "QUOTA_EXCEEDED_ALL_KEYS"} when no keys remain
+    """
+    max_attempts = len(config.RAPIDAPI_KEYS) + 1
+    for _ in range(max_attempts):
+        try:
+            key = _get_next_key()
+        except RuntimeError:
+            return {"status": "QUOTA_EXCEEDED_ALL_KEYS"}
 
-        for retry in range(3):
+        headers = {"x-rapidapi-key": key, "x-rapidapi-host": config.RAPIDAPI_HOST}
+        quota_hit = False
+        for retry in range(2):
             try:
                 r = requests.get(url, headers=headers, params=params, timeout=30)
+                if r.status_code == 429:
+                    _mark_key_exhausted(key)
+                    quota_hit = True
+                    break
                 data = r.json()
-                msg = data.get("message", "")
-                if "quota" in msg.lower() or "exceeded" in msg.lower():
-                    break  # quota hit — try next key immediately
+                msg = str(data.get("message", "") or data.get("error_message", "")).lower()
+                if any(w in msg for w in ("quota", "exceeded", "limit", "billing", "rate")):
+                    _mark_key_exhausted(key)
+                    quota_hit = True
+                    break
                 return data
             except Exception:
-                if retry < 2:
-                    time.sleep(2 ** retry + random.uniform(0, 0.5))
+                if retry == 0:
+                    time.sleep(1.5)
                 continue
+        if not quota_hit:
+            return {"status": "REQUEST_FAILED"}
 
     return {"status": "QUOTA_EXCEEDED_ALL_KEYS"}
 
@@ -570,6 +631,112 @@ def _retry_failed_enrichments(job_id: str, run_id: str, cities: list, categories
 
     append_log(job_id, f"Retry done. Re-enriched: {enriched}, Still failed: {still_failed}", "info")
     return {"processed": enriched, "failed": still_failed}
+
+
+# ─── Fast aggregation-based Silver + Gold rebuild ────────────────────────────
+
+def _rebuild_silver_gold_fast(job_id: str, run_id: str) -> dict:
+    """
+    Rebuild silver_pois and gold_master_pois from bronze using MongoDB $out aggregation.
+    Much faster than record-by-record Python processing (handles 118K in seconds).
+    Used automatically after each nightly enrich batch.
+    """
+    append_log(job_id, "Rebuilding silver layer via aggregation ...", "info")
+
+    get_col("bronze_pois").aggregate([
+        {"$addFields": {
+            "silver_id": {"$concat": ["silver_", "$u_key"]},
+            "rating":        {"$ifNull": ["$google_raw.place.rating",
+                                          "$google_raw.place_details.result.rating"]},
+            "review_count":  {"$ifNull": ["$google_raw.place.user_ratings_total",
+                                          "$google_raw.place_details.result.user_ratings_total"]},
+            "address":       {"$ifNull": ["$google_raw.place_details.result.formatted_address",
+                                          "$google_raw.place.vicinity"]},
+            "phone":         {"$ifNull": ["$google_raw.place_details.result.international_phone_number",
+                                          "$google_raw.place_details.result.formatted_phone_number"]},
+            "website":       "$google_raw.place_details.result.website",
+            "price_level":   {"$ifNull": ["$google_raw.place.price_level",
+                                          "$google_raw.place_details.result.price_level"]},
+        }},
+        {"$addFields": {
+            "quality_score": {"$round": [{"$add": [
+                {"$cond": [{"$eq": ["$has_osm_data", True]}, 0.15, 0.0]},
+                {"$cond": [{"$eq": ["$has_google_data", True]}, 0.35, 0.0]},
+                {"$cond": [
+                    {"$and": [{"$ne": [{"$type": "$rating"}, "missing"]},
+                              {"$ne": ["$rating", None]}, {"$gt": ["$rating", 0]}]},
+                    {"$multiply": [{"$divide": ["$rating", 5.0]}, 0.25]}, 0.0]},
+                {"$cond": [
+                    {"$and": [{"$ne": ["$name", None]}, {"$ne": ["$name", ""]},
+                              {"$ne": ["$name", "Unknown"]}]},
+                    0.15, 0.0]},
+                {"$cond": [
+                    {"$and": [{"$ne": [{"$type": "$address"}, "missing"]},
+                              {"$ne": ["$address", None]}, {"$ne": ["$address", ""]}]},
+                    0.10, 0.0]},
+            ]}, 4]},
+            "_layer": "silver",
+            "normalized_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        {"$project": {
+            "silver_id": 1, "u_key": 1,
+            "name": 1, "city": 1, "city_name": 1, "country": 1,
+            "category": 1, "subcategory": 1,
+            "location": 1, "address": 1, "phone": 1, "website": 1,
+            "rating": 1, "review_count": 1, "price_level": 1,
+            "osm_id": 1, "google_place_id": 1,
+            "has_osm_data": 1, "has_google_data": 1, "data_sources": 1,
+            "quality_score": 1, "normalized_at": 1, "_layer": 1,
+            "_source": 1, "created_at": 1, "updated_at": 1,
+        }},
+        {"$out": "silver_pois"},
+    ], allowDiskUse=True)
+
+    silver_count = get_col("silver_pois").count_documents({})
+    append_log(job_id, f"Silver rebuilt: {silver_count:,} records", "info")
+
+    append_log(job_id, "Rebuilding gold layer via aggregation ...", "info")
+    get_col("silver_pois").aggregate([
+        {"$match": {"$or": [{"has_google_data": True}, {"quality_score": {"$gte": 0.3}}]}},
+        {"$addFields": {
+            "poi_id": {"$cond": [
+                {"$and": [{"$ne": ["$google_place_id", None]},
+                          {"$ne": ["$google_place_id", ""]}]},
+                {"$concat": ["gold_google_", "$google_place_id"]},
+                {"$concat": ["gold_osm_", {"$toString": {"$ifNull": ["$osm_id", "$u_key"]}}]},
+            ]},
+            "_layer": "gold",
+            "promoted_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        {"$out": "gold_master_pois"},
+    ], allowDiskUse=True)
+
+    gold_count = get_col("gold_master_pois").count_documents({})
+    append_log(job_id, f"Gold rebuilt: {gold_count:,} records", "info")
+    return {"silver": silver_count, "gold": gold_count}
+
+
+def _nightly_sync(job_id: str, run_id: str, cities: list, categories: list, limit: int) -> dict:
+    """
+    Automated nightly pipeline:
+      1. Enrich a batch of unenriched OSM records with Google data
+      2. Rebuild silver + gold via fast aggregation
+    Designed to run daily, consuming a small key quota per night.
+    """
+    append_log(job_id, f"=== Nightly Sync: enrich up to {limit} records then rebuild layers ===", "info")
+
+    enrich_result = _enrich_google(job_id, run_id, cities, categories, limit)
+    enriched = enrich_result.get("processed", 0)
+    append_log(job_id, f"Enrich batch complete: {enriched} records enriched", "info")
+
+    rebuild = _rebuild_silver_gold_fast(job_id, run_id)
+
+    total = get_col("bronze_pois").count_documents({})
+    has_google = get_col("bronze_pois").count_documents({"has_google_data": True})
+    pct = round(has_google / total * 100, 1) if total else 0
+    append_log(job_id, f"Enrichment progress: {has_google:,}/{total:,} = {pct}%", "info")
+
+    return {"processed": enriched, "silver": rebuild["silver"], "gold": rebuild["gold"]}
 
 
 # ─── Bronze → Silver (with Quarantine) ───────────────────────────────────────
