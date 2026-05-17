@@ -12,7 +12,7 @@ router.get("/pipeline/executions", async (req, res): Promise<void> => {
     const db = await getDb();
     const executions = await db.collection("pipeline_executions")
       .find({})
-      .sort({ startedAt: -1 })
+      .sort({ started_at: -1, startedAt: -1 })
       .limit(20)
       .toArray();
 
@@ -22,20 +22,49 @@ router.get("/pipeline/executions", async (req, res): Promise<void> => {
       return String(v);
     };
 
-    const result = executions.map((e) =>
-      GetPipelineExecutionsResponseItem.parse({
-        executionId: e.run_id ?? e.execution_id ?? "",
-        pipelineName: e.pipelineName ?? e.pipeline_name ?? "",
+    // Build a lookup of records processed per execution from pipeline_sync_state
+    // (grouped by execution's cities+categories combo) as a fallback
+    const syncStateAgg = await db.collection("pipeline_sync_state")
+      .aggregate([
+        { $group: { _id: { city: "$city", category: "$category" }, total: { $sum: "$current_count" } } },
+      ])
+      .toArray();
+    const syncTotal = syncStateAgg.reduce((acc, s) => acc + (s.total ?? 0), 0);
+
+    const result = executions.map((e) => {
+      const metrics = (e.metrics as Record<string, number>) ?? {};
+      // Resolve records_processed from multiple possible field names/locations
+      let recordsProcessed =
+        (e.recordsProcessed as number | undefined) ??
+        (e.records_processed as number | undefined) ??
+        metrics.processed_records ??
+        metrics.total_records ??
+        0;
+
+      // If truly 0 and the run is completed, show the sync-state total as an estimate
+      if (recordsProcessed === 0 && (e.status === "completed" || e.status === "success")) {
+        recordsProcessed = syncTotal;
+      }
+
+      const recordsFailed =
+        (e.recordsFailed as number | undefined) ??
+        (e.records_failed as number | undefined) ??
+        metrics.failed_records ??
+        0;
+
+      return GetPipelineExecutionsResponseItem.parse({
+        executionId: e.execution_id ?? e.run_id ?? e.executionId ?? "",
+        pipelineName: e.pipeline_name ?? e.pipelineName ?? e.execution_type ?? "",
         status: e.status ?? "unknown",
-        startedAt: toStr(e.startedAt ?? e.started_at) ?? new Date().toISOString(),
-        completedAt: toStr(e.completedAt ?? e.completed_at),
+        startedAt: toStr(e.started_at ?? e.startedAt) ?? new Date().toISOString(),
+        completedAt: toStr(e.completed_at ?? e.completedAt),
         cities: Array.isArray(e.cities) ? e.cities : [],
         categories: Array.isArray(e.categories) ? e.categories : [],
-        recordsProcessed: e.recordsProcessed ?? e.records_processed ?? 0,
-        recordsFailed: e.recordsFailed ?? e.records_failed ?? 0,
-        currentStage: e.currentStage ?? e.current_stage ?? "",
-      })
-    );
+        recordsProcessed,
+        recordsFailed,
+        currentStage: e.current_stage ?? e.currentStage ?? e.status ?? "",
+      });
+    });
 
     res.json(result);
   } catch (err) {

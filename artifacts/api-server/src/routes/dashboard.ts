@@ -20,7 +20,7 @@ router.get("/dashboard/overview", async (req, res): Promise<void> => {
       db.collection("bronze_pois").countDocuments(),
       db.collection("silver_pois").countDocuments(),
       db.collection("gold_master_pois").countDocuments(),
-      db.collection("cities").countDocuments(),
+      db.collection("config_cities").countDocuments(),
       db.collection("data_quality_quarantine").countDocuments(),
       db.collection("pipeline_executions").countDocuments(),
       db.collection("data_lineage_edges").countDocuments(),
