@@ -91,6 +91,24 @@ def _enrich_google(job_id: str, run_id: str, cities: list, categories: list, lim
 
         closest = best_match
         place_id = closest.get("place_id")
+
+        # Dedup guard: if this google_place_id is already assigned to another record
+        # with a higher (or equal) name_match_ratio, skip to avoid mass collision
+        existing = bronze.find_one({
+            "google_place_id": place_id,
+            "_id": {"$ne": poi["_id"]},
+        }, {"google_raw.name_match_ratio": 1})
+        if existing:
+            existing_ratio = (existing.get("google_raw") or {}).get("name_match_ratio", 0) or 0
+            if existing_ratio >= best_ratio:
+                bronze.update_one({"_id": poi["_id"]}, {"$set": {
+                    "_enrichment_failed": True,
+                    "_enrichment_error": f"place_id already taken by better match (ratio={existing_ratio:.2f})",
+                    "updated_at": now_iso(),
+                }})
+                skipped_mismatch += 1
+                continue
+
         details = _rapidapi_get(config.PLACE_DETAILS_URL, {
             "place_id": place_id, "fields": "all", "language": "vi"
         })

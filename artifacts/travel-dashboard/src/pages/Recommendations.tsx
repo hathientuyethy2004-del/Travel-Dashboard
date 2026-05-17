@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { useGetRecommendations, useGetCities, useGetCityHighlights } from "@workspace/api-client-react";
+import { useGetRecommendations, useGetCities, useGetCityHighlights, useGetDashboardOverview } from "@workspace/api-client-react";
 import { GetRecommendationsMode } from "@workspace/api-client-react";
 import { CSVLink } from "react-csv";
 import { Star, MapPin, Download, ExternalLink, Phone, Globe, Award, Eye, TrendingUp, Sparkles, Shuffle } from "lucide-react";
@@ -36,6 +36,7 @@ export default function Recommendations() {
   const [limit, setLimit] = useState(20);
 
   const { data: citiesData } = useGetCities();
+  const { data: overviewData } = useGetDashboardOverview();
   const { data: recs, isLoading } = useGetRecommendations(
     { mode, city: city || undefined, category: category || undefined, limit }
   );
@@ -47,7 +48,7 @@ export default function Recommendations() {
     <div className="px-6 pt-6 pb-8 max-w-[1400px] mx-auto">
       <div className="mb-6">
         <h1 className="font-bold text-2xl">Recommendations</h1>
-        <p className="text-muted-foreground text-sm mt-1">Smart POI recommendations from 9,284 gold-layer points of interest</p>
+        <p className="text-muted-foreground text-sm mt-1">Smart POI recommendations from {overviewData?.goldPois?.toLocaleString() ?? "..."} gold-layer points of interest</p>
       </div>
 
       {/* Mode selector */}

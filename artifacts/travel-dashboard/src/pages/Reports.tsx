@@ -167,7 +167,9 @@ export default function Reports() {
                   </div>
                   <div className="p-3 rounded-lg bg-muted/30 text-center">
                     <p className="text-xs text-muted-foreground">Avg Rating</p>
-                    <p className="text-xl font-bold text-yellow-500">★ {report?.quality.avgRating?.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-yellow-500">
+                      {(report?.quality.avgRating ?? 0) > 0 ? `★ ${report!.quality.avgRating!.toFixed(2)}` : "N/A"}
+                    </p>
                   </div>
                 </div>
                 {(report?.quality.tiers ?? []).map((tier, i) => (

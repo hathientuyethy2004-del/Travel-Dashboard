@@ -1,0 +1,106 @@
+Smart Travel
+Dashboard
+POI Explorer
+Analytics
+Recommendations
+Pipeline
+Reports
+Settings
+Smart Travel Platform
+POI analytics & data pipeline monitoring
+
+Browse POIs
+Refresh
+
+
+
+
+POI Analytics
+
+Pipeline Monitor
+Bronze (Raw)
+
+22.9K
+
+Silver (Normalized)
+
+22.9K
+
+Gold (Quality-filtered)
+
+19.8K
+
+Quarantined
+
+2.1K
+
+Data Pipeline Funnel
+Gold ⊆ Silver ⊆ Bronze
+
+BronzeRaw collected POIs
+22.871
+SilverNormalized with quality scores
+22.871
+100.0% of Bronze
+GoldQuality ≥ 0.3 or Google-verified
+19.759
+86.4% of Silver
+QuarantineFailed quality rules
+2.137
+10.8% of Gold
+Gold threshold: quality score ≥ 0.3 or has Google data
+
+Quality Score Distribution
+Avg: 0.40 across Gold POIs
+
+0.0-0.2
+0.2-0.4
+0.4-0.6
+0.6-0.8
+0.8-1.0
+0
+4000
+8000
+12000
+16000
+Quarantine Failure Reasons
+2.137 POIs failed quality rules
+
+0
+400
+800
+1200
+1600
+completeness_below_threshold
+invalid_latitude
+invalid_longitude
+trust_score_below_threshold
+quality_score_below_threshold
+missing_name_and_google
+source_conflict_detected
+1510
+1478
+1478
+1384
+155
+146
+26
+Recent Pipeline Executions
+Records column shows sync-state total for completed runs
+
+Pipeline	Status	Cities	Categories	Started	Records
+specific_city_1cities_1categories	failed	hanoi	restaurant	May 16, 10:25 AM	0
+specific_city_1cities_1categories	failed	hanoi	restaurant	May 16, 08:27 AM	0
+Làm giàu Google raw	completed	__none__	all	May 15, 07:50 AM	118.582
+specific_city_1cities_1categories	completed	hanoi	restaurant	May 14, 01:07 PM	118.582
+specific_city_1cities_1categories	completed	hanoi	restaurant	May 14, 01:06 PM	118.582
+specific_city_1cities_1categories	completed	hanoi	restaurant	May 14, 01:05 PM	118.582
+incremental_sync_1cities_0categories	completed	hanoi	all	May 14, 12:07 PM	118.582
+full_sync_0cities_0categories	completed	—	all	May 14, 12:07 PM	118.582
+incremental_sync_1cities_0categories	completed	hanoi	all	May 14, 12:07 PM	118.582
+incremental_sync_1cities_0categories	completed	hanoi	all	May 14, 12:05 PM	118.582
+full_sync_0cities_0categories	completed	—	all	May 14, 12:05 PM	118.582
+incremental_sync_1cities_0categories	completed	hanoi	all	May 14, 12:05 PM	118.582
+specific_city_1cities_1categories	completed	hanoi	restaurant	May 14, 02:30 AM	118.582
+full_pipeline	running	hanoi	restaurant	May 17, 02:59 PM	0
+restaurant

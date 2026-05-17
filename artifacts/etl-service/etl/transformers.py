@@ -131,6 +131,7 @@ def _rebuild_silver_gold_fast(job_id: str, run_id: str) -> dict:
     append_log(job_id, f"Silver rebuilt: {silver_count:,} records", "info")
 
     append_log(job_id, "Rebuilding gold layer via aggregation ...", "info")
+    promoted_at = datetime.now(timezone.utc).isoformat()
     get_col("silver_pois").aggregate([
         {"$match": {"$or": [{"has_google_data": True}, {"quality_score": {"$gte": 0.3}}]}},
         {"$addFields": {
@@ -140,8 +141,17 @@ def _rebuild_silver_gold_fast(job_id: str, run_id: str) -> dict:
                 {"$concat": ["gold_google_", "$google_place_id"]},
                 {"$concat": ["gold_osm_", {"$toString": {"$ifNull": ["$osm_id", "$u_key"]}}]},
             ]},
+        }},
+        # Deduplicate by poi_id — keep the record with the highest quality_score
+        {"$sort": {"quality_score": -1}},
+        {"$group": {
+            "_id": "$poi_id",
+            "doc": {"$first": "$$ROOT"},
+        }},
+        {"$replaceRoot": {"newRoot": "$doc"}},
+        {"$addFields": {
             "_layer": "gold",
-            "promoted_at": datetime.now(timezone.utc).isoformat(),
+            "promoted_at": promoted_at,
         }},
         {"$out": "gold_master_pois"},
     ], allowDiskUse=True)

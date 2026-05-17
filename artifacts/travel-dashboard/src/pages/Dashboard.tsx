@@ -300,7 +300,7 @@ export default function Dashboard() {
                 { label: "Silver POIs", value: overview?.silverPois, icon: Database, color: "#94a3b8", hint: "All normalized POIs" },
                 { label: "Bronze POIs", value: overview?.bronzePois, icon: Database, color: CHART_COLORS.orange, hint: "All raw collected POIs" },
                 { label: "Cities", value: overview?.cities, icon: MapPin, color: CHART_COLORS.blue, hint: undefined },
-                { label: "Avg Rating", value: overview?.avgRating, icon: Star, color: CHART_COLORS.purple, decimal: true, hint: undefined },
+                { label: "Avg Quality", value: overview?.avgQualityScore, icon: Star, color: CHART_COLORS.purple, decimal: true, hint: "Average quality score across all Gold POIs (0–1)" },
               ].map(({ label, value, icon: Icon, color, decimal, hint }) => (
                 <Card key={label} title={hint}>
                   <CardContent className="p-4">
