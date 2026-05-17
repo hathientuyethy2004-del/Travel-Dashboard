@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from etl.db import get_col, now_iso
 
-JOB_TYPES = ["collect_osm", "enrich_google", "bronze_to_silver", "silver_to_gold", "full_pipeline"]
+JOB_TYPES = ["collect_osm", "enrich_google", "bronze_to_silver", "silver_to_gold", "reconcile", "full_pipeline"]
 
 def create_job(job_type: str, cities: Optional[List[str]] = None, categories: Optional[List[str]] = None, limit: int = 200, triggered_by: str = "manual") -> dict:
     job_id = str(uuid.uuid4())[:8].upper()

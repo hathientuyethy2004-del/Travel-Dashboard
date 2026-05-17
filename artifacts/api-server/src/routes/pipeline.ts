@@ -12,26 +12,22 @@ router.get("/pipeline/executions", async (req, res): Promise<void> => {
     const db = await getDb();
     const executions = await db.collection("pipeline_executions")
       .find({})
-      .sort({ started_at: -1 })
+      .sort({ startedAt: -1 })
       .limit(20)
       .toArray();
 
     const result = executions.map((e) =>
       GetPipelineExecutionsResponseItem.parse({
-        executionId: e.execution_id,
-        pipelineName: e.pipeline_name,
-        status: e.status,
-        startedAt: e.started_at instanceof Date ? e.started_at.toISOString() : String(e.started_at),
-        completedAt: e.completed_at
-          ? e.completed_at instanceof Date
-            ? e.completed_at.toISOString()
-            : String(e.completed_at)
-          : null,
+        executionId: e.run_id ?? e.execution_id ?? "",
+        pipelineName: e.pipelineName ?? e.pipeline_name ?? "",
+        status: e.status ?? "unknown",
+        startedAt: e.startedAt ?? e.started_at ?? new Date().toISOString(),
+        completedAt: e.completedAt ?? e.completed_at ?? null,
         cities: Array.isArray(e.cities) ? e.cities : [],
         categories: Array.isArray(e.categories) ? e.categories : [],
-        recordsProcessed: e.records_processed ?? 0,
-        recordsFailed: e.records_failed ?? 0,
-        currentStage: e.current_stage ?? "",
+        recordsProcessed: e.recordsProcessed ?? e.records_processed ?? 0,
+        recordsFailed: e.recordsFailed ?? e.records_failed ?? 0,
+        currentStage: e.currentStage ?? e.current_stage ?? "",
       })
     );
 
