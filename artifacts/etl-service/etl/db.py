@@ -34,7 +34,8 @@ def ensure_indexes():
     db.bronze_pois.create_index([("u_key", ASCENDING)], unique=True)
     db.bronze_pois.create_index([("city", ASCENDING), ("category", ASCENDING)])
     db.bronze_pois.create_index([("has_google_data", ASCENDING)])
-    db.bronze_pois.create_index([("_silver_promoted", ASCENDING)])  # for incremental b→s
+    db.bronze_pois.create_index([("_silver_promoted", ASCENDING)])
+    db.bronze_pois.create_index([("_enrichment_failed", ASCENDING)])
 
     # Silver — drop legacy indexes that block upserts with null fields
     for _idx in ["place_id_1__city_1", "_dedupe_key_1", "city_1__dedupe_key_1",
@@ -61,6 +62,12 @@ def ensure_indexes():
     db.gold_master_pois.create_index([("run_id", ASCENDING)])
     db.gold_master_pois.create_index([("google_place_id", ASCENDING)])
 
+    # Pending review (quality_score 0.3–0.5)
+    db.pending_review_pois.create_index([("u_key", ASCENDING)], unique=True)
+    db.pending_review_pois.create_index([("city", ASCENDING), ("category", ASCENDING)])
+    db.pending_review_pois.create_index([("quality_score", ASCENDING)])
+    db.pending_review_pois.create_index([("run_id", ASCENDING)])
+
     # Quarantine
     db.data_quality_quarantine.create_index([("u_key", ASCENDING)])
     db.data_quality_quarantine.create_index([("bronze_ref", ASCENDING)])
@@ -80,3 +87,7 @@ def ensure_indexes():
     db.pipeline_executions.create_index([("run_id", ASCENDING)], unique=True, sparse=True)
     db.pipeline_executions.create_index([("status", ASCENDING)])
     db.pipeline_executions.create_index([("startedAt", DESCENDING)])
+
+    # Config collections
+    db.config_cities.create_index([("code", ASCENDING)], unique=True)
+    db.config_categories.create_index([("code", ASCENDING)], unique=True)

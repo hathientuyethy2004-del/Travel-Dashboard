@@ -1,61 +1,74 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import {
   Play, RefreshCw, Clock, CheckCircle2, XCircle, Loader2,
-  Plus, Trash2, ToggleLeft, ToggleRight, GitBranch, Settings
+  Plus, Trash2, GitBranch, ThumbsUp, ThumbsDown, AlertCircle,
 } from "lucide-react";
-import { CHART_COLOR_LIST } from "@/lib/constants";
+import { Link } from "wouter";
 
 const API = "/api";
 
 const JOB_TYPES = [
-  { value: "collect_osm",       label: "🌍 Collect OSM",           desc: "Collect raw POI data from OpenStreetMap" },
-  { value: "enrich_google",     label: "🔍 Enrich Google",         desc: "Enrich POIs with Google Places data" },
-  { value: "bronze_to_silver",  label: "🔄 Bronze → Silver",       desc: "Normalize and score bronze layer records" },
-  { value: "silver_to_gold",    label: "⭐ Silver → Gold",          desc: "Promote quality-gated records to gold master" },
-  { value: "reconcile",         label: "🧹 Reconcile",             desc: "Remove ghost records across Bronze/Silver/Gold" },
-  { value: "full_pipeline",     label: "🚀 Full Pipeline",          desc: "Run all 5 stages end-to-end" },
+  { value: "collect_osm",               label: "🌍 Collect OSM",                desc: "Collect raw POI data from OpenStreetMap" },
+  { value: "collect_google_places",      label: "🗺️ Collect Google Places",      desc: "Discover POIs directly via Google Places Text Search" },
+  { value: "enrich_google",             label: "🔍 Enrich Google",              desc: "Enrich OSM POIs with Google Places data (fuzzy name match)" },
+  { value: "retry_failed_enrichments",  label: "🔁 Retry Failed Enrichments",   desc: "Retry enrichment for records that previously had no name match" },
+  { value: "bronze_to_silver",          label: "🔄 Bronze → Silver",            desc: "Normalize and score bronze layer records" },
+  { value: "silver_to_gold",            label: "⭐ Silver → Gold",               desc: "Promote quality-gated records; queues 0.3–0.5 for manual review" },
+  { value: "reconcile",                 label: "🧹 Reconcile",                  desc: "Remove ghost records across Bronze/Silver/Gold" },
+  { value: "full_pipeline",             label: "🚀 Full Pipeline",               desc: "Run all stages end-to-end" },
 ];
 
-const CITIES_LIST = ["hanoi","hcm","danang","cantho","haiphong","hue","nhatrang","dalat","vungtau","quynhon"];
-const CATS_LIST = ["restaurant","cafe","bar","hotel","attraction","park","shopping"];
-
 const CRON_PRESETS = [
-  { label: "Every day at 2 AM", value: "0 2 * * *" },
-  { label: "Every day at midnight", value: "0 0 * * *" },
-  { label: "Every week (Monday 3 AM)", value: "0 3 * * 1" },
-  { label: "Every month (1st, 4 AM)", value: "0 4 1 * *" },
+  { label: "Every day at 2 AM",         value: "0 2 * * *" },
+  { label: "Every day at midnight",     value: "0 0 * * *" },
+  { label: "Every week (Monday 3 AM)",  value: "0 3 * * 1" },
+  { label: "Every month (1st, 4 AM)",   value: "0 4 1 * *" },
 ];
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === "running") return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+  if (status === "running")   return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
   if (status === "completed") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-  if (status === "failed") return <XCircle className="w-4 h-4 text-red-500" />;
+  if (status === "failed")    return <XCircle className="w-4 h-4 text-red-500" />;
   return <Clock className="w-4 h-4 text-yellow-500" />;
 }
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    running: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    running:   "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
     completed: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    failed: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    failed:    "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    pending:   "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
   };
-  return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? "bg-gray-100"}`}>
-    <StatusIcon status={status} /> {status}
-  </span>;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${map[status] ?? "bg-gray-100"}`}>
+      <StatusIcon status={status} /> {status}
+    </span>
+  );
+}
+
+function QualityBadge({ score }: { score: number }) {
+  const pct = Math.round(score * 100);
+  const color = score >= 0.5 ? "text-green-600" : score >= 0.3 ? "text-yellow-600" : "text-red-500";
+  return <span className={`text-xs font-mono font-medium ${color}`}>{pct}%</span>;
 }
 
 export default function Pipeline() {
   const [jobs, setJobs] = useState<Record<string, unknown>[]>([]);
   const [schedules, setSchedules] = useState<Record<string, unknown>[]>([]);
   const [etlStatus, setEtlStatus] = useState<Record<string, unknown> | null>(null);
+  const [pendingReview, setPendingReview] = useState<Record<string, unknown>[]>([]);
+  const [reviewCount, setReviewCount] = useState(0);
   const [jobsLoading, setJobsLoading] = useState(true);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Record<string, unknown> | null>(null);
   const [triggering, setTriggering] = useState(false);
-  const [tab, setTab] = useState<"jobs" | "schedules">("jobs");
+  const [tab, setTab] = useState<"jobs" | "schedules" | "review">("jobs");
+
+  // Dynamic config from API
+  const [citiesList, setCitiesList] = useState<{ code: string; name: string }[]>([]);
+  const [catsList, setCatsList] = useState<{ code: string }[]>([]);
 
   // Trigger form
   const [triggerType, setTriggerType] = useState("collect_osm");
@@ -72,14 +85,16 @@ export default function Pipeline() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [j, s, st] = await Promise.all([
+      const [j, s, st, rc] = await Promise.all([
         fetch(`${API}/etl/jobs?limit=30`).then((r) => r.json()),
         fetch(`${API}/etl/schedules`).then((r) => r.json()),
         fetch(`${API}/etl/status`).then((r) => r.json()),
+        fetch(`${API}/etl/review/count`).then((r) => r.json()),
       ]);
       setJobs(Array.isArray(j) ? j : []);
       setSchedules(Array.isArray(s) ? s : []);
       setEtlStatus(st);
+      setReviewCount((rc as { count?: number })?.count ?? 0);
     } catch {
       // ETL service may be starting
     } finally {
@@ -87,11 +102,39 @@ export default function Pipeline() {
     }
   }, []);
 
+  const fetchConfig = useCallback(async () => {
+    try {
+      const [cities, cats] = await Promise.all([
+        fetch(`${API}/etl/config/cities`).then((r) => r.json()),
+        fetch(`${API}/etl/config/categories`).then((r) => r.json()),
+      ]);
+      setCitiesList(Array.isArray(cities) ? cities : []);
+      setCatsList(Array.isArray(cats) ? cats : []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const fetchReview = useCallback(async () => {
+    setReviewLoading(true);
+    try {
+      const data = await fetch(`${API}/etl/review?limit=50`).then((r) => r.json());
+      setPendingReview(Array.isArray(data) ? data : []);
+    } finally {
+      setReviewLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAll();
+    fetchConfig();
     const id = setInterval(fetchAll, 5000);
     return () => clearInterval(id);
-  }, [fetchAll]);
+  }, [fetchAll, fetchConfig]);
+
+  useEffect(() => {
+    if (tab === "review") fetchReview();
+  }, [tab, fetchReview]);
 
   async function triggerJob() {
     setTriggering(true);
@@ -102,8 +145,12 @@ export default function Pipeline() {
         body: JSON.stringify({ jobType: triggerType, cities: triggerCities, categories: triggerCats, limit: triggerLimit }),
       });
       const job = await r.json();
+      if (r.status === 401) {
+        alert("Authentication required to trigger jobs.");
+        return;
+      }
       setJobs((prev) => [job, ...prev]);
-    } catch (e) {
+    } catch {
       alert("Failed to trigger job: ETL service may be starting");
     } finally {
       setTriggering(false);
@@ -117,6 +164,7 @@ export default function Pipeline() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobType: schedType, cron: schedCron, label: schedLabel, limit: schedLimit }),
       });
+      if (r.status === 401) { alert("Authentication required."); return; }
       const s = await r.json();
       setSchedules((prev) => [s, ...prev]);
       setShowScheduleForm(false);
@@ -135,6 +183,20 @@ export default function Pipeline() {
     setJobs((prev) => prev.filter((j) => (j as Record<string, string>).jobId !== id));
   }
 
+  async function approveReview(uKey: string) {
+    const r = await fetch(`${API}/etl/review/${uKey}/approve`, { method: "POST" });
+    if (r.status === 401) { alert("Authentication required."); return; }
+    setPendingReview((prev) => prev.filter((p) => p.u_key !== uKey));
+    setReviewCount((c) => Math.max(0, c - 1));
+  }
+
+  async function rejectReview(uKey: string) {
+    const r = await fetch(`${API}/etl/review/${uKey}/reject`, { method: "POST" });
+    if (r.status === 401) { alert("Authentication required."); return; }
+    setPendingReview((prev) => prev.filter((p) => p.u_key !== uKey));
+    setReviewCount((c) => Math.max(0, c - 1));
+  }
+
   const statusSummary = (etlStatus as { jobs?: Record<string, number> } | null)?.jobs;
 
   return (
@@ -146,16 +208,16 @@ export default function Pipeline() {
           </div>
           <h1 className="font-bold text-2xl">Pipeline Management</h1>
         </div>
-        <p className="text-muted-foreground text-sm ml-11">Trigger ETL jobs, track progress, and manage schedules</p>
+        <p className="text-muted-foreground text-sm ml-11">Trigger ETL jobs, track progress, manage schedules, and review borderline POIs</p>
       </div>
 
       {/* ETL Status cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Total Jobs", key: "total", color: "#0079F2" },
-          { label: "Running", key: "running", color: "#0891b2" },
-          { label: "Completed", key: "completed", color: "#009118" },
-          { label: "Failed", key: "failed", color: "#A60808" },
+          { label: "Total Jobs",   key: "total",     color: "#0079F2" },
+          { label: "Running",      key: "running",   color: "#0891b2" },
+          { label: "Completed",    key: "completed", color: "#009118" },
+          { label: "Failed",       key: "failed",    color: "#A60808" },
         ].map(({ label, key, color }) => (
           <Card key={key}>
             <CardContent className="p-3">
@@ -176,7 +238,9 @@ export default function Pipeline() {
         {/* Trigger Panel */}
         <Card className="lg:col-span-1">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base flex items-center gap-2"><Play className="w-4 h-4 text-primary" /> Trigger Job</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Play className="w-4 h-4 text-primary" /> Trigger Job
+            </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-3">
             <div>
@@ -190,10 +254,10 @@ export default function Pipeline() {
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">Cities (optional)</label>
               <div className="flex flex-wrap gap-1">
-                {CITIES_LIST.map((c) => (
-                  <button key={c} onClick={() => setTriggerCities((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c])}
-                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${triggerCities.includes(c) ? "bg-primary text-white border-primary" : "border-border hover:bg-muted"}`}>
-                    {c}
+                {citiesList.map((c) => (
+                  <button key={c.code} onClick={() => setTriggerCities((prev) => prev.includes(c.code) ? prev.filter((x) => x !== c.code) : [...prev, c.code])}
+                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${triggerCities.includes(c.code) ? "bg-primary text-white border-primary" : "border-border hover:bg-muted"}`}>
+                    {c.code}
                   </button>
                 ))}
               </div>
@@ -201,10 +265,10 @@ export default function Pipeline() {
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">Categories (optional)</label>
               <div className="flex flex-wrap gap-1">
-                {CATS_LIST.map((c) => (
-                  <button key={c} onClick={() => setTriggerCats((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c])}
-                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${triggerCats.includes(c) ? "bg-primary text-white border-primary" : "border-border hover:bg-muted"}`}>
-                    {c}
+                {catsList.map((c) => (
+                  <button key={c.code} onClick={() => setTriggerCats((prev) => prev.includes(c.code) ? prev.filter((x) => x !== c.code) : [...prev, c.code])}
+                    className={`px-2 py-0.5 rounded text-xs border transition-colors ${triggerCats.includes(c.code) ? "bg-primary text-white border-primary" : "border-border hover:bg-muted"}`}>
+                    {c.code}
                   </button>
                 ))}
               </div>
@@ -222,22 +286,36 @@ export default function Pipeline() {
           </CardContent>
         </Card>
 
-        {/* Jobs / Schedules table */}
+        {/* Jobs / Schedules / Review table */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tabs */}
-          <div className="flex gap-2">
-            {(["jobs", "schedules"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${tab === t ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"}`}>
-                {t === "jobs" ? `Jobs (${jobs.length})` : `Schedules (${schedules.length})`}
-              </button>
-            ))}
-            <button onClick={fetchAll} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-md text-sm bg-muted hover:bg-muted/80 transition-colors">
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setTab("jobs")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === "jobs" ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"}`}>
+              Jobs ({jobs.length})
+            </button>
+            <button onClick={() => setTab("schedules")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === "schedules" ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"}`}>
+              Schedules ({schedules.length})
+            </button>
+            <button onClick={() => setTab("review")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === "review" ? "bg-amber-500 text-white" : "bg-muted hover:bg-muted/80"}`}>
+              <AlertCircle className="w-3.5 h-3.5" />
+              Pending Review
+              {reviewCount > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${tab === "review" ? "bg-white text-amber-600" : "bg-amber-500 text-white"}`}>
+                  {reviewCount}
+                </span>
+              )}
+            </button>
+            <button onClick={() => { fetchAll(); if (tab === "review") fetchReview(); }}
+              className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-md text-sm bg-muted hover:bg-muted/80 transition-colors">
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
           </div>
 
-          {tab === "jobs" ? (
+          {/* ── Jobs Tab ───────────────────────────────────────────────────── */}
+          {tab === "jobs" && (
             <Card>
               <CardContent className="p-0">
                 {jobsLoading ? (
@@ -256,10 +334,11 @@ export default function Pipeline() {
                       </thead>
                       <tbody>
                         {jobs.map((job: Record<string, unknown>) => (
-                          <tr key={job.jobId as string} className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
+                          <tr key={job.jobId as string}
+                            className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
                             onClick={() => setSelectedJob(selectedJob?.jobId === job.jobId ? null : job)}>
                             <td className="px-3 py-2 font-mono text-xs">{job.jobId as string}</td>
-                            <td className="px-3 py-2 text-xs">{(job.jobType as string)?.replace("_", " ")}</td>
+                            <td className="px-3 py-2 text-xs">{(job.jobType as string)?.replace(/_/g, " ")}</td>
                             <td className="px-3 py-2"><StatusBadge status={job.status as string} /></td>
                             <td className="px-3 py-2 text-xs text-green-600">{(job.recordsProcessed as number)?.toLocaleString() ?? 0}</td>
                             <td className="px-3 py-2 text-xs text-muted-foreground">
@@ -279,7 +358,10 @@ export default function Pipeline() {
                 )}
               </CardContent>
             </Card>
-          ) : (
+          )}
+
+          {/* ── Schedules Tab ──────────────────────────────────────────────── */}
+          {tab === "schedules" && (
             <Card>
               <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base">Schedules</CardTitle>
@@ -337,7 +419,6 @@ export default function Pipeline() {
                           <div className="flex items-center gap-2 mt-0.5">
                             <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{s.cron as string}</code>
                             <span className="text-xs text-muted-foreground">{(s.jobType as string)?.replace(/_/g, " ")}</span>
-                            {s.lastRun && <span className="text-xs text-muted-foreground">Last: {new Date(s.lastRun as string).toLocaleDateString()}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -356,8 +437,81 @@ export default function Pipeline() {
             </Card>
           )}
 
+          {/* ── Review Tab ─────────────────────────────────────────────────── */}
+          {tab === "review" && (
+            <Card>
+              <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                  Pending Review
+                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 px-1.5 py-0.5 rounded-full">{reviewCount}</span>
+                </CardTitle>
+                <button onClick={fetchReview} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </CardHeader>
+              <CardContent className="p-0">
+                {reviewLoading ? (
+                  <div className="p-4 space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+                ) : pendingReview.length === 0 ? (
+                  <div className="py-14 text-center">
+                    <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">All clear! No POIs waiting for review.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Records with quality score 0.3–0.5 from Silver→Gold will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/30">
+                          {["Name", "City", "Category", "Score", "Sources", "Actions"].map((h) => (
+                            <th key={h} className="text-left text-xs font-medium text-muted-foreground px-3 py-2">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingReview.map((poi: Record<string, unknown>) => (
+                          <tr key={poi.u_key as string} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                            <td className="px-3 py-2">
+                              <div className="text-xs font-medium max-w-[160px] truncate">{poi.name as string || "—"}</div>
+                              {poi.address && <div className="text-[11px] text-muted-foreground truncate max-w-[160px]">{poi.address as string}</div>}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-muted-foreground capitalize">{(poi.city as string)?.replace("_", " ")}</td>
+                            <td className="px-3 py-2 text-xs text-muted-foreground capitalize">{poi.category as string}</td>
+                            <td className="px-3 py-2">
+                              <QualityBadge score={poi.quality_score as number ?? 0} />
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex gap-1">
+                                {((poi.data_sources as string[]) || []).map((src) => (
+                                  <span key={src} className="text-[10px] bg-muted px-1 py-0.5 rounded text-muted-foreground">{src}</span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex gap-1">
+                                <button title="Approve → Gold" onClick={() => approveReview(poi.u_key as string)}
+                                  className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900 transition-colors">
+                                  <ThumbsUp className="w-3.5 h-3.5 text-green-600" />
+                                </button>
+                                <button title="Reject" onClick={() => rejectReview(poi.u_key as string)}
+                                  className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900 transition-colors">
+                                  <ThumbsDown className="w-3.5 h-3.5 text-red-500" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Job detail drawer */}
-          {selectedJob && (
+          {selectedJob && tab === "jobs" && (
             <Card>
               <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm">Job {selectedJob.jobId as string} — Logs</CardTitle>

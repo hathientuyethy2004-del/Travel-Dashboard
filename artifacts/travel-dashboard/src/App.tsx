@@ -10,6 +10,7 @@ import Analytics from "@/pages/Analytics";
 import Recommendations from "@/pages/Recommendations";
 import Pipeline from "@/pages/Pipeline";
 import Reports from "@/pages/Reports";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -32,6 +33,7 @@ function Router() {
         <Route path="/recommendations" component={Recommendations} />
         <Route path="/pipeline" component={Pipeline} />
         <Route path="/reports" component={Reports} />
+        <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>
     </>

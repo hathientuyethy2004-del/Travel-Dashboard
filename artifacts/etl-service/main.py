@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from etl.db import ensure_indexes
 from etl import scheduler as sched
-from routers import jobs, schedules
+from routers import jobs, schedules, config as config_router, review as review_router
 
 
 def _cleanup_stale_jobs():
@@ -29,10 +29,19 @@ def _cleanup_stale_jobs():
         print(f"[startup] Reset {result.modified_count} stale job(s) to 'failed'")
 
 
+def _seed_config():
+    """Seed cities and categories from hardcoded defaults on first run."""
+    from etl import config_db
+    config_db.get_cities()      # triggers seed if empty
+    config_db.get_categories()  # triggers seed if empty
+    print("[startup] Config seeded from defaults (if collections were empty)")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_indexes()
     _cleanup_stale_jobs()
+    _seed_config()
     sched.start_scheduler()
     yield
     sched.stop_scheduler()
@@ -49,19 +58,26 @@ app.add_middleware(
 
 app.include_router(jobs.router)
 app.include_router(schedules.router)
+app.include_router(config_router.router)
+app.include_router(review_router.router)
 
 
 @app.get("/etl/status")
 def status():
     from etl.db import get_col
-    from etl.config import RAPIDAPI_KEYS, CITIES, CATEGORIES
+    from etl import config_db
     jobs_col = get_col("etl_jobs")
+    cities = config_db.get_cities()
+    cats = config_db.get_categories()
+    from etl.config import RAPIDAPI_KEYS
+    review_count = get_col("pending_review_pois").count_documents({})
     return {
         "service": "ETL Service",
         "status": "running",
         "rapidApiKeys": len(RAPIDAPI_KEYS),
-        "cities": len(CITIES),
-        "categories": len(CATEGORIES),
+        "cities": len(cities),
+        "categories": len(cats),
+        "pendingReview": review_count,
         "jobs": {
             "total": jobs_col.count_documents({}),
             "running": jobs_col.count_documents({"status": "running"}),
@@ -73,12 +89,15 @@ def status():
 
 @app.get("/etl/config")
 def get_config():
-    from etl.config import CITIES, CATEGORIES, RAPIDAPI_KEYS
+    from etl import config_db, jobs as job_manager
+    from etl.config import RAPIDAPI_KEYS
+    cities = config_db.list_cities_raw()
+    cats = config_db.list_categories_raw()
     return {
-        "cities": [{"code": k, **{kk: vv for kk, vv in v.items() if kk not in ("lat", "lon")}} for k, v in CITIES.items()],
-        "categories": list(CATEGORIES.keys()),
+        "cities": cities,
+        "categories": [c["code"] for c in cats],
         "rapidApiKeyCount": len(RAPIDAPI_KEYS),
-        "jobTypes": ["collect_osm", "enrich_google", "bronze_to_silver", "silver_to_gold", "full_pipeline"],
+        "jobTypes": job_manager.JOB_TYPES,
     }
 
 

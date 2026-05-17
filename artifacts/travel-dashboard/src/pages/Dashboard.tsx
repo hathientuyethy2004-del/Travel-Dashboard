@@ -202,6 +202,28 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* First-run empty state */}
+        {!ovLoading && !ovFetching && (overview?.goldPois ?? 0) === 0 && (overview?.bronzePois ?? 0) === 0 && (
+          <div className="mb-6 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-6 flex flex-col sm:flex-row items-center gap-5">
+            <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0079F2, #0d9488)" }}>
+              <GitBranch className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="font-semibold text-base mb-1">Welcome to Smart Travel Platform</h2>
+              <p className="text-sm text-muted-foreground max-w-lg">
+                No POI data yet. Run your first ETL pipeline job to start collecting, enriching, and analyzing Vietnamese tourist locations.
+              </p>
+            </div>
+            <Link href="/pipeline">
+              <button className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #0079F2, #0d9488)" }}>
+                <GitBranch className="w-4 h-4" />
+                Go to Pipeline
+              </button>
+            </Link>
+          </div>
+        )}
+
         {/* KPI Row */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           {[

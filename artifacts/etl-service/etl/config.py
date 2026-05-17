@@ -6,6 +6,7 @@ RAPIDAPI_KEYS = [k.strip() for k in os.getenv("RAPIDAPI_KEYS", "").split(",") if
 RAPIDAPI_HOST = "google-map-places.p.rapidapi.com"
 NEARBY_SEARCH_URL = "https://google-map-places.p.rapidapi.com/maps/api/place/nearbysearch/json"
 PLACE_DETAILS_URL = "https://google-map-places.p.rapidapi.com/maps/api/place/details/json"
+TEXT_SEARCH_URL = "https://google-map-places.p.rapidapi.com/maps/api/place/textsearch/json"
 
 OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",

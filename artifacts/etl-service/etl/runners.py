@@ -2,30 +2,36 @@
 ETL Runner — executes each pipeline stage and tracks progress in MongoDB.
 
 Pipeline flow:
-  collect_osm → enrich_google → bronze_to_silver → silver_to_gold → reconcile
+  collect_osm / collect_google_places → enrich_google → bronze_to_silver → silver_to_gold → reconcile
 
-Key improvements over v1:
-  - pipeline_run_id: every record tagged with the run that produced it
-  - Quarantine stage: invalid bronze records are moved to data_quality_quarantine
-  - Quality gate: only silver records with quality_score >= QUALITY_THRESHOLD go to gold
-  - Unified dedup_key: u_key is the single identity across all layers
-  - Reconciliation: removes ghost records (gold without silver, silver without bronze)
-  - Lineage edges: every promotion writes a record to data_lineage_edges
-  - Pipeline executions: each full_pipeline run tracked in pipeline_executions
+Key improvements:
+  - Fuzzy name matching: Google enrichment validates name similarity (≥45%) before accepting
+  - Retry + exponential backoff: Overpass and RapidAPI calls retry up to 3× before giving up
+  - Failed enrichments flagged: records that fail matching are saved for retry via retry_failed_enrichments
+  - Quality thresholds split: GOLD=0.5 (auto-promote), REVIEW=0.3 (manual review queue)
+  - Pending review layer: silver records with 0.3≤score<0.5 go to pending_review_pois
+  - Google Places collector: independently discovers POIs via Text Search
+  - Config from MongoDB: cities & categories read from DB (config_db), not hardcoded
 """
 
 import time
 import random
 import uuid
 import hashlib
+import difflib
 import requests
 from datetime import datetime, timezone
 from etl.db import get_col, now_iso
 from etl.jobs import update_job, append_log
 from etl import config
+from etl import config_db
 
-# Only silver records at or above this score are promoted to gold
-QUALITY_THRESHOLD = 0.3
+# Quality gates
+QUALITY_THRESHOLD_GOLD = 0.5    # Score >= this → promoted to gold automatically
+QUALITY_THRESHOLD_REVIEW = 0.3  # Score >= this but < GOLD → goes to pending_review_pois
+
+# Fuzzy name matching — Google result must be at least this similar to the OSM name
+NAME_MATCH_THRESHOLD = 0.45
 
 # Validation rules applied in bronze → silver
 VALIDATION_RULES = {
@@ -34,8 +40,50 @@ VALIDATION_RULES = {
         (not d.get("name") or d.get("name", "").lower() in ("unknown", ""))
         and not d.get("has_google_data")
     ),
-    "duplicate_in_silver": lambda d: False,  # handled via upsert logic separately
+    "duplicate_in_silver": lambda d: False,
 }
+
+
+# ─── Retry helper ─────────────────────────────────────────────────────────────
+
+def _with_retry(fn, max_retries: int = 3, base_delay: float = 2.0):
+    """Call fn() with exponential backoff on failure. Raises last exception if all retries fail."""
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 1.0)
+                time.sleep(delay)
+    raise last_error
+
+
+# ─── Fuzzy name matching ──────────────────────────────────────────────────────
+
+def _name_similarity(a: str, b: str) -> float:
+    """Return similarity ratio between two names (0.0–1.0) using SequenceMatcher."""
+    a = a.lower().strip()
+    b = b.lower().strip()
+    if not a or not b:
+        return 0.0
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def _best_google_match(osm_name: str, candidates: list) -> tuple:
+    """
+    From a list of Google Place candidates, find the best name match.
+    Returns (best_candidate, best_ratio). Returns (None, 0.0) if no candidates.
+    """
+    best_match = None
+    best_ratio = 0.0
+    for candidate in candidates[:5]:
+        ratio = _name_similarity(osm_name, candidate.get("name", ""))
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best_match = candidate
+    return best_match, best_ratio
 
 
 # ─── Entry point ─────────────────────────────────────────────────────────────
@@ -45,18 +93,27 @@ def run_job(job_id: str, job_type: str, cities: list, categories: list, limit: i
     update_job(job_id, status="running", startedAt=now_iso(), runId=run_id)
     append_log(job_id, f"Starting job: {job_type} [run_id={run_id}]", "info")
     try:
+        cities_cfg = config_db.get_cities()
+        cats_cfg = config_db.get_categories()
+        all_cities = list(cities_cfg.keys())
+        all_cats = list(cats_cfg.keys())
+
         if job_type == "collect_osm":
-            _collect_osm(job_id, run_id, cities or list(config.CITIES), categories or list(config.CATEGORIES), limit)
+            _collect_osm(job_id, run_id, cities or all_cities, categories or all_cats, limit)
+        elif job_type == "collect_google_places":
+            _collect_google_places(job_id, run_id, cities or all_cities, categories or all_cats, limit)
         elif job_type == "enrich_google":
-            _enrich_google(job_id, run_id, cities or list(config.CITIES), categories or list(config.CATEGORIES), limit)
+            _enrich_google(job_id, run_id, cities or all_cities, categories or all_cats, limit)
+        elif job_type == "retry_failed_enrichments":
+            _retry_failed_enrichments(job_id, run_id, cities or all_cities, categories or all_cats, limit)
         elif job_type == "bronze_to_silver":
-            _bronze_to_silver(job_id, run_id, cities or list(config.CITIES), categories or list(config.CATEGORIES))
+            _bronze_to_silver(job_id, run_id, cities or all_cities, categories or all_cats)
         elif job_type == "silver_to_gold":
             _silver_to_gold(job_id, run_id)
         elif job_type == "reconcile":
             _reconcile(job_id, run_id)
         elif job_type == "full_pipeline":
-            _run_full_pipeline(job_id, run_id, cities or list(config.CITIES), categories or list(config.CATEGORIES), limit)
+            _run_full_pipeline(job_id, run_id, cities or all_cities, categories or all_cats, limit)
         update_job(job_id, status="completed", completedAt=now_iso())
         append_log(job_id, "Job completed successfully", "info")
     except Exception as e:
@@ -107,6 +164,7 @@ def _run_full_pipeline(job_id: str, run_id: str, cities: list, categories: list,
                 "processed": result.get("processed", 0),
                 "failed": result.get("failed", 0),
                 "quarantined": result.get("quarantined", 0),
+                "pending_review": result.get("pending_review", 0),
             })
             total_processed += result.get("processed", 0)
             total_failed += result.get("failed", 0)
@@ -156,28 +214,34 @@ def _create_overpass_query(lat, lon, radius_m, tags):
 def _try_overpass(query, timeout=180):
     endpoints = config.OVERPASS_ENDPOINTS.copy()
     random.shuffle(endpoints)
-    for ep in endpoints:
-        try:
-            r = requests.get(ep, params={"data": query}, timeout=timeout,
-                             headers={"User-Agent": "SmartTravel-ETL/1.0"})
-            if r.status_code == 200:
-                return r.json()
-        except Exception:
-            continue
-    raise RuntimeError("All Overpass endpoints failed")
+
+    def _attempt():
+        for ep in endpoints:
+            try:
+                r = requests.get(ep, params={"data": query}, timeout=timeout,
+                                 headers={"User-Agent": "SmartTravel-ETL/1.0"})
+                if r.status_code == 200:
+                    return r.json()
+            except Exception:
+                continue
+        raise RuntimeError("All Overpass endpoints failed")
+
+    return _with_retry(_attempt, max_retries=3, base_delay=3.0)
 
 
 def _collect_osm(job_id: str, run_id: str, cities: list, categories: list, limit: int) -> dict:
     bronze = get_col("bronze_pois")
+    cities_cfg = config_db.get_cities()
+    cats_cfg = config_db.get_categories()
     total = 0
     for city_code in cities:
-        city = config.CITIES.get(city_code)
+        city = cities_cfg.get(city_code)
         if not city:
             continue
         append_log(job_id, f"OSM collect: {city['name']}", "info")
         lat, lon, radius_m = city["lat"], city["lon"], int(city["radius_km"] * 1000)
         for cat in categories:
-            tags = config.CATEGORIES.get(cat, [])
+            tags = cats_cfg.get(cat, [])
             if not tags:
                 continue
             try:
@@ -231,6 +295,105 @@ def _collect_osm(job_id: str, run_id: str, cities: list, categories: list, limit
     return {"processed": total}
 
 
+# ─── Google Places Direct Collector ──────────────────────────────────────────
+
+def _collect_google_places(job_id: str, run_id: str, cities: list, categories: list, limit: int) -> dict:
+    """Collect POIs directly from Google Places Text Search — parallel source to OSM."""
+    if not config.RAPIDAPI_KEYS:
+        append_log(job_id, "No RapidAPI keys configured — skipping Google Places collection", "warn")
+        return {"processed": 0}
+
+    bronze = get_col("bronze_pois")
+    cities_cfg = config_db.get_cities()
+    total = 0
+
+    for city_code in cities:
+        city = cities_cfg.get(city_code)
+        if not city:
+            continue
+        if total >= limit:
+            break
+
+        for cat in categories:
+            if total >= limit:
+                break
+
+            query = f"{cat} in {city.get('nameEn', city_code)}, Vietnam"
+            append_log(job_id, f"Google Places search: {query}", "info")
+
+            search = _rapidapi_get(config.TEXT_SEARCH_URL, {
+                "query": query,
+                "language": "vi",
+                "region": "vn",
+            })
+
+            if search.get("status") == "QUOTA_EXCEEDED_ALL_KEYS":
+                append_log(job_id, "All RapidAPI keys exhausted — stopping", "error")
+                break
+
+            if search.get("status") not in ("OK", "ZERO_RESULTS") or not search.get("results"):
+                append_log(job_id, f"  {city_code}/{cat}: no results (status={search.get('status')})", "info")
+                time.sleep(0.5)
+                continue
+
+            inserted = 0
+            for place in search["results"]:
+                if total >= limit:
+                    break
+                place_id = place.get("place_id")
+                if not place_id:
+                    continue
+
+                loc_data = place.get("geometry", {}).get("location", {})
+                el_lat = loc_data.get("lat")
+                el_lon = loc_data.get("lng")
+                if not el_lat:
+                    continue
+
+                u_key = hashlib.md5(f"g_{city_code}_{place_id}".encode()).hexdigest()[:16]
+                if bronze.find_one({"u_key": u_key}, {"_id": 1}):
+                    continue
+
+                doc = {
+                    "u_key": u_key,
+                    "poi_id": f"google_{place_id}",
+                    "osm_raw": None,
+                    "google_raw": {
+                        "place": place,
+                        "place_details": None,
+                        "place_id": place_id,
+                        "fetched_at": now_iso(),
+                    },
+                    "has_osm_data": False,
+                    "has_google_data": True,
+                    "data_sources": ["google"],
+                    "name": place.get("name", "Unknown"),
+                    "city": city_code,
+                    "city_name": city.get("name", city_code),
+                    "country": "Vietnam",
+                    "category": cat,
+                    "location": {"lat": el_lat, "lon": el_lon},
+                    "osm_id": None,
+                    "osm_type": None,
+                    "google_place_id": place_id,
+                    "run_id": run_id,
+                    "created_at": now_iso(),
+                    "updated_at": now_iso(),
+                    "_layer": "bronze",
+                    "_source": "google_collector",
+                }
+                bronze.insert_one(doc)
+                inserted += 1
+                total += 1
+
+            update_job(job_id, recordsProcessed=total)
+            append_log(job_id, f"  {city_code}/{cat}: {inserted} new Google places", "info")
+            time.sleep(1.0)
+
+    append_log(job_id, f"Google Places collect done. Total inserted: {total}", "info")
+    return {"processed": total}
+
+
 # ─── Google Enricher ──────────────────────────────────────────────────────────
 
 _key_idx = 0
@@ -244,33 +407,56 @@ def _get_key():
     _key_idx += 1
     return k
 
+
 def _rapidapi_get(url, params):
-    for _ in range(len(config.RAPIDAPI_KEYS) or 1):
-        headers = {"x-rapidapi-key": _get_key(), "x-rapidapi-host": config.RAPIDAPI_HOST}
-        try:
-            r = requests.get(url, headers=headers, params=params, timeout=30)
-            data = r.json()
-            msg = data.get("message", "")
-            if "quota" in msg.lower() or "exceeded" in msg.lower():
+    """Call RapidAPI with per-key retry (exponential backoff for transient errors)."""
+    num_keys = len(config.RAPIDAPI_KEYS) or 1
+    for _ in range(num_keys):
+        key = _get_key()
+        headers = {"x-rapidapi-key": key, "x-rapidapi-host": config.RAPIDAPI_HOST}
+
+        for retry in range(3):
+            try:
+                r = requests.get(url, headers=headers, params=params, timeout=30)
+                data = r.json()
+                msg = data.get("message", "")
+                if "quota" in msg.lower() or "exceeded" in msg.lower():
+                    break  # quota hit — try next key immediately
+                return data
+            except Exception:
+                if retry < 2:
+                    time.sleep(2 ** retry + random.uniform(0, 0.5))
                 continue
-            return data
-        except Exception:
-            continue
+
     return {"status": "QUOTA_EXCEEDED_ALL_KEYS"}
 
 
 def _enrich_google(job_id: str, run_id: str, cities: list, categories: list, limit: int) -> dict:
+    """
+    Enrich OSM bronze records with Google Places data.
+    Uses fuzzy name matching (≥45% similarity) to avoid incorrect matches in dense areas.
+    Failed matches are flagged with _enrichment_failed=True for later retry.
+    """
     bronze = get_col("bronze_pois")
-    query = {"has_osm_data": True, "has_google_data": False, "location": {"$exists": True}}
+    query = {
+        "has_osm_data": True,
+        "has_google_data": False,
+        "location": {"$exists": True},
+        "_enrichment_failed": {"$ne": True},
+    }
     if cities:
         query["city"] = {"$in": cities}
     if categories:
         query["category"] = {"$in": categories}
     pois = list(bronze.find(query).limit(limit))
-    append_log(job_id, f"Google enrich: {len(pois)} POIs to process", "info")
+    append_log(job_id, f"Google enrich: {len(pois)} POIs to process (fuzzy match threshold={NAME_MATCH_THRESHOLD})", "info")
     enriched = 0
+    skipped_mismatch = 0
+
     for poi in pois:
         loc = poi["location"]
+        osm_name = (poi.get("name") or "").strip()
+
         search = _rapidapi_get(config.NEARBY_SEARCH_URL, {
             "location": f"{loc['lat']},{loc['lon']}", "radius": 100, "language": "vi"
         })
@@ -279,7 +465,21 @@ def _enrich_google(job_id: str, run_id: str, cities: list, categories: list, lim
             break
         if search.get("status") != "OK" or not search.get("results"):
             continue
-        closest = search["results"][0]
+
+        # Fuzzy name matching: find best candidate from top 5 results
+        best_match, best_ratio = _best_google_match(osm_name, search["results"])
+
+        # If OSM name is known and no candidate matches closely enough, skip enrichment
+        if osm_name.lower() not in ("unknown", "") and best_ratio < NAME_MATCH_THRESHOLD:
+            bronze.update_one({"_id": poi["_id"]}, {"$set": {
+                "_enrichment_failed": True,
+                "_enrichment_error": f"Name mismatch (best={best_ratio:.2f}, osm='{osm_name}')",
+                "updated_at": now_iso(),
+            }})
+            skipped_mismatch += 1
+            continue
+
+        closest = best_match
         place_id = closest.get("place_id")
         details = _rapidapi_get(config.PLACE_DETAILS_URL, {
             "place_id": place_id, "fields": "all", "language": "vi"
@@ -290,16 +490,86 @@ def _enrich_google(job_id: str, run_id: str, cities: list, categories: list, lim
                 "place_details": details,
                 "place_id": place_id,
                 "fetched_at": now_iso(),
+                "name_match_ratio": round(best_ratio, 4),
             },
             "has_google_data": True,
             "google_place_id": place_id,
+            "_enrichment_failed": False,
             "updated_at": now_iso(),
         }, "$addToSet": {"data_sources": "google"}})
         enriched += 1
         update_job(job_id, recordsProcessed=enriched)
         time.sleep(0.8)
-    append_log(job_id, f"Google enrich done. Enriched: {enriched}", "info")
-    return {"processed": enriched}
+
+    append_log(job_id, f"Google enrich done. Enriched: {enriched}, Skipped (name mismatch): {skipped_mismatch}", "info")
+    return {"processed": enriched, "failed": skipped_mismatch}
+
+
+def _retry_failed_enrichments(job_id: str, run_id: str, cities: list, categories: list, limit: int) -> dict:
+    """
+    Retry records previously flagged with _enrichment_failed=True.
+    Relaxes the name match threshold slightly (0.35) for second attempt.
+    """
+    bronze = get_col("bronze_pois")
+    RETRY_THRESHOLD = max(NAME_MATCH_THRESHOLD - 0.10, 0.35)
+    query = {"_enrichment_failed": True}
+    if cities:
+        query["city"] = {"$in": cities}
+    if categories:
+        query["category"] = {"$in": categories}
+
+    pois = list(bronze.find(query).limit(limit))
+    append_log(job_id, f"Retry failed enrichments: {len(pois)} records (relaxed threshold={RETRY_THRESHOLD})", "info")
+    enriched = 0
+    still_failed = 0
+
+    for poi in pois:
+        loc = poi.get("location", {})
+        if not loc.get("lat"):
+            continue
+        osm_name = (poi.get("name") or "").strip()
+
+        search = _rapidapi_get(config.NEARBY_SEARCH_URL, {
+            "location": f"{loc['lat']},{loc['lon']}", "radius": 150, "language": "vi"
+        })
+        if search.get("status") == "QUOTA_EXCEEDED_ALL_KEYS":
+            append_log(job_id, "All RapidAPI keys exhausted", "error")
+            break
+        if search.get("status") != "OK" or not search.get("results"):
+            still_failed += 1
+            continue
+
+        best_match, best_ratio = _best_google_match(osm_name, search["results"])
+
+        if osm_name.lower() not in ("unknown", "") and best_ratio < RETRY_THRESHOLD:
+            still_failed += 1
+            continue
+
+        closest = best_match
+        place_id = closest.get("place_id")
+        details = _rapidapi_get(config.PLACE_DETAILS_URL, {
+            "place_id": place_id, "fields": "all", "language": "vi"
+        })
+        bronze.update_one({"_id": poi["_id"]}, {"$set": {
+            "google_raw": {
+                "place": closest,
+                "place_details": details,
+                "place_id": place_id,
+                "fetched_at": now_iso(),
+                "name_match_ratio": round(best_ratio, 4),
+            },
+            "has_google_data": True,
+            "google_place_id": place_id,
+            "_enrichment_failed": False,
+            "_enrichment_error": None,
+            "updated_at": now_iso(),
+        }, "$addToSet": {"data_sources": "google"}})
+        enriched += 1
+        update_job(job_id, recordsProcessed=enriched)
+        time.sleep(0.8)
+
+    append_log(job_id, f"Retry done. Re-enriched: {enriched}, Still failed: {still_failed}", "info")
+    return {"processed": enriched, "failed": still_failed}
 
 
 # ─── Bronze → Silver (with Quarantine) ───────────────────────────────────────
@@ -338,7 +608,6 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
     quarantine = get_col("data_quality_quarantine")
     lineage = get_col("data_lineage_edges")
 
-    # Only process bronze records not yet promoted (incremental)
     query: dict = {"_silver_promoted": {"$ne": True}}
     if cities:
         query["city"] = {"$in": cities}
@@ -354,7 +623,6 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
 
     for doc in bronze.find(query):
         try:
-            # ── Validation ──────────────────────────────────────────────────
             failed_rules = _validate_bronze(doc)
             if failed_rules:
                 quarantine.update_one(
@@ -373,12 +641,10 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
                     }},
                     upsert=True,
                 )
-                # Mark bronze record as processed so it's not re-evaluated next run
                 bronze.update_one({"_id": doc["_id"]}, {"$set": {"_silver_promoted": True}})
                 quarantined += 1
                 continue
 
-            # ── Extract enriched fields ──────────────────────────────────────
             gr = doc.get("google_raw") or {}
             place = gr.get("place") or {}
             details_result = (gr.get("place_details") or {}).get("result") or {}
@@ -437,10 +703,8 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
                 "updated_at": now_iso(),
             }
             silver.update_one({"u_key": doc["u_key"]}, {"$set": silver_doc}, upsert=True)
-            # Mark bronze record as processed so it's skipped on future runs
             bronze.update_one({"_id": doc["_id"]}, {"$set": {"_silver_promoted": True}})
 
-            # ── Lineage edge: bronze → silver ────────────────────────────────
             lineage.update_one(
                 {"u_key": doc["u_key"], "from_layer": "bronze", "to_layer": "silver"},
                 {"$set": {
@@ -473,29 +737,45 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
     return {"processed": processed, "quarantined": quarantined, "failed": failed}
 
 
-# ─── Silver → Gold (with Quality Gate) ───────────────────────────────────────
+# ─── Silver → Gold (with Quality Gate + Pending Review) ──────────────────────
 
 def _silver_to_gold(job_id: str, run_id: str) -> dict:
+    """
+    Promote silver records based on quality score:
+    - score >= 0.5 → gold_master_pois (automatic)
+    - 0.3 <= score < 0.5 → pending_review_pois (manual review queue)
+    - score < 0.3 → held in silver
+    """
     silver = get_col("silver_pois")
     gold = get_col("gold_master_pois")
+    review = get_col("pending_review_pois")
     lineage = get_col("data_lineage_edges")
 
-    # Quality gate: only records at or above threshold
-    eligible_query = {"quality_score": {"$gte": QUALITY_THRESHOLD}}
-    below_threshold = silver.count_documents({"quality_score": {"$lt": QUALITY_THRESHOLD}})
-    total = silver.count_documents(eligible_query)
+    gold_query = {"quality_score": {"$gte": QUALITY_THRESHOLD_GOLD}}
+    review_query = {
+        "quality_score": {"$gte": QUALITY_THRESHOLD_REVIEW, "$lt": QUALITY_THRESHOLD_GOLD},
+        "_review_rejected": {"$ne": True},
+    }
+    below = silver.count_documents({"quality_score": {"$lt": QUALITY_THRESHOLD_REVIEW}})
+    total_gold = silver.count_documents(gold_query)
+    total_review = silver.count_documents(review_query)
 
-    append_log(job_id, f"Silver→Gold: {total} eligible (quality≥{QUALITY_THRESHOLD}), {below_threshold} below threshold (held in silver)", "info")
+    append_log(
+        job_id,
+        f"Silver→Gold: {total_gold} → gold (≥{QUALITY_THRESHOLD_GOLD}), "
+        f"{total_review} → pending review ({QUALITY_THRESHOLD_REVIEW}–{QUALITY_THRESHOLD_GOLD}), "
+        f"{below} held in silver (<{QUALITY_THRESHOLD_REVIEW})",
+        "info",
+    )
 
     processed = 0
     failed = 0
+    pending_review = 0
 
-    for doc in silver.find(eligible_query):
+    # ── Promote to gold ──────────────────────────────────────────────────────
+    for doc in silver.find(gold_query):
         try:
-            # Unified dedup key: u_key is the single identity
-            # google_place_id stored separately for lookup/merge purposes
             dedup_key = doc["u_key"]
-
             gold_doc = {
                 "poi_id": f"gold_{dedup_key}",
                 "silver_ref": str(doc["_id"]),
@@ -527,7 +807,6 @@ def _silver_to_gold(job_id: str, run_id: str) -> dict:
             }
             gold.update_one({"dedup_key": dedup_key}, {"$set": gold_doc}, upsert=True)
 
-            # ── Lineage edge: silver → gold ──────────────────────────────────
             lineage.update_one(
                 {"u_key": dedup_key, "from_layer": "silver", "to_layer": "gold"},
                 {"$set": {
@@ -541,7 +820,6 @@ def _silver_to_gold(job_id: str, run_id: str) -> dict:
                 }},
                 upsert=True,
             )
-
             processed += 1
             if processed % 500 == 0:
                 update_job(job_id, recordsProcessed=processed)
@@ -550,9 +828,41 @@ def _silver_to_gold(job_id: str, run_id: str) -> dict:
             failed += 1
             append_log(job_id, f"  Silver→Gold error: {e}", "warn")
 
+    # ── Queue for manual review ───────────────────────────────────────────────
+    for doc in silver.find(review_query):
+        try:
+            dedup_key = doc["u_key"]
+            review_doc = {
+                "u_key": dedup_key,
+                "silver_ref": str(doc["_id"]),
+                "name": doc.get("name", ""),
+                "city": doc.get("city", ""),
+                "city_name": doc.get("city_name", ""),
+                "category": doc.get("category", ""),
+                "location": doc.get("location", {}),
+                "address": doc.get("address"),
+                "rating": doc.get("rating"),
+                "review_count": doc.get("review_count"),
+                "quality_score": doc.get("quality_score", 0),
+                "data_sources": doc.get("data_sources", []),
+                "google_place_id": doc.get("google_place_id"),
+                "osm_id": doc.get("osm_id"),
+                "run_id": run_id,
+                "queued_at": now_iso(),
+                "_layer": "pending_review",
+            }
+            review.update_one({"u_key": dedup_key}, {"$set": review_doc}, upsert=True)
+            pending_review += 1
+        except Exception as e:
+            append_log(job_id, f"  Pending review queue error: {e}", "warn")
+
     update_job(job_id, recordsProcessed=processed)
-    append_log(job_id, f"Silver→Gold done. Promoted: {processed}, Errors: {failed}", "info")
-    return {"processed": processed, "failed": failed}
+    append_log(
+        job_id,
+        f"Silver→Gold done. Promoted: {processed}, Pending review: {pending_review}, Errors: {failed}",
+        "info",
+    )
+    return {"processed": processed, "failed": failed, "pending_review": pending_review}
 
 
 # ─── Reconciliation ───────────────────────────────────────────────────────────
@@ -571,11 +881,8 @@ def _reconcile(job_id: str, run_id: str) -> dict:
 
     append_log(job_id, "Reconciliation: scanning for ghost records...", "info")
 
-    # ── 1. Gold → Silver consistency ─────────────────────────────────────────
     gold_deleted = 0
-    all_silver_ids = set(
-        str(doc["_id"]) for doc in silver.find({}, {"_id": 1})
-    )
+    all_silver_ids = set(str(doc["_id"]) for doc in silver.find({}, {"_id": 1}))
     for gold_doc in gold.find({}, {"_id": 1, "silver_ref": 1, "dedup_key": 1}):
         silver_ref = gold_doc.get("silver_ref")
         if silver_ref and silver_ref not in all_silver_ids:
@@ -584,11 +891,8 @@ def _reconcile(job_id: str, run_id: str) -> dict:
 
     append_log(job_id, f"  Gold ghost records removed: {gold_deleted}", "info")
 
-    # ── 2. Silver → Bronze consistency ───────────────────────────────────────
     silver_deleted = 0
-    all_bronze_ids = set(
-        str(doc["_id"]) for doc in bronze.find({}, {"_id": 1})
-    )
+    all_bronze_ids = set(str(doc["_id"]) for doc in bronze.find({}, {"_id": 1}))
     for silver_doc in silver.find({}, {"_id": 1, "bronze_ref": 1}):
         bronze_ref = silver_doc.get("bronze_ref")
         if bronze_ref and bronze_ref not in all_bronze_ids:
@@ -597,7 +901,6 @@ def _reconcile(job_id: str, run_id: str) -> dict:
 
     append_log(job_id, f"  Silver ghost records removed: {silver_deleted}", "info")
 
-    # ── 3. Quarantine → Bronze consistency ───────────────────────────────────
     quarantine_deleted = 0
     for q_doc in quarantine.find({}, {"_id": 1, "bronze_ref": 1}):
         bronze_ref = q_doc.get("bronze_ref")

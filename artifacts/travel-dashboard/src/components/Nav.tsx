@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard, MapPin, BarChart2, Star, GitBranch, FileText, Menu, X
+  LayoutDashboard, MapPin, BarChart2, Star, GitBranch, FileText, Menu, X, Settings,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/lib/theme-provider";
 
 const NAV_ITEMS = [
@@ -12,12 +12,23 @@ const NAV_ITEMS = [
   { path: "/recommendations", label: "Recommendations", icon: Star },
   { path: "/pipeline", label: "Pipeline", icon: GitBranch },
   { path: "/reports", label: "Reports", icon: FileText },
+  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Nav() {
   const [location] = useLocation();
   const { isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [replitUser, setReplitUser] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/etl/status")
+      .then((r) => {
+        const userId = r.headers.get("x-replit-user-name");
+        if (userId) setReplitUser(userId);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -44,6 +55,14 @@ export function Nav() {
             </Link>
           );
         })}
+        {replitUser && (
+          <div className="ml-auto flex items-center gap-2 pl-4 border-l border-border">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
+              {replitUser[0]?.toUpperCase()}
+            </div>
+            <span className="text-xs text-muted-foreground">{replitUser}</span>
+          </div>
+        )}
       </nav>
 
       {/* Mobile top bar */}

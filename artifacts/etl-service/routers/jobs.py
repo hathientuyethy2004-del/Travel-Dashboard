@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from etl import jobs as job_manager
 from etl import runners
-from etl.config import CITIES, CATEGORIES
+from etl import config_db
 
 router = APIRouter(prefix="/etl/jobs", tags=["jobs"])
 
@@ -24,8 +24,13 @@ def list_jobs(limit: int = 50, status: Optional[str] = None):
 def trigger_job(req: TriggerJobRequest, background_tasks: BackgroundTasks):
     if req.jobType not in job_manager.JOB_TYPES:
         raise HTTPException(400, f"Invalid jobType. Must be one of: {job_manager.JOB_TYPES}")
-    cities = [c for c in (req.cities or []) if c in CITIES] or []
-    categories = [c for c in (req.categories or []) if c in CATEGORIES] or []
+
+    cities_cfg = config_db.get_cities()
+    cats_cfg = config_db.get_categories()
+
+    cities = [c for c in (req.cities or []) if c in cities_cfg] or []
+    categories = [c for c in (req.categories or []) if c in cats_cfg] or []
+
     job = job_manager.create_job(req.jobType, cities=cities, categories=categories, limit=req.limit)
     background_tasks.add_task(
         runners.run_job,
