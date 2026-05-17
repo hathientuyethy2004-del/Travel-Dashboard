@@ -14,6 +14,8 @@ import {
   useGetPipelineFunnel,
   useGetDashboardOverview,
   useGetQuarantineReasons,
+  useGetPoiByCity,
+  useGetPoiByCategory,
 } from "@workspace/api-client-react";
 import { CHART_COLORS, CHART_COLOR_LIST } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
@@ -111,6 +113,8 @@ export default function Pipeline() {
   const { data: funnel, isLoading: funnelLoading } = useGetPipelineFunnel();
   const { data: overview } = useGetDashboardOverview();
   const { data: qReasons } = useGetQuarantineReasons();
+  const { data: poiByCity }     = useGetPoiByCity();
+  const { data: poiByCategory } = useGetPoiByCategory();
 
   // ETL-specific state (needs ETL service)
   const [jobs,          setJobs]          = useState<Record<string, unknown>[]>([]);
@@ -438,7 +442,7 @@ export default function Pipeline() {
                 <p className="text-xs font-medium">Enrichment unlocks:</p>
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p className="flex items-center gap-1.5"><Star className="w-3 h-3 text-yellow-500" /> Star ratings &amp; review counts</p>
-                  <p className="flex items-center gap-1.5"><span className="w-3 h-3 text-green-500 font-bold text-center">☎</span> Phone for {goldCount.toLocaleString()} POIs</p>
+                  <p className="flex items-center gap-1.5"><span className="w-3 h-3 text-green-500 font-bold text-center">☎</span> Phone coverage: 14% → ~60%</p>
                   <p className="flex items-center gap-1.5"><Globe className="w-3 h-3 text-purple-500" /> Quality scores up to 0.9+</p>
                 </div>
                 <p className="text-xs text-blue-600 dark:text-blue-400 pt-1 font-medium">
@@ -713,56 +717,66 @@ export default function Pipeline() {
               </p>
             </div>
 
-            {/* Cities */}
+            {/* Cities — ETL config when online, DB-derived fallback when offline */}
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">Cities (optional)</label>
-              {citiesList.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Start ETL service to load cities</p>
-              ) : (
-                <div className="flex flex-wrap gap-1">
-                  {citiesList.map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => setTriggerCities((prev) =>
-                        prev.includes(c.code) ? prev.filter((x) => x !== c.code) : [...prev, c.code]
-                      )}
-                      className={`px-2 py-0.5 rounded text-xs border transition-colors ${
-                        triggerCities.includes(c.code)
-                          ? "bg-primary text-white border-primary"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      {c.name ?? c.code}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const etlCities = citiesList.length > 0
+                  ? citiesList.map((c) => ({ code: c.code, name: c.name ?? c.code }))
+                  : (poiByCity ?? []).map((c) => ({ code: c.city, name: c.cityName ?? c.city }));
+                return etlCities.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Loading cities…</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {etlCities.map((c) => (
+                      <button
+                        key={c.code}
+                        onClick={() => setTriggerCities((prev) =>
+                          prev.includes(c.code) ? prev.filter((x) => x !== c.code) : [...prev, c.code]
+                        )}
+                        className={`px-2 py-0.5 rounded text-xs border transition-colors ${
+                          triggerCities.includes(c.code)
+                            ? "bg-primary text-white border-primary"
+                            : "border-border hover:bg-muted"
+                        }`}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Categories */}
+            {/* Categories — ETL config when online, DB-derived fallback when offline */}
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1">Categories (optional)</label>
-              {catsList.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Start ETL service to load categories</p>
-              ) : (
-                <div className="flex flex-wrap gap-1">
-                  {catsList.map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => setTriggerCats((prev) =>
-                        prev.includes(c.code) ? prev.filter((x) => x !== c.code) : [...prev, c.code]
-                      )}
-                      className={`px-2 py-0.5 rounded text-xs border transition-colors ${
-                        triggerCats.includes(c.code)
-                          ? "bg-primary text-white border-primary"
-                          : "border-border hover:bg-muted"
-                      }`}
-                    >
-                      {c.code}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const etlCats = catsList.length > 0
+                  ? catsList.map((c) => c.code)
+                  : (poiByCategory ?? []).map((c) => c.category);
+                return etlCats.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Loading categories…</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {etlCats.map((code) => (
+                      <button
+                        key={code}
+                        onClick={() => setTriggerCats((prev) =>
+                          prev.includes(code) ? prev.filter((x) => x !== code) : [...prev, code]
+                        )}
+                        className={`px-2 py-0.5 rounded text-xs border transition-colors ${
+                          triggerCats.includes(code)
+                            ? "bg-primary text-white border-primary"
+                            : "border-border hover:bg-muted"
+                        }`}
+                      >
+                        {code}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Limit */}

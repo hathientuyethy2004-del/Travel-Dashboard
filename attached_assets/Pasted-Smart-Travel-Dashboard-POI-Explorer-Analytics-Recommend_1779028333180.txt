@@ -1,0 +1,135 @@
+Smart Travel
+Dashboard
+POI Explorer
+Analytics
+Recommendations
+Pipeline
+Reports
+Settings
+Pipeline Management
+22.871 records collected · 15.253 Gold POIs · 67% promotion rate · 2.137 quarantined
+
+ETL Offline
+Data Pipeline Flow
+Collection to Gold — live counts from MongoDB
+
+OSM Collected
+22.871
+Raw records
+
+Bronze Layer
+22.871
+Normalized
+
+Silver Layer
+22.871
+Scored & merged
+
+Gold Master
+15.253
+67% promoted
+
+15.253 promoted (67%)
+2.137 quarantined (9%)
+5.481 rejected (24%)
+Google Enrichment
+0 / 15.253 enriched
+0%
+Enrichment unlocks:
+
+Star ratings & review counts
+
+☎
+Phone for 15.253 POIs
+
+Quality scores up to 0.9+
+
+→ Run "Nightly Sync" or "Enrich Google" to start
+
+Start ETL service to view API key status
+
+Gold Layer — Field Coverage
+15.253 Gold POIs · OSM-only (pre-enrichment)
+
+Name
+15.253 · 100%
+Address
+5.545 · 36%
+Phone
+2.085 · 14%
+Website
+1.083 · 7%
+After Google enrichment: phone ~60% · website ~30% · quality scores up to 0.9+
+
+Quarantine Breakdown
+2.137 records
+Records failing quality gates during Silver → Gold
+
+0
+400
+800
+1K
+2K
+Incomplete data
+Invalid latitude
+Low quality score
+Source conflict
+
+ETL service is offline
+
+The ETL service is a separate Python process. Start it from the ETL Service workflow to trigger jobs, view history, and manage schedules. The pipeline health data above is always available directly from MongoDB.
+
+Trigger Job
+ETL service offline — jobs won't start
+
+Job Type
+Collection
+
+
+Collect OSM
+
+Collect Google Places
+Processing
+
+
+Bronze → Silver
+
+Silver → Gold
+
+Rebuild Layers
+
+Reconcile
+Enrichment
+
+
+Enrich Google
+★ Recommended
+
+Retry Failed
+Automation
+
+
+Nightly Sync
+★ Recommended
+
+Full Pipeline
+Enrich a batch of records then auto-rebuild Silver + Gold layers
+
+Cities (optional)
+Start ETL service to load cities
+
+Categories (optional)
+Start ETL service to load categories
+
+Limit: 200
+
+Run Job
+Jobs (0)
+Schedules (0)
+Pending Review
+Refresh
+ETL service is offline
+
+Start the ETL Service workflow to view and trigger jobs
+
+CloseOpen feedbackShare your feedbackHelp improve this app by sharing your feedback with the creatorSign inFeedback form cardAdd feedback here…Drop images hereMaximum 5 attachments reachedMaximum 5 attachmentsAttach imageSelect element to captureCapturing screenshot…Maximum screenshots reachedCancel selectionSelect elementView screenshotRemove screenshotScreenshot previewClose modalSelect a topicBug reportFeature requestDesignContentOtherMore optionsSign outSubmitSentSelect a topic to submit feedbackEnter feedback textSubmitting…Your session has expired. Please sign in again.There was an issue submitting your feedback. Please try again.cafe
