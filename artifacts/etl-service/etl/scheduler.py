@@ -105,7 +105,8 @@ def seed_default_schedules():
     Called once at service startup.
 
     Schedules (all times in Asia/Ho_Chi_Minh):
-      - 02:00 daily  — Nightly Sync: enrich 500 records + rebuild silver/gold
+      - 02:00 daily  — Nightly Sync: enrich 1000 records + rebuild silver/gold
+      - 14:00 daily  — Midday Enrich: enrich 500 more records + rebuild silver/gold
       - 01:00 Sunday — Weekly OSM refresh (collect fresh POIs from OpenStreetMap)
     """
     col = get_col("etl_schedules")
@@ -117,6 +118,14 @@ def seed_default_schedules():
             "jobType": "nightly_sync",
             "cron": "0 2 * * *",
             "label": "Nightly Enrich + Rebuild (2 AM daily)",
+            "limit": 1000,
+            "cities": [],
+            "categories": [],
+        },
+        {
+            "jobType": "nightly_sync",
+            "cron": "0 14 * * *",
+            "label": "Midday Enrich + Rebuild (2 PM daily)",
             "limit": 500,
             "cities": [],
             "categories": [],
