@@ -45,7 +45,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
           <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-medium">{p.value.toLocaleString()}</span>
+          <span className="font-medium">{(p.value ?? 0).toLocaleString()}</span>
         </div>
       ))}
     </div>
@@ -119,10 +119,10 @@ export default function Dashboard() {
   const cities = poiByCity ?? [];
   const categories = poiByCategory ?? [];
   const funnelData = funnel ? [
-    { name: "Bronze", value: funnel.bronze, fill: CHART_COLORS.orange },
-    { name: "Silver", value: funnel.silver, fill: "#94a3b8" },
-    { name: "Gold", value: funnel.gold, fill: "#eab308" },
-    { name: "Quarantine", value: funnel.quarantine, fill: CHART_COLORS.red },
+    { name: "Bronze", value: funnel.bronze ?? 0, fill: CHART_COLORS.orange },
+    { name: "Silver", value: funnel.silver ?? 0, fill: "#94a3b8" },
+    { name: "Gold", value: funnel.gold ?? 0, fill: "#eab308" },
+    { name: "Quarantine", value: funnel.quarantine ?? 0, fill: CHART_COLORS.red },
   ] : [];
   const qualData = qualityDist ?? [];
   const ratingData = ratingDist ?? [];
@@ -458,8 +458,8 @@ export default function Dashboard() {
                           {new Date(e.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </td>
                         <td className="py-2 text-xs">
-                          <span className="text-green-600">{e.recordsProcessed.toLocaleString()}</span>
-                          {e.recordsFailed > 0 && <span className="text-red-500 ml-1">/ {e.recordsFailed} failed</span>}
+                          <span className="text-green-600">{(e.recordsProcessed ?? 0).toLocaleString()}</span>
+                          {(e.recordsFailed ?? 0) > 0 && <span className="text-red-500 ml-1">/ {e.recordsFailed} failed</span>}
                         </td>
                       </tr>
                     ))}
