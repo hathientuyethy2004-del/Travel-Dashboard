@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useGetRecommendations, useGetCities, useGetCityHighlights } from "@workspace/api-client-react";
+import { GetRecommendationsMode } from "@workspace/api-client-react";
 import { CSVLink } from "react-csv";
 import { Star, MapPin, Download, ExternalLink, Phone, Globe, Award, Eye, TrendingUp, Sparkles, Shuffle } from "lucide-react";
 import { CHART_COLOR_LIST, CHART_COLORS } from "@/lib/constants";
@@ -29,15 +30,14 @@ function QualityDot({ score }: { score: number | null | undefined }) {
 
 export default function Recommendations() {
   const { isDark } = useTheme();
-  const [mode, setMode] = useState("top_rated");
+  const [mode, setMode] = useState<GetRecommendationsMode>(GetRecommendationsMode.top_rated);
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
   const [limit, setLimit] = useState(20);
 
   const { data: citiesData } = useGetCities();
   const { data: recs, isLoading } = useGetRecommendations(
-    { mode, city: city || undefined, category: category || undefined, limit },
-    { query: { keepPreviousData: true } }
+    { mode, city: city || undefined, category: category || undefined, limit }
   );
   const { data: highlights, isLoading: hLoading } = useGetCityHighlights();
 
@@ -53,7 +53,7 @@ export default function Recommendations() {
       {/* Mode selector */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
         {MODES.map(({ value, label, icon: Icon, desc }) => (
-          <button key={value} onClick={() => setMode(value)}
+          <button key={value} onClick={() => setMode(value as GetRecommendationsMode)}
             className={`p-3 rounded-xl border-2 text-left transition-all ${mode === value ? "border-primary bg-primary/5" : "border-border hover:border-primary/30 hover:bg-muted/30"}`}>
             <Icon className={`w-5 h-5 mb-1.5 ${mode === value ? "text-primary" : "text-muted-foreground"}`} />
             <p className={`text-xs font-medium ${mode === value ? "text-primary" : ""}`}>{label}</p>

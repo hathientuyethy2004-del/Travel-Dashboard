@@ -607,7 +607,7 @@ export default function Pipeline() {
                           <tr key={poi.u_key as string} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                             <td className="px-3 py-2">
                               <div className="text-xs font-medium max-w-[160px] truncate">{poi.name as string || "—"}</div>
-                              {poi.address && <div className="text-[11px] text-muted-foreground truncate max-w-[160px]">{poi.address as string}</div>}
+                              {!!poi.address && <div className="text-[11px] text-muted-foreground truncate max-w-[160px]">{String(poi.address)}</div>}
                             </td>
                             <td className="px-3 py-2 text-xs text-muted-foreground capitalize">{(poi.city as string)?.replace("_", " ")}</td>
                             <td className="px-3 py-2 text-xs text-muted-foreground capitalize">{poi.category as string}</td>

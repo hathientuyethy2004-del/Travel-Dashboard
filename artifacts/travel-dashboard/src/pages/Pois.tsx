@@ -49,12 +49,10 @@ export default function Pois() {
 
   const { data: citiesData } = useGetCities();
   const { data: poisData, isLoading, isFetching } = useGetPois(
-    { city: selectedCity || undefined, category: selectedCategory || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE },
-    { query: { enabled: true } }
+    { city: selectedCity || undefined, category: selectedCategory || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE }
   );
   const { data: topRated } = useGetTopRatedPois(
-    { city: selectedCity || undefined, category: selectedCategory || undefined, limit: 5 },
-    { query: { enabled: true } }
+    { city: selectedCity || undefined, category: selectedCategory || undefined, limit: 5 }
   );
 
   const loading = isLoading || isFetching;
