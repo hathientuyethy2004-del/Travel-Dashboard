@@ -110,6 +110,7 @@ export default function Pipeline() {
   const { isDark } = useTheme();
 
   // Non-ETL hooks — always available from MongoDB via main API
+  // Auto-refresh handled globally via QueryClient (3 min interval)
   const { data: funnel, isLoading: funnelLoading } = useGetPipelineFunnel();
   const { data: overview } = useGetDashboardOverview();
   const { data: qReasons } = useGetQuarantineReasons();
@@ -190,12 +191,18 @@ export default function Pipeline() {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
     fetchAll();
     fetchConfig();
-    const id = setInterval(fetchAll, 5000);
-    return () => clearInterval(id);
   }, [fetchAll, fetchConfig]);
+
+  // Adaptive polling: 5s when ETL online (jobs change fast), 30s when offline (just checking)
+  useEffect(() => {
+    const interval = etlOnline ? 5000 : 30000;
+    const id = setInterval(fetchAll, interval);
+    return () => clearInterval(id);
+  }, [fetchAll, etlOnline]);
 
   useEffect(() => {
     if (tab === "review") fetchReview();
@@ -267,6 +274,24 @@ export default function Pipeline() {
   async function deleteJob(id: string) {
     await fetch(`${API}/etl/jobs/${id}`, { method: "DELETE" });
     setJobs((prev) => prev.filter((j) => (j as Record<string, string>).jobId !== id));
+  }
+
+  async function quickSetupAutomation() {
+    try {
+      const presets = [
+        { jobType: "nightly_sync",  cron: "0 2 * * *",   label: "Daily Enrichment",      limit: 500  },
+        { jobType: "full_pipeline", cron: "0 3 * * 1",   label: "Weekly Full Pipeline",  limit: 1000 },
+      ];
+      const results = await Promise.all(presets.map((p) =>
+        fetch(`${API}/etl/schedules`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(p),
+        }).then((r) => r.json())
+      ));
+      setSchedules(results);
+      setTab("schedules");
+    } catch { alert("Failed to create automation schedules"); }
   }
 
   async function approveReview(uKey: string) {
@@ -578,6 +603,46 @@ export default function Pipeline() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* ── Quick Automation Setup (ETL online, no schedules yet) ────────────── */}
+      {etlOnline && !jobsLoading && schedules.length === 0 && (
+        <Card className="mb-4 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-950/10">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, #10b981, #0d9488)" }}>
+                  <Zap className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Set up automatic pipeline</p>
+                  <p className="text-xs text-muted-foreground">No schedules yet — run enrichment &amp; rebuild automatically</p>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-wrap items-center gap-3 sm:justify-end">
+                <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                    Daily Enrichment — Nightly Sync at 02:00
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block" />
+                    Weekly Full Pipeline — Monday at 03:00
+                  </span>
+                </div>
+                <button
+                  onClick={quickSetupAutomation}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90 shrink-0"
+                  style={{ background: "linear-gradient(135deg, #10b981, #0d9488)" }}
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  Set up automation
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── Enrichment progress banner (when ETL online) ────────────────────── */}

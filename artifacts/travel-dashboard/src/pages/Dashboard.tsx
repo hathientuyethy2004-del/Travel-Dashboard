@@ -74,7 +74,7 @@ export default function Dashboard() {
   const { isDark, setTheme } = useTheme();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>("analytics");
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [isSpinning, setIsSpinning] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedIntervalMs, setSelectedIntervalMs] = useState(5 * 60 * 1000);
