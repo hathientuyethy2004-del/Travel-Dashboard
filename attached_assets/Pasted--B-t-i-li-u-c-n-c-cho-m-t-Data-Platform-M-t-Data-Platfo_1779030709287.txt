@@ -1,0 +1,377 @@
+# Bộ tài liệu cần có cho một Data Platform
+
+Một Data Platform hoàn chỉnh thường cần tài liệu theo nhiều nhóm: business, dữ liệu, kiến trúc, vận hành, bảo mật, governance, AI/analytics…
+
+---
+
+# 1. Tài liệu tổng quan hệ thống
+
+## Tổng quan nền tảng
+
+* Vision & Scope
+* Business Objectives
+* Use Cases
+* Stakeholders
+* System Overview
+
+## Kiến trúc tổng thể
+
+* High-Level Architecture
+* Logical Architecture
+* Physical Architecture
+* Cloud/On-prem Architecture
+* Hybrid Architecture
+
+## Kiến trúc dữ liệu
+
+* Medallion Architecture
+* Lakehouse Architecture
+* Lambda/Kappa Architecture
+* Data Mesh / Data Fabric
+
+---
+
+# 2. Tài liệu dữ liệu (Data Documentation)
+
+## Quy trình thu thập dữ liệu
+
+* Data Collection Process
+* Data Acquisition Workflow
+* Source-to-Target Mapping
+* Data Intake Procedure
+
+## Quy chuẩn thu thập dữ liệu
+
+* Data Collection Standards
+* Naming Convention
+* Data Format Standards
+* Encoding Standards
+* Timestamp Standards
+* File Structure Standards
+
+## Danh mục nguồn dữ liệu
+
+* Data Source Catalog
+* Source Inventory
+* External/Internal Source Registry
+
+## Metadata
+
+* Business Metadata
+* Technical Metadata
+* Operational Metadata
+
+## Data Dictionary
+
+* Field Definitions
+* Column Descriptions
+* Data Types
+* Allowed Values
+* Units
+
+## Data Catalog
+
+* Dataset Registry
+* Dataset Ownership
+* Dataset Classification
+
+## Master Data Management
+
+* Golden Record
+* Entity Resolution
+* Reference Data
+
+---
+
+# 3. Tài liệu pipeline & ETL/ELT
+
+## Thiết kế pipeline
+
+* Pipeline Architecture
+* DAG Design
+* Workflow Design
+* Orchestration Design
+
+## Quy trình ETL/ELT
+
+* Extract Procedure
+* Transformation Rules
+* Load Strategy
+
+## Data Flow
+
+* Bronze/Silver/Gold Flow
+* Stream Processing Flow
+* Batch Processing Flow
+
+## Mapping & Transformation
+
+* Transformation Logic
+* Business Rules
+* Data Cleansing Rules
+* Deduplication Rules
+
+## Incremental Strategy
+
+* CDC Strategy
+* Upsert Strategy
+* Partition Strategy
+
+---
+
+# 4. Tài liệu chất lượng dữ liệu (Data Quality)
+
+## Quy chuẩn chất lượng dữ liệu
+
+* Data Quality Standards
+* Accuracy Rules
+* Completeness Rules
+* Consistency Rules
+* Timeliness Rules
+
+## Data Validation
+
+* Validation Rules
+* Schema Validation
+* Constraint Rules
+
+## Monitoring chất lượng
+
+* Data Quality Monitoring
+* Anomaly Detection
+* Freshness Monitoring
+
+## SLA/SLO
+
+* Data SLA
+* Freshness SLA
+* Availability SLA
+
+---
+
+# 5. Tài liệu governance & compliance
+
+## Data Governance Framework
+
+* Governance Model
+* Stewardship Model
+* Ownership Matrix
+
+## Phân quyền dữ liệu
+
+* RBAC
+* ABAC
+* Access Control Matrix
+
+## Chính sách dữ liệu
+
+* Data Retention Policy
+* Data Sharing Policy
+* Data Privacy Policy
+* Data Classification Policy
+
+## Compliance
+
+* GDPR
+* PCI-DSS
+* HIPAA
+* ISO 27001
+* Local Cybersecurity Laws
+
+---
+
+# 6. Tài liệu bảo mật
+
+## Security Architecture
+
+* IAM Design
+* Network Segmentation
+* Zero Trust Architecture
+
+## Quy trình bảo mật
+
+* Incident Response
+* Vulnerability Management
+* Patch Management
+
+## Data Protection
+
+* Encryption Standards
+* Key Management
+* Backup & Recovery
+
+## Secure SDLC
+
+* Threat Modeling
+* SAST/DAST
+* Penetration Testing
+
+---
+
+# 7. Tài liệu AI/Analytics
+
+## Machine Learning Documentation
+
+* Feature Store Design
+* Feature Definitions
+* Model Lifecycle
+
+## AI Governance
+
+* Model Governance
+* Explainability
+* Bias Monitoring
+
+## BI & Reporting
+
+* KPI Definitions
+* Metric Catalog
+* Dashboard Specifications
+
+---
+
+# 8. Tài liệu vận hành (Operations)
+
+## Deployment
+
+* Deployment Guide
+* Environment Setup
+* Infrastructure Provisioning
+
+## DevOps/DataOps
+
+* CI/CD Pipeline
+* Git Workflow
+* Release Process
+
+## Monitoring & Observability
+
+* Logging Strategy
+* Metrics
+* Alerting Rules
+* Tracing
+
+## Disaster Recovery
+
+* DR Plan
+* Backup Procedure
+* Failover Strategy
+
+---
+
+# 9. Tài liệu hạ tầng
+
+## Infrastructure Documentation
+
+* Server Inventory
+* Container Architecture
+* Kubernetes Architecture
+
+## Networking
+
+* Network Topology
+* Firewall Rules
+* DNS & Routing
+
+## Storage
+
+* Object Storage Design
+* Data Lifecycle Policy
+
+---
+
+# 10. Tài liệu API & tích hợp
+
+## API Documentation
+
+* REST API Spec
+* GraphQL Spec
+* Webhook Documentation
+
+## Integration
+
+* Third-party Integration
+* Connector Documentation
+* Message Queue Contracts
+
+---
+
+# 11. Tài liệu quản lý dự án
+
+## Project Documentation
+
+* Roadmap
+* Milestones
+* Risk Register
+
+## Change Management
+
+* Change Request Process
+* Versioning Strategy
+* Rollback Plan
+
+---
+
+# 12. Tài liệu người dùng
+
+## User Guide
+
+* Analyst Guide
+* Data Engineer Guide
+* Admin Guide
+
+## SOP
+
+* Standard Operating Procedures
+* Troubleshooting Guide
+* Runbook
+
+---
+
+# 13. Tài liệu dành riêng cho Lakehouse
+
+Với hệ thống của bạn (Airflow + Spark + MinIO + Iceberg + Trino + OpenMetadata), nên có thêm:
+
+## Lakehouse Governance
+
+* Table Lifecycle
+* Partition Strategy
+* Iceberg Maintenance
+
+## Metadata Lineage
+
+* Data Lineage Design
+* Lineage Tracking
+
+## Layer Standards
+
+* Bronze Standards
+* Silver Standards
+* Gold Standards
+
+## Data Contract
+
+* Producer/Consumer Contract
+* Schema Evolution Rules
+
+---
+
+# 14. Bộ tài liệu quan trọng nhất (nên làm trước)
+
+Nếu chưa đủ nguồn lực, ưu tiên:
+
+| Mức ưu tiên | Tài liệu                   |
+| ----------- | -------------------------- |
+| Cao         | Kiến trúc tổng thể         |
+| Cao         | Quy trình thu thập dữ liệu |
+| Cao         | Data Dictionary            |
+| Cao         | Source Catalog             |
+| Cao         | Pipeline Flow              |
+| Cao         | Security & Access Control  |
+| Cao         | Data Quality Rules         |
+| Cao         | SOP vận hành               |
+| Trung bình  | Governance Framework       |
+| Trung bình  | SLA/SLO                    |
+| Trung bình  | Metadata & Lineage         |
+| Sau         | AI Governance              |
+| Sau         | DR nâng cao                |
