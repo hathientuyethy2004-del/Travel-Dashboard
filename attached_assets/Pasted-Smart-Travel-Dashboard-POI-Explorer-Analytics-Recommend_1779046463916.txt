@@ -1,0 +1,186 @@
+Smart Travel
+Dashboard
+POI Explorer
+Analytics
+Recommendations
+Pipeline
+Reports
+Settings
+Platform Report
+15.271 verified destinations · 10 cities · 13 categories
+
+Generated 18 May 2026, 02:33
+
+Last 7 days
+This month
+This year
+Export CSV
+Gold Destinations
+
+15.271
+
+verified POIs
+
+Avg Quality Score
+
+0.338
+
+pre-enrichment
+
+Quarantined
+
+2.137
+
+borderline quality
+
+Bronze Records
+
+22.871
+
+raw collected
+
+Destination Readiness
+How useful are these 15.271 POIs for travelers right now? (OSM-only, pre-enrichment)
+
+Navigable
+
+Has address — traveler can find it
+
+37%
+5.584 POIs
+Contactable
+
+Has phone number
+
+14%
+2.104 POIs
+On the Web
+
+Has website URL
+
+7%
+1.094 POIs
+Enriched
+
+Google data — ratings, fuller detail
+
+0%
+0 POIs
+→ Run Google Enrichment
+
+Quality Score Distribution
+Gold POIs by quality tier · avg 0.338 · Google enrichment targets 0.6+
+
+Excellent (0.8–1.0)
+35 · 0.2%
+Good (0.6–0.8)
+14 · 0.1%
+Fair (0.4–0.6)
+5.535 · 36.2%
+Low (0.2–0.4)
+9.687 · 63.4%
+Very Low (0.0–0.2)
+0 · 0.0%
+Multi-source verified:
+61
+After Google enrichment: expect 40–60% of POIs to move from Low → Fair/Good
+
+POIs by Category
+13 categories · all Gold POIs
+
+0
+2K
+3K
+5K
+6K
+cafe
+hotel
+park
+attraction
+museum
+cinema
+shopping
+City Coverage Breakdown
+Address and phone coverage per city — reflects data depth available to travelers
+
+City	Gold POIs	Share	Address Coverage	Phone Coverage	Avg Quality
+1
+Thành phố Hồ Chí Minh
+5.944	
+38.9%
+100%
+100%
+0.343
+2
+Đà Nẵng
+2.889	
+18.9%
+100%
+100%
+0.329
+3
+Thành phố Hà Nội
+2.020	
+13.2%
+100%
+100%
+0.343
+4
+Nha Trang
+1.201	
+7.9%
+100%
+100%
+0.326
+5
+Thành phố Đà Lạt
+1.010	
+6.6%
+100%
+100%
+0.337
+6
+Thành phố Huế
+994	
+6.5%
+100%
+100%
+0.339
+7
+Thành phố Hải Phòng
+530	
+3.5%
+100%
+100%
+0.322
+8
+Cần Thơ
+261	
+1.7%
+100%
+100%
+0.351
+9
+Quy Nhơn
+253	
+1.7%
+100%
+100%
+0.350
+10
+Vũng Tàu
+169	
+1.1%
+100%
+100%
+0.334
+Recent Pipeline Executions
+Pipeline	Status	Records	When
+full_pipeline	running	0	14:59:54 17/5/2026
+specific_city_1cities_1categories	completed	0	02:30:32 14/5/2026
+incremental_sync_1cities_0categories	completed	0	12:05:06 14/5/2026
+full_sync_0cities_0categories	completed	0	12:05:10 14/5/2026
+incremental_sync_1cities_0categories	completed	0	12:05:18 14/5/2026
+Made with Replit
+
+cafe
