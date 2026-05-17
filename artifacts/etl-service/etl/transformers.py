@@ -58,17 +58,61 @@ def _rebuild_silver_gold_fast(job_id: str, run_id: str) -> dict:
     append_log(job_id, "Rebuilding silver layer via aggregation ...", "info")
 
     get_col("bronze_pois").aggregate([
+        # Stage 0: Extract OSM contact/address tags (fields have colons, need $getField)
+        {"$addFields": {
+            "_osm_addr": {
+                "$let": {
+                    "vars": {
+                        "hn": {"$getField": {"field": "addr:housenumber", "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+                        "st": {"$getField": {"field": "addr:street",      "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+                        "fa": {"$getField": {"field": "addr:full",        "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+                    },
+                    "in": {"$cond": [
+                        {"$and": [{"$ne": ["$$fa", None]}, {"$ne": [{"$type": "$$fa"}, "missing"]}]},
+                        "$$fa",
+                        {"$cond": [
+                            {"$and": [
+                                {"$ne": ["$$hn", None]}, {"$ne": [{"$type": "$$hn"}, "missing"]},
+                                {"$ne": ["$$st", None]}, {"$ne": [{"$type": "$$st"}, "missing"]},
+                            ]},
+                            {"$concat": ["$$hn", ", ", "$$st"]},
+                            {"$cond": [
+                                {"$and": [{"$ne": ["$$st", None]}, {"$ne": [{"$type": "$$st"}, "missing"]}]},
+                                "$$st", None
+                            ]}
+                        ]}
+                    ]}
+                }
+            },
+            "_osm_phone": {"$ifNull": [
+                {"$getField": {"field": "phone",         "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+                {"$getField": {"field": "contact:phone", "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+            ]},
+            "_osm_website": {"$ifNull": [
+                {"$getField": {"field": "website",         "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+                {"$getField": {"field": "contact:website", "input": {"$ifNull": ["$osm_raw.element.tags", {}]}}},
+            ]},
+        }},
         {"$addFields": {
             "silver_id": {"$concat": ["silver_", "$u_key"]},
             "rating":        {"$ifNull": ["$google_raw.place.rating",
                                           "$google_raw.place_details.result.rating"]},
             "review_count":  {"$ifNull": ["$google_raw.place.user_ratings_total",
                                           "$google_raw.place_details.result.user_ratings_total"]},
-            "address":       {"$ifNull": ["$google_raw.place_details.result.formatted_address",
-                                          "$google_raw.place.vicinity"]},
-            "phone":         {"$ifNull": ["$google_raw.place_details.result.international_phone_number",
-                                          "$google_raw.place_details.result.formatted_phone_number"]},
-            "website":       "$google_raw.place_details.result.website",
+            "address":       {"$ifNull": [
+                                  "$google_raw.place_details.result.formatted_address",
+                                  "$google_raw.place.vicinity",
+                                  "$_osm_addr",
+                              ]},
+            "phone":         {"$ifNull": [
+                                  "$google_raw.place_details.result.international_phone_number",
+                                  "$google_raw.place_details.result.formatted_phone_number",
+                                  "$_osm_phone",
+                              ]},
+            "website":       {"$ifNull": [
+                                  "$google_raw.place_details.result.website",
+                                  "$_osm_website",
+                              ]},
             "price_level":   {"$ifNull": ["$google_raw.place.price_level",
                                           "$google_raw.place_details.result.price_level"]},
         }},

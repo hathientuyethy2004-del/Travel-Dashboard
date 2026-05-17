@@ -175,6 +175,16 @@ def _collect_osm(job_id: str, run_id: str, cities: list, categories: list, limit
                     if not el_lat:
                         continue
                     tags_data = el.get("tags", {})
+                    # Build address from OSM addr tags
+                    addr_hn  = tags_data.get("addr:housenumber")
+                    addr_st  = tags_data.get("addr:street")
+                    addr_fa  = tags_data.get("addr:full")
+                    osm_addr = (addr_fa
+                                or (f"{addr_hn}, {addr_st}" if addr_hn and addr_st else None)
+                                or addr_st
+                                or None)
+                    osm_phone   = tags_data.get("phone") or tags_data.get("contact:phone") or None
+                    osm_website = tags_data.get("website") or tags_data.get("contact:website") or None
                     doc = {
                         "u_key": u_key,
                         "poi_id": f"osm_{osm_type}_{osm_id}",
@@ -183,12 +193,15 @@ def _collect_osm(job_id: str, run_id: str, cities: list, categories: list, limit
                         "has_osm_data": True,
                         "has_google_data": False,
                         "data_sources": ["osm"],
-                        "name": tags_data.get("name") or tags_data.get("name:en") or "Unknown",
+                        "name": tags_data.get("name") or tags_data.get("name:vi") or tags_data.get("name:en") or "Unknown",
                         "city": city_code,
                         "city_name": city["name"],
                         "country": "Vietnam",
                         "category": cat,
                         "location": {"lat": el_lat, "lon": el_lon},
+                        "address": osm_addr,
+                        "phone": osm_phone,
+                        "website": osm_website,
                         "osm_id": osm_id,
                         "osm_type": osm_type,
                         "google_place_id": None,
