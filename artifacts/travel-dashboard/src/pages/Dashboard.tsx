@@ -251,7 +251,14 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {funnelData.map((item, i) => {
                     const max = funnelData[0]?.value ?? 1;
-                    const pct = (item.value / max) * 100;
+                    const pct = Math.min((item.value / max) * 100, 100);
+                    const prevVal = i > 0 ? funnelData[i - 1].value : null;
+                    const ratio = prevVal && prevVal > 0 ? (item.value / prevVal) * 100 : null;
+                    const ratioLabel = ratio !== null && ratio <= 100
+                      ? `${ratio.toFixed(1)}% of prev`
+                      : ratio !== null
+                      ? `+${(ratio - 100).toFixed(1)}% vs prev`
+                      : null;
                     return (
                       <div key={item.name}>
                         <div className="flex items-center justify-between mb-1">
@@ -260,9 +267,9 @@ export default function Dashboard() {
                         </div>
                         <div className="h-8 rounded-md bg-muted overflow-hidden relative">
                           <div className="h-full rounded-md transition-all" style={{ width: `${pct}%`, backgroundColor: item.fill, opacity: 0.85 }} />
-                          {i > 0 && (
+                          {ratioLabel && (
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                              {((item.value / funnelData[i - 1].value) * 100).toFixed(1)}% of prev
+                              {ratioLabel}
                             </span>
                           )}
                         </div>
@@ -287,11 +294,19 @@ export default function Dashboard() {
               )}
             </CardHeader>
             <CardContent>
-              {catLoading || catFetching ? <Skeleton className="w-full h-[280px]" /> : (
+              {catLoading || catFetching ? <Skeleton className="w-full h-[280px]" /> : categories.length === 0 ? (
+                <div className="h-[280px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <BarChart2 className="w-8 h-8 opacity-30" />
+                  <p className="text-sm">No category data yet</p>
+                  <p className="text-xs">Run a pipeline job to populate</p>
+                </div>
+              ) : (
                 <ResponsiveContainer width="100%" height={280} debounce={0}>
                   <PieChart>
                     <Pie data={categories} cx="50%" cy="50%" outerRadius={100} innerRadius={50}
-                      dataKey="count" nameKey="category" paddingAngle={2}>
+                      dataKey="count" nameKey="category" paddingAngle={2}
+                      label={({ name, percent }) => percent > 0.04 ? `${(percent * 100).toFixed(0)}%` : ""}
+                      labelLine={false}>
                       {categories.map((_, i) => (
                         <Cell key={i} fill={CHART_COLOR_LIST[i % CHART_COLOR_LIST.length]} />
                       ))}
@@ -318,7 +333,13 @@ export default function Dashboard() {
             )}
           </CardHeader>
           <CardContent>
-            {cityLoading || cityFetching ? <Skeleton className="w-full h-[260px]" /> : (
+            {cityLoading || cityFetching ? <Skeleton className="w-full h-[260px]" /> : cities.length === 0 ? (
+              <div className="h-[260px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <MapPin className="w-8 h-8 opacity-30" />
+                <p className="text-sm">No city data yet</p>
+                <p className="text-xs">Run a pipeline job to populate</p>
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height={260} debounce={0}>
                 <BarChart data={cities} layout="vertical" margin={{ left: 20, right: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />

@@ -16,13 +16,19 @@ router.get("/pipeline/executions", async (req, res): Promise<void> => {
       .limit(20)
       .toArray();
 
+    const toStr = (v: unknown): string | null => {
+      if (!v) return null;
+      if (v instanceof Date) return v.toISOString();
+      return String(v);
+    };
+
     const result = executions.map((e) =>
       GetPipelineExecutionsResponseItem.parse({
         executionId: e.run_id ?? e.execution_id ?? "",
         pipelineName: e.pipelineName ?? e.pipeline_name ?? "",
         status: e.status ?? "unknown",
-        startedAt: e.startedAt ?? e.started_at ?? new Date().toISOString(),
-        completedAt: e.completedAt ?? e.completed_at ?? null,
+        startedAt: toStr(e.startedAt ?? e.started_at) ?? new Date().toISOString(),
+        completedAt: toStr(e.completedAt ?? e.completed_at),
         cities: Array.isArray(e.cities) ? e.cities : [],
         categories: Array.isArray(e.categories) ? e.categories : [],
         recordsProcessed: e.recordsProcessed ?? e.records_processed ?? 0,

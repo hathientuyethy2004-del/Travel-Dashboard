@@ -14,8 +14,9 @@ const JOB_TYPES = [
   { value: "collect_osm",       label: "🌍 Collect OSM",           desc: "Collect raw POI data from OpenStreetMap" },
   { value: "enrich_google",     label: "🔍 Enrich Google",         desc: "Enrich POIs with Google Places data" },
   { value: "bronze_to_silver",  label: "🔄 Bronze → Silver",       desc: "Normalize and score bronze layer records" },
-  { value: "silver_to_gold",    label: "⭐ Silver → Gold",          desc: "Deduplicate and promote to gold master" },
-  { value: "full_pipeline",     label: "🚀 Full Pipeline",          desc: "Run all 4 stages end-to-end" },
+  { value: "silver_to_gold",    label: "⭐ Silver → Gold",          desc: "Promote quality-gated records to gold master" },
+  { value: "reconcile",         label: "🧹 Reconcile",             desc: "Remove ghost records across Bronze/Silver/Gold" },
+  { value: "full_pipeline",     label: "🚀 Full Pipeline",          desc: "Run all 5 stages end-to-end" },
 ];
 
 const CITIES_LIST = ["hanoi","hcm","danang","cantho","haiphong","hue","nhatrang","dalat","vungtau","quynhon"];
@@ -159,9 +160,13 @@ export default function Pipeline() {
           <Card key={key}>
             <CardContent className="p-3">
               <p className="text-xs text-muted-foreground">{label}</p>
-              <p className="text-xl font-bold mt-0.5" style={{ color }}>
-                {statusSummary ? (statusSummary[key] ?? 0) : "—"}
-              </p>
+              {jobsLoading ? (
+                <Skeleton className="h-7 w-12 mt-0.5" />
+              ) : (
+                <p className="text-xl font-bold mt-0.5" style={{ color }}>
+                  {statusSummary ? (statusSummary[key] ?? 0) : 0}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}

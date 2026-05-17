@@ -123,22 +123,21 @@ export default function Analytics() {
         {/* Data quality questions answered */}
         <Card>
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Platform Questions</CardTitle>
+            <CardTitle className="text-base">Platform FAQ</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             <div className="space-y-2">
               {[
-                { q: "Dữ liệu từ đâu?", a: "OSM Overpass API + Google Places (RapidAPI)" },
-                { q: "Xử lý thế nào?", a: "Bronze → Silver (normalize) → Gold (dedup+promote)" },
-                { q: "Lưu ở đâu?", a: "MongoDB Atlas — smart_travel_platform database" },
-                { q: "Có đáng tin không?", a: "Quality score = 0.3 (OSM) + 0.3 (Google) + rating/5 × 0.2 + 0.2" },
-                { q: "Có bị trùng không?", a: "Dedup bằng Google Place ID hoặc OSM ID tại Gold layer" },
-                { q: "Có phục hồi được không?", a: "Mỗi record giữ bronze_ref → silver_ref → gold lineage" },
-                { q: "Có theo dõi pipeline?", a: "Có — etl_jobs collection track mọi job run" },
-                { q: "Có mở rộng được không?", a: "Có — thêm city/category vào config, chạy lại pipeline" },
-                { q: "Có kiểm soát chất lượng?", a: "Có — quality_score và quarantine tại Silver layer" },
-                { q: "Có lineage không?", a: "Có — data_lineage_edges collection (13K+ edges)" },
-                { q: "Có monitoring không?", a: "Có — pipeline_executions, etl_jobs, real-time logs" },
+                { q: "Where does data come from?", a: "OSM Overpass API + Google Places (RapidAPI)" },
+                { q: "How is it processed?", a: "Bronze → Silver (normalize) → Gold (dedup + promote)" },
+                { q: "Where is it stored?", a: "MongoDB Atlas — smart_travel_platform database" },
+                { q: "How is quality scored?", a: "0.3 (OSM) + 0.3 (Google) + rating/5 × 0.2 + address 0.1 + name 0.1" },
+                { q: "How are duplicates handled?", a: "Unified u_key dedup across all layers; ghost records removed by reconcile stage" },
+                { q: "Is data traceable?", a: "Yes — bronze_ref → silver_ref → gold lineage per record" },
+                { q: "Is the pipeline monitored?", a: "Yes — etl_jobs + pipeline_executions collections track every run" },
+                { q: "Is it extensible?", a: "Yes — add cities/categories to config and re-run the pipeline" },
+                { q: "Is quality enforced?", a: "Yes — quality_score gate at Silver → Gold; low-quality records quarantined" },
+                { q: "Is there data lineage?", a: "Yes — data_lineage_edges collection records every promotion" },
               ].map(({ q, a }) => (
                 <div key={q} className="flex items-start gap-2 py-1.5 border-b border-border/50 last:border-0">
                   <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: CHART_COLORS.teal }} />
