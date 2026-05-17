@@ -1,0 +1,217 @@
+poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+overview:1  Failed to load resource: the server responded with a status of 500 ()
+quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+executions:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+overview:1  Failed to load resource: the server responded with a status of 500 ()
+quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+executions:1  Failed to load resource: the server responded with a status of 500 ()
+quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+overview:1  Failed to load resource: the server responded with a status of 500 ()
+pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+executions:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+overview:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+executions:1  Failed to load resource: the server responded with a status of 500 ()
+poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/city-category-matrix:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/temporal:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/sources:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/quality-tiers:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/city-category-matrix:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/temporal:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/quality-tiers:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/sources:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/city-category-matrix:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/quality-tiers:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/sources:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/temporal:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/city-category-matrix:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/sources:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/quality-tiers:1  Failed to load resource: the server responded with a status of 500 ()
+/api/analytics/temporal:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations/city-highlights:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=top_rated&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations/city-highlights:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=top_rated&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=highly_reviewed&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=best_quality&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=multi_source&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations/city-highlights:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=random&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=random&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=random&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations/city-highlights:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/etl/status:1  Failed to load resource: the server responded with a status of 503 ()
+/api/etl/schedules:1  Failed to load resource: the server responded with a status of 503 ()
+/api/etl/jobs?limit=30:1  Failed to load resource: the server responded with a status of 503 ()
+/api/etl/status:1  Failed to load resource: the server responded with a status of 503 ()
+/api/etl/jobs?limit=30:1  Failed to load resource: the server responded with a status of 503 ()
+/api/etl/schedules:1  Failed to load resource: the server responded with a status of 503 ()
+/api/reports/summary?period=monthly:1  Failed to load resource: the server responded with a status of 500 ()
+/api/reports/summary?period=monthly:1  Failed to load resource: the server responded with a status of 500 ()
+/api/reports/summary?period=yearly:1  Failed to load resource: the server responded with a status of 500 ()
+/api/reports/summary?period=weekly:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations?mode=top_rated&limit=20:1  Failed to load resource: the server responded with a status of 500 ()
+/api/recommendations/city-highlights:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/cities:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois?limit=20&offset=0:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pois/top-rated?limit=5:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quarantine-reasons:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-category:1  Failed to load resource: the server responded with a status of 500 ()
+/api/pipeline/executions:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/pipeline-funnel:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/poi-by-city:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/overview:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/rating-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+/api/dashboard/quality-distribution:1  Failed to load resource: the server responded with a status of 500 ()
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/quarantine-reasons 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+SU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/poi-by-category 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+oU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/rating-distribution 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+gU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/pipeline/executions 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+TU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/pipeline-funnel 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+cU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/poi-by-city 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+nU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/quality-distribution 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+pU @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
+index-DfNV0C-T.js:9  GET https://travel-dashboard--hathientuyethy2.replit.app/api/dashboard/overview 500 (Internal Server Error)
+Ft @ index-DfNV0C-T.js:9
+ZI @ index-DfNV0C-T.js:9
+queryFn @ index-DfNV0C-T.js:9
+i @ index-DfNV0C-T.js:9
+O @ index-DfNV0C-T.js:9
+(anonymous) @ index-DfNV0C-T.js:9
