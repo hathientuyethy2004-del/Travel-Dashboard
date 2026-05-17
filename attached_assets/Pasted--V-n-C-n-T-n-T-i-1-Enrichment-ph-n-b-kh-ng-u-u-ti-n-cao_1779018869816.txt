@@ -1,0 +1,36 @@
+ Vấn Đề Còn Tồn Tại
+1. Enrichment phân bổ không đều — Ưu tiên cao
+Hà Nội        5,202 POIs  ●●●●●●●●●●●●  61.2% enriched  avgQ=0.57
+Cần Thơ       1,160 POIs  ●●●●●●●●●●●●●●●  77.6% enriched  avgQ=0.63
+Đà Lạt        1,110 POIs  ●●  9.0% enriched  avgQ=0.34
+TP. HCM       6,208 POIs  ●  4.5% enriched  avgQ=0.32
+Đà Nẵng       2,932 POIs  ▸  1.5% enriched  avgQ=0.31
+Nha Trang     1,201 POIs  ○  0.0% enriched  avgQ=0.30
+Huế             994 POIs  ○  0.0% enriched  avgQ=0.30
+Hải Phòng       530 POIs  ○  0.0% enriched  avgQ=0.30
+Vũng Tàu        169 POIs  ○  0.0% enriched  avgQ=0.30
+
+Hà Nội và Cần Thơ đã được enrich rất tốt (61-78%), nhưng 5 thành phố quan trọng (HCM, Đà Nẵng, Nha Trang...) gần như chưa được enrich. Pipeline sẽ tự động xử lý dần theo thứ tự ngẫu nhiên — nhưng nếu muốn ưu tiên HCM và Đà Nẵng (có nhiều POIs nhất) thì cần cấu hình cities filter trong schedule.
+
+2. Quality distribution bimodal — Trung bình
+Score 0.20–0.40:  14,999 records (76.9%)  — OSM only, không có Google data
+Score 0.60–0.80:   4,507 records (23.1%)  — có Google data
+Score 0.40–0.60:       0 records
+Score 0.80–1.00:       0 records
+
+Hiện tại có 2 cụm rõ rệt: OSM-only (quality ≈ 0.30) và enriched (quality ≈ 0.65). Không có giá trị nào trong khoảng 0.40–0.60 vì enrichment là all-or-nothing (hoặc có Google = +0.35, hoặc không). Khi pipeline enrich thêm ~14,500 records còn lại trong 12 ngày tới, distribution sẽ cân bằng hơn nhiều.
+
+3. Quy Nhơn không có dữ liệu — Trung bình
+quynhon  Bronze: 0  Silver: 0  Gold: 0
+
+Thành phố thứ 10 chưa từng được collect OSM. Cần chạy 1 job collect_osm với cities: ["quynhon"] để bổ sung.
+
+4. /api/etl/status phản hồi chậm — Nhỏ
+/api/etl/status   1,616ms  ← quá chậm so với các endpoint khác (149–530ms)
+
+Endpoint này đang count documents trên nhiều collections đồng thời mà không có index hoặc caching. Ảnh hưởng tới Dashboard page load nếu nó được poll thường xuyên.
+
+5. runners.py quá lớn — Nhỏ
+runners.py   1,104 dòng
+
+Toàn bộ logic OSM collector, Google enricher, silver/gold rebuild, nightly sync đều nằm trong 1 file. Khi cần debug hoặc mở rộng, rất khó điều hướng. Nên tách thành collectors.py, enrichers.py, transformers.py.

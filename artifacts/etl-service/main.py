@@ -4,6 +4,7 @@ Smart Travel Platform — Python ETL Service
 FastAPI service exposing ETL management endpoints under /etl/*
 """
 import os
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,8 +33,8 @@ def _cleanup_stale_jobs():
 def _seed_config():
     """Seed cities and categories from hardcoded defaults on first run."""
     from etl import config_db
-    config_db.get_cities()      # triggers seed if empty
-    config_db.get_categories()  # triggers seed if empty
+    config_db.get_cities()
+    config_db.get_categories()
     print("[startup] Config seeded from defaults (if collections were empty)")
 
 
@@ -68,11 +69,21 @@ app.include_router(config_router.router)
 app.include_router(review_router.router)
 
 
+# ─── In-memory cache for the status endpoint (30s TTL) ───────────────────────
+
+_status_cache: dict = {"data": None, "ts": 0.0}
+_STATUS_TTL = 30.0
+
+
 @app.get("/etl/status")
 def status():
+    now = time.monotonic()
+    if _status_cache["data"] is not None and (now - _status_cache["ts"]) < _STATUS_TTL:
+        return _status_cache["data"]
+
     from etl.db import get_col
     from etl import config_db
-    from etl.runners import get_key_status
+    from etl.collectors import get_key_status
     jobs_col = get_col("etl_jobs")
     bronze = get_col("bronze_pois")
     cities = config_db.get_cities()
@@ -87,7 +98,7 @@ def status():
 
     key_status = get_key_status()
 
-    return {
+    result = {
         "service": "ETL Service",
         "status": "running",
         "apiKeys": key_status,
@@ -108,6 +119,9 @@ def status():
             "failed": jobs_col.count_documents({"status": "failed"}),
         },
     }
+    _status_cache["data"] = result
+    _status_cache["ts"] = now
+    return result
 
 
 @app.get("/etl/config")
