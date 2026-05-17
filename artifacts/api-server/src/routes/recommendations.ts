@@ -52,27 +52,30 @@ router.get("/recommendations", async (req, res) => {
     let matchFilter: Record<string, unknown> = base;
 
     if (mode === "top_rated") {
+      // "Has Address" — POIs with verified address (navigable for travelers)
       const { filter, index } = await firstNonEmpty(gold, [
         { ...base, rating: { $exists: true, $ne: null }, review_count: { $gte: 5 } },
-        { ...base, has_google_data: true, quality_score: { $gte: 0.65 } },
+        { ...base, address: { $nin: [null, ""] } },
         { ...base, quality_score: { $gte: 0.3 } },
       ]);
       matchFilter = filter;
-      sortStage = index === 0 ? { rating: -1, review_count: -1 } : { quality_score: -1 };
+      sortStage = index === 0 ? { rating: -1, review_count: -1 } : { quality_score: -1, name: 1 };
 
     } else if (mode === "hidden_gems") {
+      // "Has Contact" — POIs with phone or website (bookable for travelers)
       const { filter, index } = await firstNonEmpty(gold, [
         { ...base, rating: { $gte: 4.3 }, review_count: { $lte: 50, $gte: 3 } },
-        { ...base, has_osm_data: true, has_google_data: { $ne: true }, quality_score: { $gte: 0.3 }, name: { $nin: ["Unknown", "unknown", ""] } },
+        { ...base, $or: [{ phone: { $nin: [null, ""] } }, { website: { $nin: [null, ""] } }] },
         { ...base, quality_score: { $gte: 0.3 } },
       ]);
       matchFilter = filter;
       sortStage = index === 0 ? { rating: -1, quality_score: -1 } : { quality_score: -1 };
 
     } else if (mode === "highly_reviewed") {
+      // "Most Complete" — address + contact info (fully actionable POIs)
       const { filter, index } = await firstNonEmpty(gold, [
         { ...base, review_count: { $exists: true, $ne: null } },
-        { ...base, has_osm_data: true, has_google_data: true },
+        { ...base, address: { $nin: [null, ""] }, $or: [{ phone: { $nin: [null, ""] } }, { website: { $nin: [null, ""] } }] },
         { ...base, quality_score: { $gte: 0.3 } },
       ]);
       matchFilter = filter;
@@ -83,12 +86,19 @@ router.get("/recommendations", async (req, res) => {
       sortStage = { quality_score: -1 };
 
     } else if (mode === "multi_source") {
-      const { filter } = await firstNonEmpty(gold, [
-        { ...base, "data_sources.1": { $exists: true } },
-        { ...base, quality_score: { $gte: 0.3 } },
-      ]);
-      matchFilter = filter;
-      sortStage = { quality_score: -1 };
+      // "Category Mix" — best POI from each category for diverse discovery
+      const perCat = Math.max(2, Math.ceil(limit / 8));
+      const pois = await gold.aggregate([
+        { $match: { ...base, quality_score: { $gte: 0.3 } } },
+        { $sort: { quality_score: -1 } },
+        { $group: { _id: "$category", pois: { $push: "$$ROOT" } } },
+        { $project: { pois: { $slice: ["$pois", perCat] } } },
+        { $unwind: "$pois" },
+        { $replaceRoot: { newRoot: "$pois" } },
+        { $limit: limit },
+      ]).toArray();
+      res.json({ mode, city: city || null, category: category || null, count: pois.length, pois: pois.map(mapPoi) });
+      return;
 
     } else {
       // random / discover

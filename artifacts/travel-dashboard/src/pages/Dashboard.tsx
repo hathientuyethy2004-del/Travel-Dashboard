@@ -10,6 +10,7 @@ import {
   useGetRatingDistribution, getGetRatingDistributionQueryKey,
   useGetPipelineExecutions, getGetPipelineExecutionsQueryKey,
   useGetQuarantineReasons, getGetQuarantineReasonsQueryKey,
+  useGetAnalyticsCityCategoryMatrix, getGetAnalyticsCityCategoryMatrixQueryKey,
 } from "@workspace/api-client-react";
 import { CSVLink } from "react-csv";
 import {
@@ -90,6 +91,7 @@ export default function Dashboard() {
   useGetRatingDistribution();
   const { data: executions, isLoading: execLoading } = useGetPipelineExecutions();
   const { data: quarantineReasons, isLoading: qrLoading } = useGetQuarantineReasons();
+  const { data: matrix } = useGetAnalyticsCityCategoryMatrix();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -114,6 +116,7 @@ export default function Dashboard() {
       getGetPoiByCategoryQueryKey(), getGetPipelineFunnelQueryKey(),
       getGetQualityDistributionQueryKey(), getGetRatingDistributionQueryKey(),
       getGetPipelineExecutionsQueryKey(), getGetQuarantineReasonsQueryKey(),
+      getGetAnalyticsCityCategoryMatrixQueryKey(),
     ].forEach((k) => queryClient.invalidateQueries({ queryKey: k }));
     setLastRefreshed(new Date().toLocaleTimeString());
     setTimeout(() => setIsSpinning(false), 1000);
@@ -125,23 +128,25 @@ export default function Dashboard() {
   const allCities = (poiByCity ?? []).map((c) => ({ value: c.city, label: c.cityName ?? c.city }));
   const allCategories = (poiByCategory ?? []).map((c) => ({ value: c.category, label: c.category }));
 
-  // Filtered data for charts
-  const cities = filterCategory === "all"
-    ? (poiByCity ?? [])
-    : (poiByCity ?? []);  // city chart always shows all cities
+  // City chart: when category filter active → show per-city counts for that category using matrix
+  const cityChartData = (() => {
+    if (filterCategory === "all" || !matrix?.length) return poiByCity ?? [];
+    const map: Record<string, { city: string; cityName: string; count: number }> = {};
+    matrix.filter((r) => r.category === filterCategory).forEach((r) => {
+      if (!map[r.city]) map[r.city] = { city: r.city, cityName: r.cityName ?? r.city, count: 0 };
+      map[r.city].count += r.count;
+    });
+    return Object.values(map).sort((a, b) => b.count - a.count);
+  })();
 
-  const categories = filterCity === "all"
-    ? (poiByCategory ?? [])
-    : (poiByCategory ?? []);  // category chart always shows all categories
-
-  const filteredCities = filterCategory !== "all"
-    ? cities
-    : cities;
-
-  // For city bar chart: filter by category if set (we can only filter on already-aggregated data)
-  const cityChartData = poiByCity ?? [];
-  // Group small category slices (< 3% of total) into "Other"
-  const rawCatData = poiByCategory ?? [];
+  // Category chart: when city filter active → show per-category counts for that city using matrix
+  const rawCatData = (() => {
+    if (filterCity === "all" || !matrix?.length) return poiByCategory ?? [];
+    return matrix
+      .filter((r) => r.city === filterCity)
+      .map((r) => ({ category: r.category, count: r.count }))
+      .sort((a, b) => b.count - a.count);
+  })();
   const catTotal = rawCatData.reduce((s, d) => s + d.count, 0);
   const catChartData = (() => {
     const main = rawCatData.filter((d) => catTotal === 0 || d.count / catTotal >= 0.03);
@@ -186,7 +191,11 @@ export default function Dashboard() {
               </div>
               <h1 className="font-bold text-[32px]">Smart Travel Platform</h1>
             </div>
-            <p className="text-muted-foreground text-[14px] ml-12">POI analytics & data pipeline monitoring</p>
+            <p className="text-muted-foreground text-[14px] ml-12">
+              {!loading && overview
+                ? `${overview.goldPois.toLocaleString()} verified destinations across ${overview.cities} Vietnamese cities`
+                : "Discover & analyze verified tourist destinations across Vietnam"}
+            </p>
             {lastRefreshed && <p className="text-[12px] text-muted-foreground mt-1 ml-12">Last refresh: {lastRefreshed}</p>}
           </div>
           <div className="flex items-center gap-3 pt-2 print:hidden">
