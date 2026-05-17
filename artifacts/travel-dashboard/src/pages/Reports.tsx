@@ -4,20 +4,36 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGetReportSummary } from "@workspace/api-client-react";
 import { CSVLink } from "react-csv";
 import {
-  BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Download, FileText, Calendar, Database, Star, CheckCircle2, AlertTriangle } from "lucide-react";
-import { CHART_COLORS, CHART_COLOR_LIST, formatNumber } from "@/lib/constants";
+import {
+  Download, FileText, MapPin, Phone, Globe, Sparkles,
+  Star, AlertTriangle, TrendingUp, Database,
+} from "lucide-react";
+import { CHART_COLORS, CHART_COLOR_LIST } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 const PERIODS = [
-  { value: "weekly",  label: "Weekly",  icon: "7d" },
-  { value: "monthly", label: "Monthly", icon: "30d" },
-  { value: "yearly",  label: "Yearly",  icon: "1yr" },
+  { value: "weekly",  label: "Last 7 days" },
+  { value: "monthly", label: "This month"  },
+  { value: "yearly",  label: "This year"   },
 ];
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
+// Quality tier color mapping (best→worst)
+const TIER_COLORS: Record<string, string> = {
+  "0.8–1.0": "#009118",
+  "0.6–0.8": CHART_COLORS.teal,
+  "0.4–0.6": CHART_COLORS.blue,
+  "0.2–0.4": CHART_COLORS.orange,
+  "0.0–0.2": CHART_COLORS.red,
+};
+
+function CustomTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-border bg-popover p-3 text-sm shadow-lg">
@@ -33,88 +49,136 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
+type ReportData = {
+  period: string;
+  since: string;
+  generatedAt: string;
+  totals: { bronze: number; silver: number; gold: number; quarantine: number; cities: number };
+  coverage?: { withAddress: number; withPhone: number; withWebsite: number; addrPct: number; phonePct: number; websitePct: number };
+  quality: {
+    avgQualityScore: number;
+    avgRating: number;
+    multiSourcePois: number;
+    tiers: { tier: string; range: string; count: number }[];
+  };
+  cityStats?: { city: string; cityName: string; total: number; withAddress: number; withPhone: number; addrPct: number; phonePct: number; avgQuality: number }[];
+  topCities: { city: string; cityName: string; count: number }[];
+  topCategories: { category: string; count: number }[];
+  recentExecutions: { pipelineName: string; status: string; startedAt: string; recordsProcessed: number }[];
+};
+
 export default function Reports() {
   const { isDark } = useTheme();
   const [period, setPeriod] = useState<"weekly" | "monthly" | "yearly">("monthly");
-  const { data: report, isLoading } = useGetReportSummary({ period });
+  const { data: rawReport, isLoading } = useGetReportSummary({ period });
+  const report = rawReport as ReportData | undefined;
 
-  const gridColor = isDark ? "rgba(255,255,255,0.08)" : "#e5e5e5";
   const tickColor = isDark ? "#98999C" : "#71717a";
 
-  const funnelData = report ? [
-    { name: "Bronze", value: report.totals.bronze, fill: CHART_COLORS.orange },
-    { name: "Silver", value: report.totals.silver, fill: "#94a3b8" },
-    { name: "Gold", value: report.totals.gold, fill: "#eab308" },
-    { name: "Quarantine", value: report.totals.quarantine, fill: CHART_COLORS.red },
-  ] : [];
+  const gold          = report?.totals.gold      ?? 0;
+  const quarantine    = report?.totals.quarantine ?? 0;
+  const withAddr      = report?.coverage?.withAddress ?? 0;
+  const withPhone     = report?.coverage?.withPhone   ?? 0;
+  const withWebsite   = report?.coverage?.withWebsite ?? 0;
+  const addrPct       = report?.coverage?.addrPct    ?? 0;
+  const phonePct      = report?.coverage?.phonePct   ?? 0;
+  const websitePct    = report?.coverage?.websitePct ?? 0;
+  const avgQuality    = report?.quality.avgQualityScore ?? 0;
+
+  const categoryData = (report?.topCategories ?? []).map((c, i) => ({
+    name:  c.category,
+    count: c.count,
+    fill:  CHART_COLOR_LIST[i % CHART_COLOR_LIST.length],
+  }));
 
   const csvData = report ? [
-    { section: "Period", period: report.period, since: report.since, generated: report.generatedAt },
-    { section: "Totals", bronze: report.totals.bronze, silver: report.totals.silver, gold: report.totals.gold },
-    { section: "New This Period", bronze: report.periodStats.newBronze, silver: report.periodStats.newSilver, gold: report.periodStats.newGold },
-    { section: "Quality", avgScore: report.quality.avgQualityScore, avgRating: report.quality.avgRating, multiSource: report.quality.multiSourcePois },
+    { section: "Totals",   gold, quarantine, bronze: report.totals.bronze },
+    { section: "Coverage", withAddress: withAddr, withPhone, withWebsite, addrPct, phonePct, websitePct },
+    { section: "Quality",  avgQualityScore: avgQuality, avgRating: report.quality.avgRating },
+    ...(report.cityStats ?? []).map((c) => ({
+      section: "City",
+      city: c.cityName, pois: c.total, addrPct: c.addrPct, phonePct: c.phonePct, avgQuality: c.avgQuality,
+    })),
   ] : [];
 
   return (
     <div className="px-6 pt-6 pb-8 max-w-[1400px] mx-auto">
-      <div className="mb-6 flex items-start justify-between">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="mb-5 flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #795EFF, #0079F2)" }}>
               <FileText className="w-4 h-4 text-white" />
             </div>
-            <h1 className="font-bold text-2xl">Reports</h1>
+            <h1 className="font-bold text-2xl">Platform Report</h1>
           </div>
-          <p className="text-muted-foreground text-sm ml-11">Periodic data platform health reports</p>
-          {report && <p className="text-xs text-muted-foreground ml-11 mt-1">Generated: {new Date(report.generatedAt).toLocaleString()} · Since: {report.since}</p>}
+          <p className="text-muted-foreground text-sm ml-11">
+            {isLoading ? "Loading…" : (
+              gold > 0
+                ? `${gold.toLocaleString()} verified destinations · ${report?.totals.cities ?? 0} cities · ${report?.topCategories.length ?? 0} categories`
+                : "Tourism data platform health report"
+            )}
+          </p>
+          {report && (
+            <p className="text-xs text-muted-foreground ml-11 mt-0.5">
+              Generated {new Date(report.generatedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Period selector */}
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            {PERIODS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setPeriod(value as typeof period)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  period === value
+                    ? "bg-primary text-white"
+                    : "hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {!isLoading && report && csvData.length > 0 && (
-            <CSVLink data={csvData} filename={`report-${period}-${new Date().toISOString().slice(0, 10)}.csv`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#F0F1F2", color: isDark ? "#c8c9cc" : "#4b5563" }}>
+            <CSVLink
+              data={csvData}
+              filename={`smart-travel-report-${new Date().toISOString().slice(0, 10)}.csv`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-80 transition-opacity border border-border"
+            >
               <Download className="w-3.5 h-3.5" /> Export CSV
             </CSVLink>
           )}
         </div>
       </div>
 
-      {/* Period selector */}
-      <div className="flex gap-2 mb-6">
-        {PERIODS.map(({ value, label, icon }) => (
-          <button key={value} onClick={() => setPeriod(value as typeof period)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${period === value ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/30"}`}>
-            <Calendar className="w-3.5 h-3.5" />
-            {label}
-            <span className={`text-xs px-1.5 py-0.5 rounded ${period === value ? "bg-primary/10" : "bg-muted"}`}>{icon}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Summary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      {/* ── Platform Snapshot ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {[
-          { label: "Gold POIs", value: report?.totals.gold, icon: Star, color: "#eab308", new: report?.periodStats.newGold },
-          { label: "Bronze Records", value: report?.totals.bronze, icon: Database, color: CHART_COLORS.orange, new: report?.periodStats.newBronze },
-          { label: "Avg Quality", value: report?.quality.avgQualityScore, icon: CheckCircle2, color: CHART_COLORS.teal, decimal: true },
-          { label: "Quarantined", value: report?.totals.quarantine, icon: AlertTriangle, color: CHART_COLORS.red },
-        ].map(({ label, value, icon: Icon, color, new: newCount, decimal }) => (
+          { label: "Gold Destinations",  value: gold,        icon: Star,          color: "#d97706", sub: "verified POIs" },
+          { label: "Avg Quality Score",  value: avgQuality,  icon: TrendingUp,    color: CHART_COLORS.teal, sub: "pre-enrichment", decimal: true },
+          { label: "Quarantined",        value: quarantine,  icon: AlertTriangle, color: CHART_COLORS.red, sub: "borderline quality" },
+          { label: "Bronze Records",     value: report?.totals.bronze ?? 0, icon: Database, color: CHART_COLORS.orange, sub: "raw collected" },
+        ].map(({ label, value, icon: Icon, color, sub, decimal }) => (
           <Card key={label}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
                 <p className="text-xs text-muted-foreground font-medium">{label}</p>
-                <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
+                <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}18` }}>
                   <Icon className="w-3.5 h-3.5" style={{ color }} />
                 </div>
               </div>
               {isLoading ? <Skeleton className="h-7 w-20" /> : (
                 <>
                   <p className="text-2xl font-bold" style={{ color }}>
-                    {decimal ? (value as number)?.toFixed(2) : formatNumber(value as number ?? 0, "compact")}
+                    {decimal
+                      ? (value as number).toFixed(3)
+                      : (value as number).toLocaleString()}
                   </p>
-                  {newCount !== undefined && newCount > 0 && (
-                    <p className="text-xs text-green-600 mt-0.5">+{newCount.toLocaleString()} this {period.replace("ly", "")}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
                 </>
               )}
             </CardContent>
@@ -122,150 +186,290 @@ export default function Reports() {
         ))}
       </div>
 
+      {/* ── Destination Readiness ─────────────────────────────────────────── */}
+      <Card className="mb-4">
+        <CardHeader className="px-4 pt-4 pb-2">
+          <CardTitle className="text-sm">Destination Readiness</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            How useful are these {gold.toLocaleString()} POIs for travelers right now? (OSM-only, pre-enrichment)
+          </p>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          {isLoading ? <Skeleton className="h-20 w-full" /> : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                {
+                  label: "Navigable",
+                  sub:   "Has address — traveler can find it",
+                  icon:  MapPin,
+                  count: withAddr,
+                  pct:   addrPct,
+                  color: CHART_COLORS.teal,
+                },
+                {
+                  label: "Contactable",
+                  sub:   "Has phone number",
+                  icon:  Phone,
+                  count: withPhone,
+                  pct:   phonePct,
+                  color: CHART_COLORS.green,
+                },
+                {
+                  label: "On the Web",
+                  sub:   "Has website URL",
+                  icon:  Globe,
+                  count: withWebsite,
+                  pct:   websitePct,
+                  color: CHART_COLORS.purple,
+                },
+                {
+                  label: "Enriched",
+                  sub:   "Google data — ratings, fuller detail",
+                  icon:  Sparkles,
+                  count: 0,
+                  pct:   0,
+                  color: CHART_COLORS.blue,
+                  note:  "→ Run Google Enrichment",
+                },
+              ].map(({ label, sub, icon: Icon, count, pct, color, note }) => (
+                <div key={label} className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}18` }}>
+                      <Icon className="w-3.5 h-3.5" style={{ color }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{label}</p>
+                      <p className="text-[11px] text-muted-foreground">{sub}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold tabular-nums" style={{ color }}>{pct}%</span>
+                    <span className="text-xs text-muted-foreground">{count.toLocaleString()} POIs</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: color }}
+                    />
+                  </div>
+                  {note && (
+                    <p className="text-[11px] font-medium" style={{ color }}>{note}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Quality Distribution + Category Breakdown ─────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        {/* Layer funnel */}
+
+        {/* Quality Distribution */}
         <Card>
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Data Layer Totals</CardTitle>
+            <CardTitle className="text-sm">Quality Score Distribution</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Gold POIs by quality tier · avg {avgQuality.toFixed(3)} · Google enrichment targets 0.6+
+            </p>
           </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-[240px]" /> : (
-              <div className="space-y-3">
-                {funnelData.map((item) => {
-                  const max = funnelData[0]?.value ?? 1;
-                  const pct = (item.value / max) * 100;
+          <CardContent className="px-4 pb-4 space-y-2">
+            {isLoading ? <Skeleton className="h-40 w-full" /> : (
+              <>
+                {(report?.quality.tiers ?? []).map((tier) => {
+                  const color = TIER_COLORS[tier.range] ?? CHART_COLORS.blue;
+                  const pct   = gold > 0 ? (tier.count / gold) * 100 : 0;
                   return (
-                    <div key={item.name}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium" style={{ color: item.fill }}>{item.name}</span>
-                        <span className="text-sm text-muted-foreground">{item.value.toLocaleString()}</span>
+                    <div key={tier.tier}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium" style={{ color }}>{tier.tier}</span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {tier.count.toLocaleString()} · {pct.toFixed(1)}%
+                        </span>
                       </div>
-                      <div className="h-7 rounded-md bg-muted overflow-hidden">
-                        <div className="h-full rounded-md" style={{ width: `${pct}%`, backgroundColor: item.fill, opacity: 0.8 }} />
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: color }}
+                        />
                       </div>
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quality tiers */}
-        <Card>
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Quality Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-[240px]" /> : (
-              <div className="space-y-2">
-                {/* Avg metrics */}
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div className="p-3 rounded-lg bg-muted/30 text-center">
-                    <p className="text-xs text-muted-foreground">Avg Quality Score</p>
-                    <p className="text-xl font-bold text-teal-600">{report?.quality.avgQualityScore?.toFixed(3)}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/30 text-center">
-                    <p className="text-xs text-muted-foreground">Avg Rating</p>
-                    <p className="text-xl font-bold text-yellow-500">
-                      {(report?.quality.avgRating ?? 0) > 0 ? `★ ${report!.quality.avgRating!.toFixed(2)}` : "N/A"}
-                    </p>
-                  </div>
-                </div>
-                {(report?.quality.tiers ?? []).map((tier, i) => (
-                  <div key={tier.tier} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLOR_LIST[i % CHART_COLOR_LIST.length] }} />
-                      <span className="text-sm">{tier.tier}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 h-1.5 rounded bg-muted overflow-hidden">
-                        <div className="h-full rounded" style={{ width: `${(tier.count / (report?.totals.gold || 1)) * 100}%`, backgroundColor: CHART_COLOR_LIST[i % CHART_COLOR_LIST.length] }} />
-                      </div>
-                      <span className="text-sm font-medium w-16 text-right">{tier.count.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-2 flex justify-between text-xs text-muted-foreground">
+                <div className="pt-2 flex justify-between text-xs text-muted-foreground border-t border-border">
                   <span>Multi-source verified:</span>
-                  <span className="font-medium text-green-600">{report?.quality.multiSourcePois?.toLocaleString()}</span>
+                  <span className={`font-medium ${(report?.quality.multiSourcePois ?? 0) > 0 ? "text-green-600" : ""}`}>
+                    {(report?.quality.multiSourcePois ?? 0).toLocaleString()}
+                  </span>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  After Google enrichment: expect 40–60% of POIs to move from Low → Fair/Good
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Category Breakdown */}
+        <Card>
+          <CardHeader className="px-4 pt-4 pb-2">
+            <CardTitle className="text-sm">POIs by Category</CardTitle>
+            <p className="text-xs text-muted-foreground">{report?.topCategories.length ?? 0} categories · all Gold POIs</p>
+          </CardHeader>
+          <CardContent className="px-4 pb-3">
+            {isLoading ? <Skeleton className="h-[220px] w-full" /> : (
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={categoryData}
+                    layout="vertical"
+                    margin={{ left: 4, right: 48, top: 2, bottom: 2 }}
+                  >
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 10, fill: tickColor }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}K` : String(v)}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: tickColor }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={70}
+                    />
+                    <Tooltip
+                      formatter={(v: number) => [v.toLocaleString(), "Gold POIs"]}
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 8,
+                        border: "1px solid var(--border)",
+                        background: isDark ? "#1e1e2e" : "#fff",
+                      }}
+                    />
+                    <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={14}>
+                      {categoryData.map((c, i) => <Cell key={i} fill={c.fill} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Top cities and categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <Card>
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Top Cities by Gold POIs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-[200px]" /> : (
-              <ResponsiveContainer width="100%" height={200} debounce={0}>
-                <BarChart data={report?.topCities ?? []} layout="vertical" margin={{ left: 20, right: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: tickColor }} />
-                  <YAxis type="category" dataKey="cityName" tick={{ fontSize: 11, fill: tickColor }} width={80} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" name="Gold POIs" fill={CHART_COLORS.blue} radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Top Categories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-[200px]" /> : (
-              <ResponsiveContainer width="100%" height={200} debounce={0}>
-                <BarChart data={report?.topCategories ?? []} margin={{ left: 0, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                  <XAxis dataKey="category" tick={{ fontSize: 11, fill: tickColor }} />
-                  <YAxis tick={{ fontSize: 11, fill: tickColor }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" name="Gold POIs" radius={[4, 4, 0, 0]}>
-                    {(report?.topCategories ?? []).map((_, i) => <Cell key={i} fill={CHART_COLOR_LIST[i % CHART_COLOR_LIST.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent executions */}
-      {(report?.recentExecutions?.length ?? 0) > 0 && (
-        <Card>
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Recent Pipeline Executions</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* ── City Coverage Table ───────────────────────────────────────────── */}
+      <Card className="mb-4">
+        <CardHeader className="px-4 pt-4 pb-2">
+          <CardTitle className="text-sm">City Coverage Breakdown</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Address and phone coverage per city — reflects data depth available to travelers
+          </p>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-4 space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    {["Pipeline", "Status", "Records", "Started"].map((h) => (
-                      <th key={h} className="text-left text-xs font-medium text-muted-foreground pb-2 pr-4">{h}</th>
+                  <tr className="border-b border-border bg-muted/30">
+                    {["City", "Gold POIs", "Share", "Address Coverage", "Phone Coverage", "Avg Quality"].map((h) => (
+                      <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-2.5">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(report?.cityStats ?? []).map((city, i) => {
+                    const share = gold > 0 ? (city.total / gold) * 100 : 0;
+                    const qColor = city.avgQuality >= 0.5 ? "text-green-600" : city.avgQuality >= 0.3 ? "text-yellow-600" : "text-red-500";
+                    return (
+                      <tr key={city.city} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: CHART_COLOR_LIST[i % CHART_COLOR_LIST.length] }}>
+                              {i + 1}
+                            </div>
+                            <span className="text-xs font-medium">{city.cityName || city.city}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs font-bold tabular-nums">{city.total.toLocaleString()}</td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full bg-primary/60" style={{ width: `${share}%` }} />
+                            </div>
+                            <span className="text-xs text-muted-foreground tabular-nums">{share.toFixed(1)}%</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${city.addrPct}%`, backgroundColor: CHART_COLORS.teal }} />
+                            </div>
+                            <span className="text-xs font-medium" style={{ color: CHART_COLORS.teal }}>{city.addrPct}%</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${city.phonePct}%`, backgroundColor: CHART_COLORS.green }} />
+                            </div>
+                            <span className="text-xs font-medium" style={{ color: CHART_COLORS.green }}>{city.phonePct}%</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className={`text-xs font-mono font-medium ${qColor}`}>
+                            {city.avgQuality.toFixed(3)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Recent Pipeline Executions ────────────────────────────────────── */}
+      {(report?.recentExecutions?.length ?? 0) > 0 && (
+        <Card>
+          <CardHeader className="px-4 pt-4 pb-2">
+            <CardTitle className="text-sm">Recent Pipeline Executions</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    {["Pipeline", "Status", "Records", "When"].map((h) => (
+                      <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-2">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {(report?.recentExecutions ?? []).map((e, i) => (
-                    <tr key={i} className="border-b border-border/50">
-                      <td className="py-2 pr-4 text-xs font-medium">{e.pipelineName as string}</td>
-                      <td className="py-2 pr-4">
-                        <span className={`text-xs px-2 py-0.5 rounded ${(e.status as string) === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                          {e.status as string}
+                    <tr key={i} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2 text-xs font-medium">{e.pipelineName}</td>
+                      <td className="px-4 py-2">
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          e.status === "completed"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                        }`}>
+                          {e.status}
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-xs text-green-600">{(e.recordsProcessed as number)?.toLocaleString()}</td>
-                      <td className="py-2 text-xs text-muted-foreground">{e.startedAt ? new Date(e.startedAt as string).toLocaleString() : "—"}</td>
+                      <td className="px-4 py-2 text-xs text-green-600 tabular-nums">
+                        {(e.recordsProcessed ?? 0).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2 text-xs text-muted-foreground">
+                        {e.startedAt ? new Date(e.startedAt).toLocaleString("vi-VN") : "—"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

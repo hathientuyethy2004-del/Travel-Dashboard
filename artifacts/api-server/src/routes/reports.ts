@@ -20,75 +20,141 @@ router.get("/reports/summary", async (req, res) => {
     const sinceIso = since.toISOString().slice(0, 10);
 
     const [
-      totalBronze, totalSilver, totalGold, totalQuarantine, totalCities,
-      newBronze, newSilver, newGold,
-      avgQuality, avgRating,
-      topCities, topCategories,
+      totalBronze,
+      totalSilver,
+      totalGold,
+      totalQuarantine,
+      withAddress,
+      withPhone,
+      withWebsite,
+      avgQualityAgg,
+      avgRatingAgg,
+      topCities,
+      allCategories,
       executions,
       qualityTiers,
       multiSourceCount,
+      cityStats,
     ] = await Promise.all([
       db.collection("bronze_pois").countDocuments({}),
       db.collection("silver_pois").countDocuments({}),
       db.collection("gold_master_pois").countDocuments({}),
-      db.collection("quarantine").countDocuments({}),
-      db.collection("cities").countDocuments({}),
-      db.collection("bronze_pois").countDocuments({ created_at: { $gte: sinceIso } }),
-      db.collection("silver_pois").countDocuments({ created_at: { $gte: sinceIso } }),
-      db.collection("gold_master_pois").countDocuments({ created_at: { $gte: sinceIso } }),
+      // Fixed: use correct quarantine collection name
+      db.collection("data_quality_quarantine").countDocuments({}),
+      db.collection("gold_master_pois").countDocuments({ address: { $ne: null } }),
+      db.collection("gold_master_pois").countDocuments({ phone: { $ne: null } }),
+      db.collection("gold_master_pois").countDocuments({ website: { $ne: null } }),
       db.collection("gold_master_pois").aggregate([
-        { $group: { _id: null, avg: { $avg: "$quality_score" } } }
+        { $group: { _id: null, avg: { $avg: "$quality_score" } } },
       ]).toArray(),
       db.collection("gold_master_pois").aggregate([
-        { $match: { rating: { $ne: null } } },
-        { $group: { _id: null, avg: { $avg: "$rating" } } }
+        { $match: { rating: { $gt: 0 } } },
+        { $group: { _id: null, avg: { $avg: "$rating" } } },
       ]).toArray(),
+      // Top 5 cities for chart
       db.collection("gold_master_pois").aggregate([
-        { $group: { _id: "$city", cityName: { $first: "$city_name" }, count: { $sum: 1 }, avgRating: { $avg: "$rating" } } },
+        { $group: { _id: "$city", cityName: { $first: "$city_name" }, count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 5 },
       ]).toArray(),
+      // All categories
       db.collection("gold_master_pois").aggregate([
-        { $group: { _id: "$category", count: { $sum: 1 }, avgRating: { $avg: "$rating" } } },
+        { $group: { _id: "$category", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-        { $limit: 8 },
       ]).toArray(),
       db.collection("pipeline_executions").find({}).sort({ startedAt: -1 }).limit(5).toArray(),
+      // 5-bucket quality tiers for nuanced view
       db.collection("gold_master_pois").aggregate([
-        { $addFields: { tier: { $switch: { branches: [
-          { case: { $gte: ["$quality_score", 0.8] }, then: "High" },
-          { case: { $gte: ["$quality_score", 0.5] }, then: "Medium" },
-          { case: { $gte: ["$quality_score", 0.2] }, then: "Low" },
-        ], default: "Very Low" } } } },
+        { $addFields: {
+          tier: { $switch: { branches: [
+            { case: { $gte: ["$quality_score", 0.8] }, then: "0.8–1.0" },
+            { case: { $gte: ["$quality_score", 0.6] }, then: "0.6–0.8" },
+            { case: { $gte: ["$quality_score", 0.4] }, then: "0.4–0.6" },
+            { case: { $gte: ["$quality_score", 0.2] }, then: "0.2–0.4" },
+          ], default: "0.0–0.2" } },
+        }},
         { $group: { _id: "$tier", count: { $sum: 1 } } },
+        { $sort: { _id: -1 } },
       ]).toArray(),
       db.collection("bronze_pois").countDocuments({ has_osm_data: true, has_google_data: true }),
+      // Per-city coverage stats — all cities, no limit
+      db.collection("gold_master_pois").aggregate([
+        { $group: {
+          _id: "$city",
+          cityName:    { $first: "$city_name" },
+          total:       { $sum: 1 },
+          withAddress: { $sum: { $cond: [{ $ne: ["$address", null] }, 1, 0] } },
+          withPhone:   { $sum: { $cond: [{ $ne: ["$phone",   null] }, 1, 0] } },
+          avgQuality:  { $avg: "$quality_score" },
+        }},
+        { $sort: { total: -1 } },
+      ]).toArray(),
     ]);
+
+    const totalCities = cityStats.length;
+    const avgQuality  = avgQualityAgg[0]?.avg ?? 0;
+    const avgRating   = avgRatingAgg[0]?.avg  ?? 0;
+
+    const TIER_ORDER = ["0.8–1.0", "0.6–0.8", "0.4–0.6", "0.2–0.4", "0.0–0.2"];
+    const TIER_LABELS: Record<string, string> = {
+      "0.8–1.0": "Excellent",
+      "0.6–0.8": "Good",
+      "0.4–0.6": "Fair",
+      "0.2–0.4": "Low",
+      "0.0–0.2": "Very Low",
+    };
+    const tierMap = Object.fromEntries(qualityTiers.map((t) => [t._id as string, t.count as number]));
+    const tiersOrdered = TIER_ORDER.map((range) => ({
+      tier:  `${TIER_LABELS[range]} (${range})`,
+      range,
+      count: tierMap[range] ?? 0,
+    }));
 
     res.json({
       period,
       since: sinceIso,
       generatedAt: now.toISOString(),
-      totals: { bronze: totalBronze, silver: totalSilver, gold: totalGold, quarantine: totalQuarantine, cities: totalCities },
-      periodStats: { newBronze, newSilver, newGold },
-      quality: {
-        avgQualityScore: avgQuality[0]?.avg ?? 0,
-        avgRating: avgRating[0]?.avg ?? 0,
-        multiSourcePois: multiSourceCount,
-        tiers: qualityTiers.map((t) => ({ tier: t._id, count: t.count })),
+      totals: {
+        bronze: totalBronze,
+        silver: totalSilver,
+        gold:   totalGold,
+        quarantine: totalQuarantine,
+        cities: totalCities,
       },
-      topCities: topCities.map((c) => ({
-        city: c._id, cityName: c.cityName, count: c.count,
-        avgRating: Math.round((c.avgRating ?? 0) * 100) / 100,
+      coverage: {
+        withAddress,
+        withPhone,
+        withWebsite,
+        addrPct:    totalGold > 0 ? Math.round((withAddress / totalGold) * 100) : 0,
+        phonePct:   totalGold > 0 ? Math.round((withPhone   / totalGold) * 100) : 0,
+        websitePct: totalGold > 0 ? Math.round((withWebsite / totalGold) * 100) : 0,
+      },
+      quality: {
+        avgQualityScore: avgQuality,
+        avgRating,
+        multiSourcePois: multiSourceCount,
+        tiers: tiersOrdered,
+      },
+      cityStats: cityStats.map((c) => ({
+        city:        c._id,
+        cityName:    c.cityName ?? c._id,
+        total:       c.total,
+        withAddress: c.withAddress,
+        withPhone:   c.withPhone,
+        addrPct:     c.total > 0 ? Math.round((c.withAddress / c.total) * 100) : 0,
+        phonePct:    c.total > 0 ? Math.round((c.withPhone   / c.total) * 100) : 0,
+        avgQuality:  Math.round((c.avgQuality ?? 0) * 1000) / 1000,
       })),
-      topCategories: topCategories.map((c) => ({
+      topCities: topCities.map((c) => ({
+        city: c._id, cityName: c.cityName ?? c._id, count: c.count,
+      })),
+      topCategories: allCategories.map((c) => ({
         category: c._id, count: c.count,
-        avgRating: Math.round((c.avgRating ?? 0) * 100) / 100,
       })),
       recentExecutions: executions.map((e) => ({
-        pipelineName: e.pipeline_name || e.pipelineName || "Pipeline",
-        status: e.status || "completed",
-        startedAt: e.startedAt || e.started_at,
+        pipelineName:     e.pipeline_name || e.pipelineName || "Pipeline",
+        status:           e.status || "completed",
+        startedAt:        e.startedAt || e.started_at,
         recordsProcessed: e.records_processed || e.recordsProcessed || 0,
       })),
     });
