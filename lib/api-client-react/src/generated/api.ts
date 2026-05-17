@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Smart Travel Platform Dashboard API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import {
   useQuery
@@ -18,9 +18,13 @@ import type {
 import type {
   CategoryPoiCount,
   City,
+  CityCategory,
+  CityHighlight,
   CityPoiCount,
   DashboardOverview,
   GetPoisParams,
+  GetRecommendationsParams,
+  GetReportSummaryParams,
   GetTopRatedPoisParams,
   HealthStatus,
   PipelineExecution,
@@ -28,9 +32,14 @@ import type {
   Poi,
   PoisResponse,
   QualityBucket,
+  QualityTier,
   QuarantineReason,
   RatingBucket,
-  SyncStateSummary
+  RecommendationsResponse,
+  ReportSummary,
+  SourceBreakdown,
+  SyncStateSummary,
+  TemporalPoint
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -54,7 +63,6 @@ export const getHealthCheckUrl = () => {
 }
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const healthCheck = async ( options?: RequestInit): Promise<HealthStatus> => {
@@ -132,7 +140,6 @@ export const getGetDashboardOverviewUrl = () => {
 }
 
 /**
- * Returns high-level counts across all data layers
  * @summary Get overview statistics
  */
 export const getDashboardOverview = async ( options?: RequestInit): Promise<DashboardOverview> => {
@@ -210,7 +217,6 @@ export const getGetPoiByCityUrl = () => {
 }
 
 /**
- * Returns count of gold-layer POIs per city
  * @summary POI counts grouped by city
  */
 export const getPoiByCity = async ( options?: RequestInit): Promise<CityPoiCount[]> => {
@@ -288,7 +294,6 @@ export const getGetPoiByCategoryUrl = () => {
 }
 
 /**
- * Returns count of gold-layer POIs per category
  * @summary POI counts grouped by category
  */
 export const getPoiByCategory = async ( options?: RequestInit): Promise<CategoryPoiCount[]> => {
@@ -366,7 +371,6 @@ export const getGetPipelineFunnelUrl = () => {
 }
 
 /**
- * Returns record counts at each data layer for funnel visualization
  * @summary Bronze → Silver → Gold pipeline funnel
  */
 export const getPipelineFunnel = async ( options?: RequestInit): Promise<PipelineFunnel> => {
@@ -444,7 +448,6 @@ export const getGetQualityDistributionUrl = () => {
 }
 
 /**
- * Returns distribution of quality scores for gold POIs
  * @summary Quality score distribution
  */
 export const getQualityDistribution = async ( options?: RequestInit): Promise<QualityBucket[]> => {
@@ -522,7 +525,6 @@ export const getGetRatingDistributionUrl = () => {
 }
 
 /**
- * Returns distribution of ratings for gold POIs
  * @summary Rating distribution
  */
 export const getRatingDistribution = async ( options?: RequestInit): Promise<RatingBucket[]> => {
@@ -591,6 +593,83 @@ export function useGetRatingDistribution<TData = Awaited<ReturnType<typeof getRa
 
 
 
+export const getGetQuarantineReasonsUrl = () => {
+
+
+
+
+  return `/api/dashboard/quarantine-reasons`
+}
+
+/**
+ * @summary Data quality quarantine reasons breakdown
+ */
+export const getQuarantineReasons = async ( options?: RequestInit): Promise<QuarantineReason[]> => {
+
+  return customFetch<QuarantineReason[]>(getGetQuarantineReasonsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuarantineReasonsQueryKey = () => {
+    return [
+    `/api/dashboard/quarantine-reasons`
+    ] as const;
+    }
+
+
+export const getGetQuarantineReasonsQueryOptions = <TData = Awaited<ReturnType<typeof getQuarantineReasons>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuarantineReasons>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuarantineReasonsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuarantineReasons>>> = ({ signal }) => getQuarantineReasons({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuarantineReasons>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuarantineReasonsQueryResult = NonNullable<Awaited<ReturnType<typeof getQuarantineReasons>>>
+export type GetQuarantineReasonsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Data quality quarantine reasons breakdown
+ */
+
+export function useGetQuarantineReasons<TData = Awaited<ReturnType<typeof getQuarantineReasons>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuarantineReasons>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuarantineReasonsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetPipelineExecutionsUrl = () => {
 
 
@@ -600,7 +679,6 @@ export const getGetPipelineExecutionsUrl = () => {
 }
 
 /**
- * Returns list of recent pipeline execution runs
  * @summary Recent pipeline executions
  */
 export const getPipelineExecutions = async ( options?: RequestInit): Promise<PipelineExecution[]> => {
@@ -678,7 +756,6 @@ export const getGetPipelineSyncStateUrl = () => {
 }
 
 /**
- * Returns aggregated sync state metrics by city and category
  * @summary Pipeline sync state summary
  */
 export const getPipelineSyncState = async ( options?: RequestInit): Promise<SyncStateSummary[]> => {
@@ -756,7 +833,6 @@ export const getGetCitiesUrl = () => {
 }
 
 /**
- * Returns all cities in the platform
  * @summary Get all cities
  */
 export const getCities = async ( options?: RequestInit): Promise<City[]> => {
@@ -841,7 +917,6 @@ export const getGetPoisUrl = (params?: GetPoisParams,) => {
 }
 
 /**
- * Returns paginated gold-layer POIs with optional filters
  * @summary Browse gold-layer POIs
  */
 export const getPois = async (params?: GetPoisParams, options?: RequestInit): Promise<PoisResponse> => {
@@ -926,7 +1001,6 @@ export const getGetTopRatedPoisUrl = (params?: GetTopRatedPoisParams,) => {
 }
 
 /**
- * Returns top-rated gold-layer POIs
  * @summary Top rated POIs
  */
 export const getTopRatedPois = async (params?: GetTopRatedPoisParams, options?: RequestInit): Promise<Poi[]> => {
@@ -995,21 +1069,20 @@ export function useGetTopRatedPois<TData = Awaited<ReturnType<typeof getTopRated
 
 
 
-export const getGetQuarantineReasonsUrl = () => {
+export const getGetAnalyticsTemporalUrl = () => {
 
 
 
 
-  return `/api/dashboard/quarantine-reasons`
+  return `/api/analytics/temporal`
 }
 
 /**
- * Returns count of quarantine records grouped by failed rule
- * @summary Data quality quarantine reasons breakdown
+ * @summary Time-series of POI collection by layer
  */
-export const getQuarantineReasons = async ( options?: RequestInit): Promise<QuarantineReason[]> => {
+export const getAnalyticsTemporal = async ( options?: RequestInit): Promise<TemporalPoint[]> => {
 
-  return customFetch<QuarantineReason[]>(getGetQuarantineReasonsUrl(),
+  return customFetch<TemporalPoint[]>(getGetAnalyticsTemporalUrl(),
   {
     ...options,
     method: 'GET'
@@ -1022,45 +1095,521 @@ export const getQuarantineReasons = async ( options?: RequestInit): Promise<Quar
 
 
 
-export const getGetQuarantineReasonsQueryKey = () => {
+export const getGetAnalyticsTemporalQueryKey = () => {
     return [
-    `/api/dashboard/quarantine-reasons`
+    `/api/analytics/temporal`
     ] as const;
     }
 
 
-export const getGetQuarantineReasonsQueryOptions = <TData = Awaited<ReturnType<typeof getQuarantineReasons>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuarantineReasons>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetAnalyticsTemporalQueryOptions = <TData = Awaited<ReturnType<typeof getAnalyticsTemporal>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsTemporal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetQuarantineReasonsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalyticsTemporalQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuarantineReasons>>> = ({ signal }) => getQuarantineReasons({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalyticsTemporal>>> = ({ signal }) => getAnalyticsTemporal({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuarantineReasons>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsTemporal>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetQuarantineReasonsQueryResult = NonNullable<Awaited<ReturnType<typeof getQuarantineReasons>>>
-export type GetQuarantineReasonsQueryError = ErrorType<unknown>
+export type GetAnalyticsTemporalQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalyticsTemporal>>>
+export type GetAnalyticsTemporalQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Data quality quarantine reasons breakdown
+ * @summary Time-series of POI collection by layer
  */
 
-export function useGetQuarantineReasons<TData = Awaited<ReturnType<typeof getQuarantineReasons>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuarantineReasons>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetAnalyticsTemporal<TData = Awaited<ReturnType<typeof getAnalyticsTemporal>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsTemporal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetQuarantineReasonsQueryOptions(options)
+  const queryOptions = getGetAnalyticsTemporalQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAnalyticsSourcesUrl = () => {
+
+
+
+
+  return `/api/analytics/sources`
+}
+
+/**
+ * @summary Data source breakdown (OSM / Google / Both)
+ */
+export const getAnalyticsSources = async ( options?: RequestInit): Promise<SourceBreakdown> => {
+
+  return customFetch<SourceBreakdown>(getGetAnalyticsSourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnalyticsSourcesQueryKey = () => {
+    return [
+    `/api/analytics/sources`
+    ] as const;
+    }
+
+
+export const getGetAnalyticsSourcesQueryOptions = <TData = Awaited<ReturnType<typeof getAnalyticsSources>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalyticsSourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalyticsSources>>> = ({ signal }) => getAnalyticsSources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsSources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnalyticsSourcesQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalyticsSources>>>
+export type GetAnalyticsSourcesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Data source breakdown (OSM / Google / Both)
+ */
+
+export function useGetAnalyticsSources<TData = Awaited<ReturnType<typeof getAnalyticsSources>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsSources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnalyticsSourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAnalyticsQualityTiersUrl = () => {
+
+
+
+
+  return `/api/analytics/quality-tiers`
+}
+
+/**
+ * @summary Quality tier distribution
+ */
+export const getAnalyticsQualityTiers = async ( options?: RequestInit): Promise<QualityTier[]> => {
+
+  return customFetch<QualityTier[]>(getGetAnalyticsQualityTiersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnalyticsQualityTiersQueryKey = () => {
+    return [
+    `/api/analytics/quality-tiers`
+    ] as const;
+    }
+
+
+export const getGetAnalyticsQualityTiersQueryOptions = <TData = Awaited<ReturnType<typeof getAnalyticsQualityTiers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsQualityTiers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalyticsQualityTiersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalyticsQualityTiers>>> = ({ signal }) => getAnalyticsQualityTiers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsQualityTiers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnalyticsQualityTiersQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalyticsQualityTiers>>>
+export type GetAnalyticsQualityTiersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Quality tier distribution
+ */
+
+export function useGetAnalyticsQualityTiers<TData = Awaited<ReturnType<typeof getAnalyticsQualityTiers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsQualityTiers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnalyticsQualityTiersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAnalyticsCityCategoryMatrixUrl = () => {
+
+
+
+
+  return `/api/analytics/city-category-matrix`
+}
+
+/**
+ * @summary POI count matrix by city × category
+ */
+export const getAnalyticsCityCategoryMatrix = async ( options?: RequestInit): Promise<CityCategory[]> => {
+
+  return customFetch<CityCategory[]>(getGetAnalyticsCityCategoryMatrixUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnalyticsCityCategoryMatrixQueryKey = () => {
+    return [
+    `/api/analytics/city-category-matrix`
+    ] as const;
+    }
+
+
+export const getGetAnalyticsCityCategoryMatrixQueryOptions = <TData = Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalyticsCityCategoryMatrixQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>> = ({ signal }) => getAnalyticsCityCategoryMatrix({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnalyticsCityCategoryMatrixQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>>
+export type GetAnalyticsCityCategoryMatrixQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary POI count matrix by city × category
+ */
+
+export function useGetAnalyticsCityCategoryMatrix<TData = Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalyticsCityCategoryMatrix>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnalyticsCityCategoryMatrixQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetRecommendationsUrl = (params?: GetRecommendationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/recommendations?${stringifiedParams}` : `/api/recommendations`
+}
+
+/**
+ * @summary Get POI recommendations
+ */
+export const getRecommendations = async (params?: GetRecommendationsParams, options?: RequestInit): Promise<RecommendationsResponse> => {
+
+  return customFetch<RecommendationsResponse>(getGetRecommendationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRecommendationsQueryKey = (params?: GetRecommendationsParams,) => {
+    return [
+    `/api/recommendations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetRecommendationsQueryOptions = <TData = Awaited<ReturnType<typeof getRecommendations>>, TError = ErrorType<unknown>>(params?: GetRecommendationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecommendations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRecommendationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecommendations>>> = ({ signal }) => getRecommendations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRecommendations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRecommendationsQueryResult = NonNullable<Awaited<ReturnType<typeof getRecommendations>>>
+export type GetRecommendationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get POI recommendations
+ */
+
+export function useGetRecommendations<TData = Awaited<ReturnType<typeof getRecommendations>>, TError = ErrorType<unknown>>(
+ params?: GetRecommendationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecommendations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRecommendationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCityHighlightsUrl = () => {
+
+
+
+
+  return `/api/recommendations/city-highlights`
+}
+
+/**
+ * @summary Top highlight per city
+ */
+export const getCityHighlights = async ( options?: RequestInit): Promise<CityHighlight[]> => {
+
+  return customFetch<CityHighlight[]>(getGetCityHighlightsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCityHighlightsQueryKey = () => {
+    return [
+    `/api/recommendations/city-highlights`
+    ] as const;
+    }
+
+
+export const getGetCityHighlightsQueryOptions = <TData = Awaited<ReturnType<typeof getCityHighlights>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCityHighlights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCityHighlightsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCityHighlights>>> = ({ signal }) => getCityHighlights({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCityHighlights>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCityHighlightsQueryResult = NonNullable<Awaited<ReturnType<typeof getCityHighlights>>>
+export type GetCityHighlightsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Top highlight per city
+ */
+
+export function useGetCityHighlights<TData = Awaited<ReturnType<typeof getCityHighlights>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCityHighlights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCityHighlightsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetReportSummaryUrl = (params?: GetReportSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/reports/summary?${stringifiedParams}` : `/api/reports/summary`
+}
+
+/**
+ * @summary Periodic data report
+ */
+export const getReportSummary = async (params?: GetReportSummaryParams, options?: RequestInit): Promise<ReportSummary> => {
+
+  return customFetch<ReportSummary>(getGetReportSummaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportSummaryQueryKey = (params?: GetReportSummaryParams,) => {
+    return [
+    `/api/reports/summary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetReportSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getReportSummary>>, TError = ErrorType<unknown>>(params?: GetReportSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReportSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportSummaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportSummary>>> = ({ signal }) => getReportSummary(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReportSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getReportSummary>>>
+export type GetReportSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Periodic data report
+ */
+
+export function useGetReportSummary<TData = Awaited<ReturnType<typeof getReportSummary>>, TError = ErrorType<unknown>>(
+ params?: GetReportSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReportSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReportSummaryQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

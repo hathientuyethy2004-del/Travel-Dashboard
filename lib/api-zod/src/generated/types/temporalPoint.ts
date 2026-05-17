@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface QualityBucket {
-  range: string;
-  count: number;
+export interface TemporalPoint {
+  date: string;
+  bronze: number;
+  silver: number;
+  gold: number;
 }

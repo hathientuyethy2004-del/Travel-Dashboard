@@ -1,0 +1,16 @@
+kind = "api"
+previewPath = "/etl"
+title = "ETL Service"
+version = "1.0.0"
+id = "etl-service"
+
+[[services]]
+localPort = 9000
+name = "ETL Service"
+paths = ["/etl"]
+
+[services.development]
+run = "python3 main.py"
+
+[services.env]
+PORT = "9000"

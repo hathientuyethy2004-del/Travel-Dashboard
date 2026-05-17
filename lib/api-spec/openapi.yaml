@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: Smart Travel Platform Dashboard API
 servers:
   - url: /api
@@ -18,13 +18,18 @@ tags:
     description: Data pipeline metrics
   - name: cities
     description: City data
+  - name: analytics
+    description: Advanced analytics
+  - name: recommendations
+    description: POI recommendations
+  - name: reports
+    description: Periodic reports
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -38,7 +43,6 @@ paths:
       operationId: getDashboardOverview
       tags: [dashboard]
       summary: Get overview statistics
-      description: Returns high-level counts across all data layers
       responses:
         "200":
           description: Overview stats
@@ -52,7 +56,6 @@ paths:
       operationId: getPoiByCity
       tags: [dashboard]
       summary: POI counts grouped by city
-      description: Returns count of gold-layer POIs per city
       responses:
         "200":
           description: POI by city
@@ -68,7 +71,6 @@ paths:
       operationId: getPoiByCategory
       tags: [dashboard]
       summary: POI counts grouped by category
-      description: Returns count of gold-layer POIs per category
       responses:
         "200":
           description: POI by category
@@ -84,7 +86,6 @@ paths:
       operationId: getPipelineFunnel
       tags: [dashboard]
       summary: Bronze → Silver → Gold pipeline funnel
-      description: Returns record counts at each data layer for funnel visualization
       responses:
         "200":
           description: Pipeline funnel data
@@ -98,7 +99,6 @@ paths:
       operationId: getQualityDistribution
       tags: [dashboard]
       summary: Quality score distribution
-      description: Returns distribution of quality scores for gold POIs
       responses:
         "200":
           description: Quality distribution
@@ -114,7 +114,6 @@ paths:
       operationId: getRatingDistribution
       tags: [dashboard]
       summary: Rating distribution
-      description: Returns distribution of ratings for gold POIs
       responses:
         "200":
           description: Rating distribution
@@ -125,12 +124,26 @@ paths:
                 items:
                   $ref: "#/components/schemas/RatingBucket"
 
+  /dashboard/quarantine-reasons:
+    get:
+      operationId: getQuarantineReasons
+      tags: [dashboard]
+      summary: Data quality quarantine reasons breakdown
+      responses:
+        "200":
+          description: Quarantine reasons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuarantineReason"
+
   /pipeline/executions:
     get:
       operationId: getPipelineExecutions
       tags: [pipeline]
       summary: Recent pipeline executions
-      description: Returns list of recent pipeline execution runs
       responses:
         "200":
           description: Pipeline executions
@@ -146,7 +159,6 @@ paths:
       operationId: getPipelineSyncState
       tags: [pipeline]
       summary: Pipeline sync state summary
-      description: Returns aggregated sync state metrics by city and category
       responses:
         "200":
           description: Sync state summary
@@ -162,7 +174,6 @@ paths:
       operationId: getCities
       tags: [cities]
       summary: Get all cities
-      description: Returns all cities in the platform
       responses:
         "200":
           description: Cities list
@@ -178,7 +189,6 @@ paths:
       operationId: getPois
       tags: [pois]
       summary: Browse gold-layer POIs
-      description: Returns paginated gold-layer POIs with optional filters
       parameters:
         - name: city
           in: query
@@ -211,7 +221,6 @@ paths:
       operationId: getTopRatedPois
       tags: [pois]
       summary: Top rated POIs
-      description: Returns top-rated gold-layer POIs
       parameters:
         - name: city
           in: query
@@ -236,21 +245,131 @@ paths:
                 items:
                   $ref: "#/components/schemas/Poi"
 
-  /dashboard/quarantine-reasons:
+  /analytics/temporal:
     get:
-      operationId: getQuarantineReasons
-      tags: [dashboard]
-      summary: Data quality quarantine reasons breakdown
-      description: Returns count of quarantine records grouped by failed rule
+      operationId: getAnalyticsTemporal
+      tags: [analytics]
+      summary: Time-series of POI collection by layer
       responses:
         "200":
-          description: Quarantine reasons
+          description: Temporal series
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/QuarantineReason"
+                  $ref: "#/components/schemas/TemporalPoint"
+
+  /analytics/sources:
+    get:
+      operationId: getAnalyticsSources
+      tags: [analytics]
+      summary: Data source breakdown (OSM / Google / Both)
+      responses:
+        "200":
+          description: Source breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceBreakdown"
+
+  /analytics/quality-tiers:
+    get:
+      operationId: getAnalyticsQualityTiers
+      tags: [analytics]
+      summary: Quality tier distribution
+      responses:
+        "200":
+          description: Quality tiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QualityTier"
+
+  /analytics/city-category-matrix:
+    get:
+      operationId: getAnalyticsCityCategoryMatrix
+      tags: [analytics]
+      summary: POI count matrix by city × category
+      responses:
+        "200":
+          description: City-category matrix
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CityCategory"
+
+  /recommendations:
+    get:
+      operationId: getRecommendations
+      tags: [recommendations]
+      summary: Get POI recommendations
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [top_rated, hidden_gems, highly_reviewed, best_quality, multi_source, random]
+            default: top_rated
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationsResponse"
+
+  /recommendations/city-highlights:
+    get:
+      operationId: getCityHighlights
+      tags: [recommendations]
+      summary: Top highlight per city
+      responses:
+        "200":
+          description: City highlights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CityHighlight"
+
+  /reports/summary:
+    get:
+      operationId: getReportSummary
+      tags: [reports]
+      summary: Periodic data report
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [weekly, monthly, yearly]
+            default: monthly
+      responses:
+        "200":
+          description: Report summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportSummary"
 
 components:
   schemas:
@@ -259,185 +378,125 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
     DashboardOverview:
       type: object
-      required:
-        - bronzePois
-        - silverPois
-        - goldPois
-        - cities
-        - quarantined
-        - pipelineRuns
-        - dataLineageEdges
-        - avgQualityScore
-        - avgRating
+      required: [bronzePois, silverPois, goldPois, cities, quarantined, pipelineRuns, dataLineageEdges, avgQualityScore, avgRating]
       properties:
-        bronzePois:
-          type: integer
-        silverPois:
-          type: integer
-        goldPois:
-          type: integer
-        cities:
-          type: integer
-        quarantined:
-          type: integer
-        pipelineRuns:
-          type: integer
-        dataLineageEdges:
-          type: integer
-        avgQualityScore:
-          type: number
-        avgRating:
-          type: number
+        bronzePois: { type: integer }
+        silverPois: { type: integer }
+        goldPois: { type: integer }
+        cities: { type: integer }
+        quarantined: { type: integer }
+        pipelineRuns: { type: integer }
+        dataLineageEdges: { type: integer }
+        avgQualityScore: { type: number }
+        avgRating: { type: number }
 
     CityPoiCount:
       type: object
       required: [city, cityName, count]
       properties:
-        city:
-          type: string
-        cityName:
-          type: string
-        count:
-          type: integer
+        city: { type: string }
+        cityName: { type: string }
+        count: { type: integer }
 
     CategoryPoiCount:
       type: object
       required: [category, count]
       properties:
-        category:
-          type: string
-        count:
-          type: integer
+        category: { type: string }
+        count: { type: integer }
 
     PipelineFunnel:
       type: object
       required: [bronze, silver, gold, quarantine]
       properties:
-        bronze:
-          type: integer
-        silver:
-          type: integer
-        gold:
-          type: integer
-        quarantine:
-          type: integer
+        bronze: { type: integer }
+        silver: { type: integer }
+        gold: { type: integer }
+        quarantine: { type: integer }
 
     QualityBucket:
       type: object
       required: [range, count]
       properties:
-        range:
-          type: string
-        count:
-          type: integer
+        range: { type: string }
+        count: { type: integer }
 
     RatingBucket:
       type: object
       required: [range, count]
       properties:
-        range:
-          type: string
-        count:
-          type: integer
+        range: { type: string }
+        count: { type: integer }
+
+    QuarantineReason:
+      type: object
+      required: [rule, count]
+      properties:
+        rule: { type: string }
+        count: { type: integer }
 
     PipelineExecution:
       type: object
       required: [executionId, pipelineName, status, startedAt, cities, categories, recordsProcessed, recordsFailed]
       properties:
-        executionId:
-          type: string
-        pipelineName:
-          type: string
-        status:
-          type: string
-        startedAt:
-          type: string
-        completedAt:
-          type: ["string", "null"]
+        executionId: { type: string }
+        pipelineName: { type: string }
+        status: { type: string }
+        startedAt: { type: string }
+        completedAt: { type: ["string", "null"] }
         cities:
           type: array
-          items:
-            type: string
+          items: { type: string }
         categories:
           type: array
-          items:
-            type: string
-        recordsProcessed:
-          type: integer
-        recordsFailed:
-          type: integer
-        currentStage:
-          type: string
+          items: { type: string }
+        recordsProcessed: { type: integer }
+        recordsFailed: { type: integer }
+        currentStage: { type: string }
 
     SyncStateSummary:
       type: object
       required: [city, category, currentCount, status, upsertedCount]
       properties:
-        city:
-          type: string
-        category:
-          type: string
-        currentCount:
-          type: integer
-        status:
-          type: string
-        upsertedCount:
-          type: integer
+        city: { type: string }
+        category: { type: string }
+        currentCount: { type: integer }
+        status: { type: string }
+        upsertedCount: { type: integer }
 
     City:
       type: object
       required: [cityCode, name, nameEn, region, population]
       properties:
-        cityCode:
-          type: string
-        name:
-          type: string
-        nameEn:
-          type: string
-        region:
-          type: string
-        population:
-          type: integer
-        description:
-          type: ["string", "null"]
+        cityCode: { type: string }
+        name: { type: string }
+        nameEn: { type: string }
+        region: { type: string }
+        population: { type: integer }
+        description: { type: ["string", "null"] }
 
     Poi:
       type: object
       required: [poiId, name, city, cityName, category, rating, reviewCount, qualityScore]
       properties:
-        poiId:
-          type: string
-        name:
-          type: string
-        city:
-          type: string
-        cityName:
-          type: string
-        category:
-          type: string
-        subcategory:
-          type: ["string", "null"]
-        address:
-          type: ["string", "null"]
-        rating:
-          type: ["number", "null"]
-        reviewCount:
-          type: ["integer", "null"]
-        qualityScore:
-          type: ["number", "null"]
-        imageUrl:
-          type: ["string", "null"]
-        website:
-          type: ["string", "null"]
-        phone:
-          type: ["string", "null"]
-        priceLevel:
-          type: ["integer", "null"]
+        poiId: { type: string }
+        name: { type: string }
+        city: { type: string }
+        cityName: { type: string }
+        category: { type: string }
+        subcategory: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        rating: { type: ["number", "null"] }
+        reviewCount: { type: ["integer", "null"] }
+        qualityScore: { type: ["number", "null"] }
+        imageUrl: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        priceLevel: { type: ["integer", "null"] }
 
     PoisResponse:
       type: object
@@ -447,14 +506,142 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Poi"
-        total:
-          type: integer
+        total: { type: integer }
 
-    QuarantineReason:
+    TemporalPoint:
       type: object
-      required: [rule, count]
+      required: [date, bronze, silver, gold]
       properties:
-        rule:
-          type: string
-        count:
-          type: integer
+        date: { type: string }
+        bronze: { type: integer }
+        silver: { type: integer }
+        gold: { type: integer }
+
+    SourceBreakdown:
+      type: object
+      required: [osmOnly, googleOnly, both, total]
+      properties:
+        osmOnly: { type: integer }
+        googleOnly: { type: integer }
+        both: { type: integer }
+        total: { type: integer }
+
+    QualityTier:
+      type: object
+      required: [tier, count]
+      properties:
+        tier: { type: string }
+        count: { type: integer }
+
+    CityCategory:
+      type: object
+      required: [city, cityName, category, count]
+      properties:
+        city: { type: string }
+        cityName: { type: string }
+        category: { type: string }
+        count: { type: integer }
+
+    RecommendedPoi:
+      type: object
+      required: [poiId, name, city, cityName, category]
+      properties:
+        poiId: { type: string }
+        name: { type: string }
+        city: { type: string }
+        cityName: { type: string }
+        category: { type: string }
+        rating: { type: ["number", "null"] }
+        reviewCount: { type: ["integer", "null"] }
+        qualityScore: { type: ["number", "null"] }
+        address: { type: ["string", "null"] }
+        website: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        dataSources:
+          type: array
+          items: { type: string }
+
+    RecommendationsResponse:
+      type: object
+      required: [mode, count, pois]
+      properties:
+        mode: { type: string }
+        city: { type: ["string", "null"] }
+        category: { type: ["string", "null"] }
+        count: { type: integer }
+        pois:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendedPoi"
+
+    CityHighlight:
+      type: object
+      required: [city, cityName, avgRating, totalPois]
+      properties:
+        city: { type: string }
+        cityName: { type: string }
+        avgRating: { type: number }
+        totalPois: { type: integer }
+        topPoi:
+          type: object
+          properties:
+            name: { type: string }
+            rating: { type: number }
+            category: { type: string }
+            reviewCount: { type: integer }
+
+    ReportTotals:
+      type: object
+      required: [bronze, silver, gold, quarantine, cities]
+      properties:
+        bronze: { type: integer }
+        silver: { type: integer }
+        gold: { type: integer }
+        quarantine: { type: integer }
+        cities: { type: integer }
+
+    ReportPeriodStats:
+      type: object
+      required: [newBronze, newSilver, newGold]
+      properties:
+        newBronze: { type: integer }
+        newSilver: { type: integer }
+        newGold: { type: integer }
+
+    ReportQuality:
+      type: object
+      required: [avgQualityScore, avgRating, multiSourcePois, tiers]
+      properties:
+        avgQualityScore: { type: number }
+        avgRating: { type: number }
+        multiSourcePois: { type: integer }
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/QualityTier"
+
+    ReportSummary:
+      type: object
+      required: [period, since, generatedAt, totals, periodStats, quality, topCities, topCategories, recentExecutions]
+      properties:
+        period: { type: string }
+        since: { type: string }
+        generatedAt: { type: string }
+        totals:
+          $ref: "#/components/schemas/ReportTotals"
+        periodStats:
+          $ref: "#/components/schemas/ReportPeriodStats"
+        quality:
+          $ref: "#/components/schemas/ReportQuality"
+        topCities:
+          type: array
+          items:
+            $ref: "#/components/schemas/CityPoiCount"
+        topCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryPoiCount"
+        recentExecutions:
+          type: array
+          items:
+            type: object

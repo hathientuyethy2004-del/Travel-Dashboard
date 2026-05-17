@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface QualityBucket {
-  range: string;
-  count: number;
+export interface ReportTotals {
+  bronze: number;
+  silver: number;
+  gold: number;
+  quarantine: number;
+  cities: number;
 }

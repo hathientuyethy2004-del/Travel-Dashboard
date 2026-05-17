@@ -6,7 +6,4 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface QualityBucket {
-  range: string;
-  count: number;
-}
+export type ReportSummaryRecentExecutionsItem = { [key: string]: unknown };

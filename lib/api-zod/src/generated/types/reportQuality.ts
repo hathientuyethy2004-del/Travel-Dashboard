@@ -5,15 +5,11 @@
  * Smart Travel Platform Dashboard API
  * OpenAPI spec version: 0.2.0
  */
+import type { QualityTier } from './qualityTier';
 
-export interface DashboardOverview {
-  bronzePois: number;
-  silverPois: number;
-  goldPois: number;
-  cities: number;
-  quarantined: number;
-  pipelineRuns: number;
-  dataLineageEdges: number;
+export interface ReportQuality {
   avgQualityScore: number;
   avgRating: number;
+  multiSourcePois: number;
+  tiers: QualityTier[];
 }

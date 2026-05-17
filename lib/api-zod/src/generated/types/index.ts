@@ -3,14 +3,21 @@
  * Do not edit manually.
  * Api
  * Smart Travel Platform Dashboard API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
 export * from './categoryPoiCount';
 export * from './city';
+export * from './cityCategory';
+export * from './cityHighlight';
+export * from './cityHighlightTopPoi';
 export * from './cityPoiCount';
 export * from './dashboardOverview';
 export * from './getPoisParams';
+export * from './getRecommendationsMode';
+export * from './getRecommendationsParams';
+export * from './getReportSummaryParams';
+export * from './getReportSummaryPeriod';
 export * from './getTopRatedPoisParams';
 export * from './healthStatus';
 export * from './pipelineExecution';
@@ -18,6 +25,16 @@ export * from './pipelineFunnel';
 export * from './poi';
 export * from './poisResponse';
 export * from './qualityBucket';
+export * from './qualityTier';
 export * from './quarantineReason';
 export * from './ratingBucket';
+export * from './recommendationsResponse';
+export * from './recommendedPoi';
+export * from './reportPeriodStats';
+export * from './reportQuality';
+export * from './reportSummary';
+export * from './reportSummaryRecentExecutionsItem';
+export * from './reportTotals';
+export * from './sourceBreakdown';
 export * from './syncStateSummary';
+export * from './temporalPoint';

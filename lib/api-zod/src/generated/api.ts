@@ -3,13 +3,12 @@
  * Do not edit manually.
  * Api
  * Smart Travel Platform Dashboard API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from 'zod';
 
 
 /**
- * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -18,7 +17,6 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
- * Returns high-level counts across all data layers
  * @summary Get overview statistics
  */
 export const GetDashboardOverviewResponse = zod.object({
@@ -35,7 +33,6 @@ export const GetDashboardOverviewResponse = zod.object({
 
 
 /**
- * Returns count of gold-layer POIs per city
  * @summary POI counts grouped by city
  */
 export const GetPoiByCityResponseItem = zod.object({
@@ -47,7 +44,6 @@ export const GetPoiByCityResponse = zod.array(GetPoiByCityResponseItem)
 
 
 /**
- * Returns count of gold-layer POIs per category
  * @summary POI counts grouped by category
  */
 export const GetPoiByCategoryResponseItem = zod.object({
@@ -58,7 +54,6 @@ export const GetPoiByCategoryResponse = zod.array(GetPoiByCategoryResponseItem)
 
 
 /**
- * Returns record counts at each data layer for funnel visualization
  * @summary Bronze → Silver → Gold pipeline funnel
  */
 export const GetPipelineFunnelResponse = zod.object({
@@ -70,7 +65,6 @@ export const GetPipelineFunnelResponse = zod.object({
 
 
 /**
- * Returns distribution of quality scores for gold POIs
  * @summary Quality score distribution
  */
 export const GetQualityDistributionResponseItem = zod.object({
@@ -81,7 +75,6 @@ export const GetQualityDistributionResponse = zod.array(GetQualityDistributionRe
 
 
 /**
- * Returns distribution of ratings for gold POIs
  * @summary Rating distribution
  */
 export const GetRatingDistributionResponseItem = zod.object({
@@ -92,7 +85,16 @@ export const GetRatingDistributionResponse = zod.array(GetRatingDistributionResp
 
 
 /**
- * Returns list of recent pipeline execution runs
+ * @summary Data quality quarantine reasons breakdown
+ */
+export const GetQuarantineReasonsResponseItem = zod.object({
+  "rule": zod.string(),
+  "count": zod.number()
+})
+export const GetQuarantineReasonsResponse = zod.array(GetQuarantineReasonsResponseItem)
+
+
+/**
  * @summary Recent pipeline executions
  */
 export const GetPipelineExecutionsResponseItem = zod.object({
@@ -111,7 +113,6 @@ export const GetPipelineExecutionsResponse = zod.array(GetPipelineExecutionsResp
 
 
 /**
- * Returns aggregated sync state metrics by city and category
  * @summary Pipeline sync state summary
  */
 export const GetPipelineSyncStateResponseItem = zod.object({
@@ -125,7 +126,6 @@ export const GetPipelineSyncStateResponse = zod.array(GetPipelineSyncStateRespon
 
 
 /**
- * Returns all cities in the platform
  * @summary Get all cities
  */
 export const GetCitiesResponseItem = zod.object({
@@ -140,7 +140,6 @@ export const GetCitiesResponse = zod.array(GetCitiesResponseItem)
 
 
 /**
- * Returns paginated gold-layer POIs with optional filters
  * @summary Browse gold-layer POIs
  */
 export const getPoisQueryLimitDefault = 50;
@@ -175,7 +174,6 @@ export const GetPoisResponse = zod.object({
 
 
 /**
- * Returns top-rated gold-layer POIs
  * @summary Top rated POIs
  */
 export const getTopRatedPoisQueryLimitDefault = 10;
@@ -206,13 +204,149 @@ export const GetTopRatedPoisResponse = zod.array(GetTopRatedPoisResponseItem)
 
 
 /**
- * Returns count of quarantine records grouped by failed rule
- * @summary Data quality quarantine reasons breakdown
+ * @summary Time-series of POI collection by layer
  */
-export const GetQuarantineReasonsResponseItem = zod.object({
-  "rule": zod.string(),
+export const GetAnalyticsTemporalResponseItem = zod.object({
+  "date": zod.string(),
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+})
+export const GetAnalyticsTemporalResponse = zod.array(GetAnalyticsTemporalResponseItem)
+
+
+/**
+ * @summary Data source breakdown (OSM / Google / Both)
+ */
+export const GetAnalyticsSourcesResponse = zod.object({
+  "osmOnly": zod.number(),
+  "googleOnly": zod.number(),
+  "both": zod.number(),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Quality tier distribution
+ */
+export const GetAnalyticsQualityTiersResponseItem = zod.object({
+  "tier": zod.string(),
   "count": zod.number()
 })
-export const GetQuarantineReasonsResponse = zod.array(GetQuarantineReasonsResponseItem)
+export const GetAnalyticsQualityTiersResponse = zod.array(GetAnalyticsQualityTiersResponseItem)
+
+
+/**
+ * @summary POI count matrix by city × category
+ */
+export const GetAnalyticsCityCategoryMatrixResponseItem = zod.object({
+  "city": zod.string(),
+  "cityName": zod.string(),
+  "category": zod.string(),
+  "count": zod.number()
+})
+export const GetAnalyticsCityCategoryMatrixResponse = zod.array(GetAnalyticsCityCategoryMatrixResponseItem)
+
+
+/**
+ * @summary Get POI recommendations
+ */
+export const getRecommendationsQueryModeDefault = `top_rated`;
+export const getRecommendationsQueryLimitDefault = 20;
+
+export const GetRecommendationsQueryParams = zod.object({
+  "city": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "mode": zod.enum(['top_rated', 'hidden_gems', 'highly_reviewed', 'best_quality', 'multi_source', 'random']).default(getRecommendationsQueryModeDefault),
+  "limit": zod.coerce.number().default(getRecommendationsQueryLimitDefault)
+})
+
+export const GetRecommendationsResponse = zod.object({
+  "mode": zod.string(),
+  "city": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "count": zod.number(),
+  "pois": zod.array(zod.object({
+  "poiId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string(),
+  "cityName": zod.string(),
+  "category": zod.string(),
+  "rating": zod.number().nullish(),
+  "reviewCount": zod.number().nullish(),
+  "qualityScore": zod.number().nullish(),
+  "address": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "dataSources": zod.array(zod.string()).optional()
+}))
+})
+
+
+/**
+ * @summary Top highlight per city
+ */
+export const GetCityHighlightsResponseItem = zod.object({
+  "city": zod.string(),
+  "cityName": zod.string(),
+  "avgRating": zod.number(),
+  "totalPois": zod.number(),
+  "topPoi": zod.object({
+  "name": zod.string().optional(),
+  "rating": zod.number().optional(),
+  "category": zod.string().optional(),
+  "reviewCount": zod.number().optional()
+}).optional()
+})
+export const GetCityHighlightsResponse = zod.array(GetCityHighlightsResponseItem)
+
+
+/**
+ * @summary Periodic data report
+ */
+export const getReportSummaryQueryPeriodDefault = `monthly`;
+
+export const GetReportSummaryQueryParams = zod.object({
+  "period": zod.enum(['weekly', 'monthly', 'yearly']).default(getReportSummaryQueryPeriodDefault)
+})
+
+export const GetReportSummaryResponse = zod.object({
+  "period": zod.string(),
+  "since": zod.string(),
+  "generatedAt": zod.string(),
+  "totals": zod.object({
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number(),
+  "quarantine": zod.number(),
+  "cities": zod.number()
+}),
+  "periodStats": zod.object({
+  "newBronze": zod.number(),
+  "newSilver": zod.number(),
+  "newGold": zod.number()
+}),
+  "quality": zod.object({
+  "avgQualityScore": zod.number(),
+  "avgRating": zod.number(),
+  "multiSourcePois": zod.number(),
+  "tiers": zod.array(zod.object({
+  "tier": zod.string(),
+  "count": zod.number()
+}))
+}),
+  "topCities": zod.array(zod.object({
+  "city": zod.string(),
+  "cityName": zod.string(),
+  "count": zod.number()
+})),
+  "topCategories": zod.array(zod.object({
+  "category": zod.string(),
+  "count": zod.number()
+})),
+  "recentExecutions": zod.array(zod.object({
+
+}).passthrough())
+})
 
 

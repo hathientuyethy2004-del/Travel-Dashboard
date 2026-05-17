@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "python-3.11"]
 
 [deployment]
 router = "application"
@@ -10,6 +10,27 @@ env = { "CI" = "true" }
 
 [workflows]
 runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "artifacts/etl-service: ETL Service"
+
+[[workflows.workflow]]
+name = "artifacts/etl-service: ETL Service"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd artifacts/etl-service && python3 main.py"
+waitForPort = 9000
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 stack = "PNPM_WORKSPACE"
@@ -28,6 +49,10 @@ localPort = 8081
 externalPort = 80
 
 [[ports]]
+localPort = 9000
+externalPort = 9000
+
+[[ports]]
 localPort = 20411
 externalPort = 3000
 
@@ -38,3 +63,4 @@ MONGODB_URI = "mongodb+srv://nguyenanhilu9785_db_user:12345@cluster0.olqzq.mongo
 
 [userenv.shared]
 DB_NAME = "smart_travel_platform"
+RAPIDAPI_KEYS = "02ad4fd6f3msh1f0390da51ae627p19a5cfjsn7f2b23cadfdb,ffbaceaaeamsh9084aa32f4d5dfdp13028bjsn2366c1d9a5c9,cf1b379a98msh116f2d78aa3d55ep1a4602jsndbd91f1a8bb4,a8e7379197msh81d17cdf3eb3011p1d33edjsn80f3ab12c760,9036bbd933mshe2c1df67124cf82p17e447jsn62bbd79e7831,8273c590f0msh0fbb213f4e2259ap1eb5f2jsna331f7b571a5,45a1bd5affmsheebc75157c3c1b6p1ecba2jsnb4d9bc4281a8,d8f35af3b3msheafde79cfa9fb8ep1a3de2jsn2bf9a5caa8ff,43cca0d81dmshda434d1ae285f35p1ac2f0jsn723e4b3b4527,1ed19ade15msh0f90d44564b91a4p1339ebjsnb7ba3d888c30,9150bcabc8msh7d6269a3add664ap1b08afjsne677054f3e81,23b064b24fmsh5c0d6b9aa7f2c45p1869f3jsnfaa274a6282e,53ec40f187msh1642c6724cceb2ep182fc3jsn6a584f1f4b07,6e2b78e2f3msh87c727c6c10224ep1c5c71jsn12fd50cce4d9,634b19ccc8msh14d2a916be1dedfp147a2ejsn98f0fcbe4207,cd339b16e5msh9d08aa5988d3f0dp16e629jsnc2db1d0323ac,c6dd068888mshc5be1c28bc37e4bp1eda9ejsnd3b2eea31432,06036fc7a1mshebc5121bc91e011p1127dejsna4cb5f45d6a4,579b1bc1bamsh6ae715f2e9227e0p1fdbafjsn635fff52edbd,825439be0bmshcae9fab2979c7aap132cc1jsna521dcd3c841,a7f0bd701cmsh300d3078eb38caep114d7ejsn17c3aa336bd7"

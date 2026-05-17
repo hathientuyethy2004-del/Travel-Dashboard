@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * Smart Travel Platform Dashboard API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
@@ -46,6 +46,11 @@ export interface QualityBucket {
 
 export interface RatingBucket {
   range: string;
+  count: number;
+}
+
+export interface QuarantineReason {
+  rule: string;
   count: number;
 }
 
@@ -112,9 +117,111 @@ export interface PoisResponse {
   total: number;
 }
 
-export interface QuarantineReason {
-  rule: string;
+export interface TemporalPoint {
+  date: string;
+  bronze: number;
+  silver: number;
+  gold: number;
+}
+
+export interface SourceBreakdown {
+  osmOnly: number;
+  googleOnly: number;
+  both: number;
+  total: number;
+}
+
+export interface QualityTier {
+  tier: string;
   count: number;
+}
+
+export interface CityCategory {
+  city: string;
+  cityName: string;
+  category: string;
+  count: number;
+}
+
+export interface RecommendedPoi {
+  poiId: string;
+  name: string;
+  city: string;
+  cityName: string;
+  category: string;
+  /** @nullable */
+  rating?: number | null;
+  /** @nullable */
+  reviewCount?: number | null;
+  /** @nullable */
+  qualityScore?: number | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  dataSources?: string[];
+}
+
+export interface RecommendationsResponse {
+  mode: string;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  category?: string | null;
+  count: number;
+  pois: RecommendedPoi[];
+}
+
+export type CityHighlightTopPoi = {
+  name?: string;
+  rating?: number;
+  category?: string;
+  reviewCount?: number;
+};
+
+export interface CityHighlight {
+  city: string;
+  cityName: string;
+  avgRating: number;
+  totalPois: number;
+  topPoi?: CityHighlightTopPoi;
+}
+
+export interface ReportTotals {
+  bronze: number;
+  silver: number;
+  gold: number;
+  quarantine: number;
+  cities: number;
+}
+
+export interface ReportPeriodStats {
+  newBronze: number;
+  newSilver: number;
+  newGold: number;
+}
+
+export interface ReportQuality {
+  avgQualityScore: number;
+  avgRating: number;
+  multiSourcePois: number;
+  tiers: QualityTier[];
+}
+
+export type ReportSummaryRecentExecutionsItem = { [key: string]: unknown };
+
+export interface ReportSummary {
+  period: string;
+  since: string;
+  generatedAt: string;
+  totals: ReportTotals;
+  periodStats: ReportPeriodStats;
+  quality: ReportQuality;
+  topCities: CityPoiCount[];
+  topCategories: CategoryPoiCount[];
+  recentExecutions: ReportSummaryRecentExecutionsItem[];
 }
 
 export type GetPoisParams = {
@@ -129,4 +236,36 @@ city?: string;
 category?: string;
 limit?: number;
 };
+
+export type GetRecommendationsParams = {
+city?: string;
+category?: string;
+mode?: GetRecommendationsMode;
+limit?: number;
+};
+
+export type GetRecommendationsMode = typeof GetRecommendationsMode[keyof typeof GetRecommendationsMode];
+
+
+export const GetRecommendationsMode = {
+  top_rated: 'top_rated',
+  hidden_gems: 'hidden_gems',
+  highly_reviewed: 'highly_reviewed',
+  best_quality: 'best_quality',
+  multi_source: 'multi_source',
+  random: 'random',
+} as const;
+
+export type GetReportSummaryParams = {
+period?: GetReportSummaryPeriod;
+};
+
+export type GetReportSummaryPeriod = typeof GetReportSummaryPeriod[keyof typeof GetReportSummaryPeriod];
+
+
+export const GetReportSummaryPeriod = {
+  weekly: 'weekly',
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
 

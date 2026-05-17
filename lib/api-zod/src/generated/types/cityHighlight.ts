@@ -5,9 +5,12 @@
  * Smart Travel Platform Dashboard API
  * OpenAPI spec version: 0.2.0
  */
+import type { CityHighlightTopPoi } from './cityHighlightTopPoi';
 
-export interface CityPoiCount {
+export interface CityHighlight {
   city: string;
   cityName: string;
-  count: number;
+  avgRating: number;
+  totalPois: number;
+  topPoi?: CityHighlightTopPoi;
 }

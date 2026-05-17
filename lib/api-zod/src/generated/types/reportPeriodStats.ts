@@ -6,7 +6,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface QualityBucket {
-  range: string;
-  count: number;
+export interface ReportPeriodStats {
+  newBronze: number;
+  newSilver: number;
+  newGold: number;
 }

@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface QualityBucket {
-  range: string;
+export interface QualityTier {
+  tier: string;
   count: number;
 }

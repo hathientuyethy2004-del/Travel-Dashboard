@@ -5,10 +5,8 @@
  * Smart Travel Platform Dashboard API
  * OpenAPI spec version: 0.2.0
  */
+import type { GetReportSummaryPeriod } from './getReportSummaryPeriod';
 
-export type GetPoisParams = {
-city?: string;
-category?: string;
-limit?: number;
-offset?: number;
+export type GetReportSummaryParams = {
+period?: GetReportSummaryPeriod;
 };

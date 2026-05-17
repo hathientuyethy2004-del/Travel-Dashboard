@@ -5,10 +5,11 @@
  * Smart Travel Platform Dashboard API
  * OpenAPI spec version: 0.2.0
  */
+import type { GetRecommendationsMode } from './getRecommendationsMode';
 
-export type GetPoisParams = {
+export type GetRecommendationsParams = {
 city?: string;
 category?: string;
+mode?: GetRecommendationsMode;
 limit?: number;
-offset?: number;
 };

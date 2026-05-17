@@ -6,28 +6,23 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface Poi {
+export interface RecommendedPoi {
   poiId: string;
   name: string;
   city: string;
   cityName: string;
   category: string;
   /** @nullable */
-  subcategory?: string | null;
+  rating?: number | null;
+  /** @nullable */
+  reviewCount?: number | null;
+  /** @nullable */
+  qualityScore?: number | null;
   /** @nullable */
   address?: string | null;
-  /** @nullable */
-  rating: number | null;
-  /** @nullable */
-  reviewCount: number | null;
-  /** @nullable */
-  qualityScore: number | null;
-  /** @nullable */
-  imageUrl?: string | null;
   /** @nullable */
   website?: string | null;
   /** @nullable */
   phone?: string | null;
-  /** @nullable */
-  priceLevel?: number | null;
+  dataSources?: string[];
 }
