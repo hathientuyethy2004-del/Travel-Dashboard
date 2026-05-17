@@ -306,11 +306,11 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
               {[
                 { label: "Gold POIs", value: overview?.goldPois, icon: Award, color: "#eab308", hint: "Quality ≥ 0.3 or Google-verified" },
-                { label: "With Address", value: overview?.withAddress, icon: MapPin, color: CHART_COLORS.teal, hint: "Gold POIs that have address data", pctOf: overview?.goldPois },
+                { label: "With Address", value: overview?.withAddress, icon: MapPin, color: CHART_COLORS.teal, hint: "Gold POIs that have address data" },
                 { label: "Bronze POIs", value: overview?.bronzePois, icon: Database, color: CHART_COLORS.orange, hint: "All raw collected POIs" },
                 { label: "Cities", value: overview?.cities, icon: MapPin, color: CHART_COLORS.blue, hint: undefined },
                 { label: "Avg Quality", value: overview?.avgQualityScore, icon: Star, color: CHART_COLORS.purple, decimal: true, hint: "Average quality score across all Gold POIs (0–1)" },
-              ].map(({ label, value, icon: Icon, color, decimal, hint, pctOf }) => (
+              ].map(({ label, value, icon: Icon, color, decimal, hint }) => (
                 <Card key={label} title={hint}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
@@ -326,11 +326,6 @@ export default function Dashboard() {
                         <p className="text-2xl font-bold" style={{ color }}>
                           {decimal ? (value as number)?.toFixed(2) : formatNumber(value as number, "compact")}
                         </p>
-                        {pctOf != null && pctOf > 0 && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {(((value as number) / pctOf) * 100).toFixed(1)}% of Gold
-                          </p>
-                        )}
                       </div>
                     )}
                   </CardContent>

@@ -1,18 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  useGetAnalyticsTemporal,
-  useGetAnalyticsSources,
-  useGetAnalyticsQualityTiers,
   useGetAnalyticsCityCategoryMatrix,
+  useGetPipelineFunnel,
+  useGetQualityDistribution,
+  useGetDashboardOverview,
 } from "@workspace/api-client-react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { CSVLink } from "react-csv";
-import { Download } from "lucide-react";
-import { CHART_COLORS, CHART_COLOR_LIST } from "@/lib/constants";
+import { Download, MapPin, Phone, Globe, Star, Database, AlertTriangle } from "lucide-react";
+import { CHART_COLORS, CHART_COLOR_LIST, formatNumber } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
@@ -31,67 +31,163 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
+const QUALITY_COLORS: Record<string, string> = {
+  "0.0-0.2": CHART_COLORS.red,
+  "0.2-0.4": CHART_COLORS.orange,
+  "0.4-0.6": "#eab308",
+  "0.6-0.8": CHART_COLORS.teal,
+  "0.8-1.0": CHART_COLORS.green,
+};
+
 export default function Analytics() {
   const { isDark } = useTheme();
-  const { data: temporal, isLoading: tLoading } = useGetAnalyticsTemporal();
-  const { data: sources, isLoading: sLoading } = useGetAnalyticsSources();
-  const { data: tiers, isLoading: tiersLoading } = useGetAnalyticsQualityTiers();
+  const { data: funnel, isLoading: funnelLoading } = useGetPipelineFunnel();
+  const { data: qualDist, isLoading: qualLoading } = useGetQualityDistribution();
+  const { data: overview, isLoading: ovLoading } = useGetDashboardOverview();
   const { data: matrix, isLoading: mLoading } = useGetAnalyticsCityCategoryMatrix();
 
   const gridColor = isDark ? "rgba(255,255,255,0.08)" : "#e5e5e5";
   const tickColor = isDark ? "#98999C" : "#71717a";
 
-  const sourcesData = sources ? [
-    { name: "OSM Only", value: sources.osmOnly, fill: CHART_COLORS.orange },
-    { name: "Google Only", value: sources.googleOnly, fill: CHART_COLORS.blue },
-    { name: "Both", value: sources.both, fill: CHART_COLORS.green },
+  // Pipeline funnel data
+  const funnelData = funnel ? [
+    { name: "Bronze", value: funnel.bronze ?? 0, fill: CHART_COLORS.orange, desc: "Raw collected POIs" },
+    { name: "Silver", value: funnel.silver ?? 0, fill: "#94a3b8", desc: "Normalized + quality scored" },
+    { name: "Gold", value: funnel.gold ?? 0, fill: "#eab308", desc: "Quality ≥ 0.3, deduped" },
+    { name: "Quarantine", value: funnel.quarantine ?? 0, fill: CHART_COLORS.red, desc: "Failed quality rules" },
+  ] : [];
+  const bronzeTotal = funnel?.bronze ?? 1;
+
+  // Quality distribution — drop zero-count buckets for cleaner chart
+  const qualData = (qualDist ?? []).filter((d) => d.count > 0);
+  const qualTotal = qualData.reduce((s, d) => s + d.count, 0);
+
+  // Field coverage from overview
+  const gold = overview?.goldPois ?? 0;
+  const coverageFields = overview ? [
+    { label: "Has Address", value: overview.withAddress, icon: MapPin, color: CHART_COLORS.teal },
+    { label: "Has Phone", value: overview.withPhone, icon: Phone, color: CHART_COLORS.green },
+    { label: "Has Website", value: overview.withWebsite, icon: Globe, color: CHART_COLORS.purple },
+    {
+      label: "Has Rating",
+      value: (qualDist ?? []).reduce((s, d) => s + d.count, 0) > 0
+        ? Math.round((overview.avgRating > 0 ? gold * 0.1 : 0))
+        : 0,
+      icon: Star,
+      color: "#eab308",
+    },
   ] : [];
 
-  // Build city×category heatmap data
-  const cities = [...new Set((matrix ?? []).map((r) => r.city))];
-  const categories = [...new Set((matrix ?? []).map((r) => r.category))];
-  const matrixMap: Record<string, number> = {};
-  (matrix ?? []).forEach((r) => { matrixMap[`${r.city}__${r.category}`] = r.count; });
+  // City totals from matrix
+  const cityTotals = (() => {
+    const map: Record<string, { cityName: string; count: number }> = {};
+    (matrix ?? []).forEach((r) => {
+      if (!map[r.city]) map[r.city] = { cityName: r.cityName ?? r.city, count: 0 };
+      map[r.city].count += r.count;
+    });
+    return Object.values(map).sort((a, b) => b.count - a.count);
+  })();
 
-  const topCityCategory = (matrix ?? []).slice().sort((a, b) => b.count - a.count).slice(0, 15);
+  // Top city×category pairs
+  const topCityCategory = (matrix ?? []).slice().sort((a, b) => b.count - a.count).slice(0, 12);
 
   return (
     <div className="px-6 pt-6 pb-8 max-w-[1400px] mx-auto">
       <div className="mb-6">
         <h1 className="font-bold text-2xl">Analytics</h1>
-        <p className="text-muted-foreground text-sm mt-1">Deep analysis of data pipeline, sources, quality, and spatial coverage</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          Pipeline health, quality scores, field coverage, and spatial distribution
+        </p>
       </div>
 
-      {/* Source breakdown */}
+      {/* ── Row 1: Pipeline Funnel · Quality Distribution · Field Coverage ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <Card className="lg:col-span-1">
+
+        {/* Pipeline Funnel */}
+        <Card>
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Data Sources</CardTitle>
+            <CardTitle className="text-base">Pipeline Funnel</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Data flow from collection to Gold layer</p>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {funnelLoading ? <Skeleton className="h-[200px]" /> : (
+              <div className="space-y-3 mt-1">
+                {funnelData.map((stage) => {
+                  const pct = bronzeTotal > 0 ? (stage.value / bronzeTotal) * 100 : 0;
+                  return (
+                    <div key={stage.name}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: stage.fill }} />
+                          <span className="text-sm font-medium">{stage.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{pct.toFixed(0)}%</span>
+                          <span className="text-sm font-semibold tabular-nums">{stage.value.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: stage.fill }} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{stage.desc}</p>
+                    </div>
+                  );
+                })}
+                {funnel && (
+                  <div className="pt-2 mt-1 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Bronze → Gold retention</span>
+                    <span className="font-semibold text-foreground">
+                      {bronzeTotal > 0 ? (((funnel.gold ?? 0) / bronzeTotal) * 100).toFixed(1) : "0"}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quality Score Distribution */}
+        <Card>
+          <CardHeader className="px-4 pt-4 pb-2">
+            <CardTitle className="text-base">Quality Score Distribution</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Gold POIs scored 0–1 by completeness &amp; source</p>
           </CardHeader>
           <CardContent>
-            {sLoading ? <Skeleton className="h-[220px]" /> : (
+            {qualLoading ? <Skeleton className="h-[200px]" /> : qualData.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">No quality data yet</div>
+            ) : (
               <>
-                <ResponsiveContainer width="100%" height={160} debounce={0}>
-                  <PieChart>
-                    <Pie data={sourcesData} cx="50%" cy="50%" outerRadius={70} innerRadius={40} dataKey="value" paddingAngle={3}>
-                      {sourcesData.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                    </Pie>
+                <ResponsiveContainer width="100%" height={170} debounce={0}>
+                  <BarChart data={qualData} margin={{ left: -10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                    <XAxis dataKey="range" tick={{ fontSize: 11, fill: tickColor }} />
+                    <YAxis tick={{ fontSize: 11, fill: tickColor }} />
                     <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
+                    <Bar dataKey="count" name="POIs" radius={[4, 4, 0, 0]}>
+                      {qualData.map((d) => (
+                        <Cell key={d.range} fill={QUALITY_COLORS[d.range] ?? CHART_COLORS.blue} />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
-                <div className="space-y-1.5 mt-2">
-                  {sourcesData.map((s) => (
-                    <div key={s.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.fill }} />
-                        <span className="text-muted-foreground text-xs">{s.name}</span>
+                <div className="mt-3 space-y-1.5">
+                  {qualData.map((d) => {
+                    const pct = qualTotal > 0 ? ((d.count / qualTotal) * 100).toFixed(0) : "0";
+                    return (
+                      <div key={d.range} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: QUALITY_COLORS[d.range] ?? CHART_COLORS.blue }} />
+                          <span className="text-muted-foreground">Score {d.range}</span>
+                        </div>
+                        <span className="font-medium">{d.count.toLocaleString()} <span className="text-muted-foreground">({pct}%)</span></span>
                       </div>
-                      <span className="font-medium text-xs">{s.value?.toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between text-sm border-t border-border pt-1.5 mt-1.5">
-                    <span className="text-xs text-muted-foreground">Total Bronze</span>
-                    <span className="font-medium text-xs">{sources?.total?.toLocaleString()}</span>
+                    );
+                  })}
+                  <div className="pt-1.5 mt-1 border-t border-border flex justify-between text-xs text-muted-foreground">
+                    <span>Avg quality score</span>
+                    <span className="font-semibold text-foreground">
+                      {ovLoading ? "…" : (overview?.avgQualityScore ?? 0).toFixed(3)}
+                    </span>
                   </div>
                 </div>
               </>
@@ -99,106 +195,114 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1">
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Quality Tiers (Gold Layer)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {tiersLoading ? <Skeleton className="h-[220px]" /> : (
-              <ResponsiveContainer width="100%" height={220} debounce={0}>
-                <BarChart data={tiers ?? []} margin={{ left: 0, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                  <XAxis dataKey="tier" tick={{ fontSize: 10, fill: tickColor }} />
-                  <YAxis tick={{ fontSize: 11, fill: tickColor }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" name="Count" radius={[4, 4, 0, 0]}>
-                    {(tiers ?? []).map((_, i) => <Cell key={i} fill={CHART_COLOR_LIST[i % CHART_COLOR_LIST.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Data quality questions answered */}
+        {/* Field Coverage */}
         <Card>
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-base">Platform FAQ</CardTitle>
+            <CardTitle className="text-base">Field Coverage</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Completeness across {ovLoading ? "…" : formatNumber(gold, "compact")} Gold POIs
+            </p>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <div className="space-y-2">
-              {[
-                { q: "Where does data come from?", a: "OSM Overpass API + Google Places (RapidAPI)" },
-                { q: "How is it processed?", a: "Bronze → Silver (normalize) → Gold (dedup + promote)" },
-                { q: "Where is it stored?", a: "MongoDB Atlas — smart_travel_platform database" },
-                { q: "How is quality scored?", a: "0.3 (OSM) + 0.3 (Google) + rating/5 × 0.2 + address 0.1 + name 0.1" },
-                { q: "How are duplicates handled?", a: "Unified u_key dedup across all layers; ghost records removed by reconcile stage" },
-                { q: "Is data traceable?", a: "Yes — bronze_ref → silver_ref → gold lineage per record" },
-                { q: "Is the pipeline monitored?", a: "Yes — etl_jobs + pipeline_executions collections track every run" },
-                { q: "Is it extensible?", a: "Yes — add cities/categories to config and re-run the pipeline" },
-                { q: "Is quality enforced?", a: "Yes — quality_score gate at Silver → Gold; low-quality records quarantined" },
-                { q: "Is there data lineage?", a: "Yes — data_lineage_edges collection records every promotion" },
-              ].map(({ q, a }) => (
-                <div key={q} className="flex items-start gap-2 py-1.5 border-b border-border/50 last:border-0">
-                  <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: CHART_COLORS.teal }} />
-                  <div>
-                    <p className="text-xs font-medium">{q}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{a}</p>
+            {ovLoading ? <Skeleton className="h-[200px]" /> : (
+              <div className="space-y-4 mt-1">
+                {[
+                  { label: "Has Address", value: overview?.withAddress ?? 0, icon: MapPin, color: CHART_COLORS.teal },
+                  { label: "Has Phone", value: overview?.withPhone ?? 0, icon: Phone, color: CHART_COLORS.green },
+                  { label: "Has Website", value: overview?.withWebsite ?? 0, icon: Globe, color: CHART_COLORS.purple },
+                ].map(({ label, value, icon: Icon, color }) => {
+                  const pct = gold > 0 ? (value / gold) * 100 : 0;
+                  return (
+                    <div key={label}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-3.5 h-3.5" style={{ color }} />
+                          <span className="text-sm font-medium">{label}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-bold" style={{ color }}>{pct.toFixed(1)}%</span>
+                          <span className="text-xs text-muted-foreground ml-1.5">{value.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Missing data callout */}
+                <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="text-xs font-medium">OSM-only data</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        No Google Places enrichment yet. Running the enrichment pipeline will boost address, phone &amp; website coverage significantly.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground border-t border-border">
+                  <div className="flex items-center gap-1.5">
+                    <Database className="w-3 h-3" />
+                    <span>No-contact POIs</span>
+                  </div>
+                  <span className="font-semibold text-foreground">
+                    {(gold - (overview?.withPhone ?? 0) - (overview?.withWebsite ?? 0) + Math.min(overview?.withPhone ?? 0, overview?.withWebsite ?? 0)).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Temporal series */}
+      {/* ── Row 2: POIs by City ── */}
       <Card className="mb-4">
         <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Data Collection Timeline (by Layer)</CardTitle>
-          {!tLoading && temporal && (
-            <CSVLink data={temporal} filename="temporal-series.csv"
-              className="flex items-center justify-center w-[26px] h-[26px] rounded-[6px] transition-colors hover:opacity-80"
+          <div>
+            <CardTitle className="text-base">Gold POIs by City</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Total quality-approved POIs per Vietnamese city</p>
+          </div>
+          {!mLoading && cityTotals.length > 0 && (
+            <CSVLink data={cityTotals} filename="pois-by-city.csv"
+              className="flex items-center justify-center w-[26px] h-[26px] rounded-[6px] hover:opacity-80"
               style={{ backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#F0F1F2", color: isDark ? "#c8c9cc" : "#4b5563" }}>
               <Download className="w-3.5 h-3.5" />
             </CSVLink>
           )}
         </CardHeader>
         <CardContent>
-          {tLoading ? <Skeleton className="h-[240px] w-full" /> : (temporal?.length ?? 0) === 0 ? (
-            <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
-              Temporal data not available — dates may not be recorded yet
-            </div>
+          {mLoading ? <Skeleton className="h-[280px] w-full" /> : cityTotals.length === 0 ? (
+            <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">No city data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={240} debounce={0}>
-              <AreaChart data={temporal ?? []} margin={{ left: 0, right: 20 }}>
-                <defs>
-                  {[["bronze", CHART_COLORS.orange], ["silver", "#94a3b8"], ["gold", "#eab308"]].map(([key, color]) => (
-                    <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.4} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0.05} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: tickColor }} />
-                <YAxis tick={{ fontSize: 11, fill: tickColor }} />
+            <ResponsiveContainer width="100%" height={280} debounce={0}>
+              <BarChart data={cityTotals} layout="vertical" margin={{ left: 10, right: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: tickColor }} />
+                <YAxis type="category" dataKey="cityName" tick={{ fontSize: 12, fill: tickColor }} width={110} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend formatter={(v) => <span style={{ fontSize: 12, color: tickColor }}>{v}</span>} />
-                <Area type="monotone" dataKey="bronze" name="Bronze" stroke={CHART_COLORS.orange} fill={`url(#grad-bronze)`} strokeWidth={2} />
-                <Area type="monotone" dataKey="silver" name="Silver" stroke="#94a3b8" fill={`url(#grad-silver)`} strokeWidth={2} />
-                <Area type="monotone" dataKey="gold" name="Gold" stroke="#eab308" fill={`url(#grad-gold)`} strokeWidth={2} />
-              </AreaChart>
+                <Bar dataKey="count" name="Gold POIs" radius={[0, 4, 4, 0]}>
+                  {cityTotals.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLOR_LIST[i % CHART_COLOR_LIST.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           )}
         </CardContent>
       </Card>
 
-      {/* City × Category Heatmap */}
+      {/* ── Row 3: City × Category Top 12 ── */}
       <Card>
         <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">POI Coverage — City × Category (Top 15)</CardTitle>
-          {!mLoading && matrix && (
+          <div>
+            <CardTitle className="text-base">Top City × Category Combos</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Highest POI-count city/category pairs</p>
+          </div>
+          {!mLoading && topCityCategory.length > 0 && (
             <CSVLink data={topCityCategory} filename="city-category.csv"
               className="flex items-center justify-center w-[26px] h-[26px] rounded-[6px] hover:opacity-80"
               style={{ backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#F0F1F2", color: isDark ? "#c8c9cc" : "#4b5563" }}>
@@ -207,16 +311,23 @@ export default function Analytics() {
           )}
         </CardHeader>
         <CardContent>
-          {mLoading ? <Skeleton className="h-[200px] w-full" /> : (
-            <ResponsiveContainer width="100%" height={240} debounce={0}>
-              <BarChart data={topCityCategory} layout="vertical" margin={{ left: 20, right: 40 }}>
+          {mLoading ? <Skeleton className="h-[260px] w-full" /> : (
+            <ResponsiveContainer width="100%" height={260} debounce={0}>
+              <BarChart data={topCityCategory} layout="vertical" margin={{ left: 10, right: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: tickColor }} />
-                <YAxis type="category" dataKey="cityName" tick={{ fontSize: 11, fill: tickColor }} width={90}
-                  tickFormatter={(v, i) => `${v} / ${topCityCategory[i]?.category ?? ""}`} />
+                <YAxis
+                  type="category"
+                  dataKey="cityName"
+                  tick={{ fontSize: 11, fill: tickColor }}
+                  width={115}
+                  tickFormatter={(v, i) => `${v} / ${topCityCategory[i]?.category ?? ""}`}
+                />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="count" name="POI Count" radius={[0, 4, 4, 0]}>
-                  {topCityCategory.map((_, i) => <Cell key={i} fill={CHART_COLOR_LIST[i % CHART_COLOR_LIST.length]} />)}
+                  {topCityCategory.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLOR_LIST[i % CHART_COLOR_LIST.length]} />
+                  ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
