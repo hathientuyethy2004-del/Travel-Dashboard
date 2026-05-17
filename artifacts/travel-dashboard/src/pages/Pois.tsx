@@ -138,22 +138,30 @@ export default function Pois() {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="px-4 pt-4 pb-2">
-                <CardTitle className="text-base">Top Rated</CardTitle>
+                <CardTitle className="text-base">
+                  {top5.length > 0 && top5[0]?.rating ? "Top Rated" : "Top Quality"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <div className="space-y-3">
                   {top5.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No data available</p>
+                    <p className="text-sm text-muted-foreground">Loading best POIs…</p>
                   ) : top5.map((p, i) => (
                     <div key={p.poiId} className="flex items-start gap-2">
                       <span className="text-xs font-bold text-muted-foreground w-4 mt-0.5">{i + 1}.</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{p.name}</p>
                         <div className="flex items-center gap-1 mt-0.5">
-                          <StarRating rating={p.rating} />
-                          {p.reviewCount && (
-                            <span className="text-xs text-muted-foreground">({p.reviewCount.toLocaleString()})</span>
-                          )}
+                          {p.rating ? (
+                            <>
+                              <StarRating rating={p.rating} />
+                              {p.reviewCount && (
+                                <span className="text-xs text-muted-foreground">({p.reviewCount.toLocaleString()})</span>
+                              )}
+                            </>
+                          ) : p.qualityScore != null ? (
+                            <span className="text-xs text-muted-foreground">Quality {(p.qualityScore * 100).toFixed(0)}%</span>
+                          ) : null}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{p.cityName}</p>
                       </div>

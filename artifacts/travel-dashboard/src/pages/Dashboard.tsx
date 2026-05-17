@@ -150,6 +150,8 @@ export default function Dashboard() {
 
   const qualData = qualityDist ?? [];
   const ratingData = ratingDist ?? [];
+  const ratingIsEmpty = ratingData.every((d) => d.count === 0);
+  const qualIsEmpty = qualData.every((d) => d.count === 0);
   const execData = executions ?? [];
   const qrData = (quarantineReasons ?? []).slice(0, 8);
 
@@ -398,7 +400,15 @@ export default function Dashboard() {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {ratingLoading ? <Skeleton className="w-full h-[280px]" /> : (
+                  {ratingLoading ? <Skeleton className="w-full h-[280px]" /> : ratingIsEmpty ? (
+                    <div className="h-[280px] flex flex-col items-center justify-center gap-3 text-center px-6">
+                      <Star className="w-10 h-10 opacity-20" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">No rating data yet</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">Ratings will appear once Google enrichment assigns scores to POIs</p>
+                      </div>
+                    </div>
+                  ) : (
                     <ResponsiveContainer width="100%" height={280} debounce={0}>
                       <BarChart data={ratingData} margin={{ left: 0, right: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
@@ -559,7 +569,15 @@ export default function Dashboard() {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {qualLoading ? <Skeleton className="w-full h-[260px]" /> : (
+                  {qualLoading ? <Skeleton className="w-full h-[260px]" /> : qualIsEmpty ? (
+                    <div className="h-[260px] flex flex-col items-center justify-center gap-3 text-center px-6">
+                      <BarChart2 className="w-10 h-10 opacity-20" />
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">No quality data yet</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">Run the pipeline to compute quality scores</p>
+                      </div>
+                    </div>
+                  ) : (
                     <ResponsiveContainer width="100%" height={260} debounce={0}>
                       <BarChart data={qualData} margin={{ left: 0, right: 20 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />

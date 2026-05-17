@@ -27,7 +27,7 @@ router.get("/pois", async (req, res): Promise<void> => {
     const [pois, total] = await Promise.all([
       db.collection("gold_master_pois")
         .find(filter)
-        .sort({ rating: -1, review_count: -1 })
+        .sort({ rating: -1, quality_score: -1, review_count: -1 })
         .skip(Number(offset))
         .limit(Number(limit))
         .toArray(),
@@ -72,16 +72,32 @@ router.get("/pois/top-rated", async (req, res): Promise<void> => {
     const { city, category, limit = 10 } = parsed.data;
     const db = await getDb();
 
-    const filter: Record<string, unknown> = {
-      rating: { $exists: true, $ne: null, $gte: 4.0 },
-      review_count: { $gte: 10 },
-    };
-    if (city) filter["city"] = city;
-    if (category) filter["category"] = category;
+    const base: Record<string, unknown> = {};
+    if (city) base["city"] = city;
+    if (category) base["category"] = category;
 
-    const pois = await db.collection("gold_master_pois")
-      .find(filter)
-      .sort({ rating: -1, review_count: -1 })
+    const gold = db.collection("gold_master_pois");
+
+    // 3-tier fallback: real ratings → quality-enriched → quality-score ranking
+    const filters = [
+      { ...base, rating: { $exists: true, $ne: null, $gte: 4.0 }, review_count: { $gte: 5 } },
+      { ...base, has_google_data: true, quality_score: { $gte: 0.65 } },
+      { ...base, quality_score: { $gte: 0.3 } },
+    ];
+    let matchFilter = filters[filters.length - 1];
+    let useRatingSort = false;
+    for (let i = 0; i < filters.length; i++) {
+      const n = await gold.countDocuments(filters[i] as Parameters<typeof gold.countDocuments>[0]);
+      if (n > 0) {
+        matchFilter = filters[i];
+        useRatingSort = i === 0;
+        break;
+      }
+    }
+
+    const pois = await gold
+      .find(matchFilter)
+      .sort(useRatingSort ? [["rating", -1], ["review_count", -1]] : [["quality_score", -1]])
       .limit(Number(limit))
       .toArray();
 
