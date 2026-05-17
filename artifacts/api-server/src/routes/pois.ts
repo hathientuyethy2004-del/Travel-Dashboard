@@ -17,17 +17,26 @@ router.get("/pois", async (req, res): Promise<void> => {
       return;
     }
 
-    const { city, category, limit = 50, offset = 0 } = parsed.data;
+    const { city, category, search, sortBy, limit = 50, offset = 0 } = parsed.data;
     const db = await getDb();
 
     const filter: Record<string, unknown> = {};
     if (city) filter["city"] = city;
     if (category) filter["category"] = category;
+    if (search) {
+      const regex = { $regex: search, $options: "i" };
+      filter["$or"] = [{ name: regex }, { address: regex }];
+    }
+
+    const sortStage: [string, 1 | -1][] =
+      sortBy === "name" ? [["name", 1]] :
+      sortBy === "city" ? [["city_name", 1], ["quality_score", -1]] :
+      [["quality_score", -1], ["rating", -1], ["review_count", -1]];
 
     const [pois, total] = await Promise.all([
       db.collection("gold_master_pois")
         .find(filter)
-        .sort({ rating: -1, quality_score: -1, review_count: -1 })
+        .sort(sortStage)
         .skip(Number(offset))
         .limit(Number(limit))
         .toArray(),
