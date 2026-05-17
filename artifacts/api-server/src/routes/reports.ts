@@ -3,7 +3,7 @@ import { getDb } from "../lib/mongodb";
 
 const router = Router();
 
-router.get("/api/reports/summary", async (req, res) => {
+router.get("/reports/summary", async (req, res) => {
   try {
     const db = await getDb();
     const period = (req.query.period as string) || "monthly";

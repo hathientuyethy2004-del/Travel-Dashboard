@@ -7,6 +7,7 @@ import citiesRouter from "./cities";
 import analyticsRouter from "./analytics";
 import recommendationsRouter from "./recommendations";
 import reportsRouter from "./reports";
+import etlProxyRouter from "./etl-proxy";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(citiesRouter);
 router.use(analyticsRouter);
 router.use(recommendationsRouter);
 router.use(reportsRouter);
+router.use(etlProxyRouter);
 
 export default router;

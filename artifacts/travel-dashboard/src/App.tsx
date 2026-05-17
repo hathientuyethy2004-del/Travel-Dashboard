@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { Nav } from "@/components/Nav";
 import Dashboard from "@/pages/Dashboard";
 import Pois from "@/pages/Pois";
+import Analytics from "@/pages/Analytics";
+import Recommendations from "@/pages/Recommendations";
+import Pipeline from "@/pages/Pipeline";
+import Reports from "@/pages/Reports";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -19,11 +23,18 @@ const queryClient = new QueryClient({
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/pois" component={Pois} />
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <Nav />
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/pois" component={Pois} />
+        <Route path="/analytics" component={Analytics} />
+        <Route path="/recommendations" component={Recommendations} />
+        <Route path="/pipeline" component={Pipeline} />
+        <Route path="/reports" component={Reports} />
+        <Route component={NotFound} />
+      </Switch>
+    </>
   );
 }
 

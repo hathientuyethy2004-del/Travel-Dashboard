@@ -3,7 +3,7 @@ import { getDb } from "../lib/mongodb";
 
 const router = Router();
 
-router.get("/api/analytics/temporal", async (req, res) => {
+router.get("/analytics/temporal", async (req, res) => {
   try {
     const db = await getDb();
     const [bronzeByDay, silverByDay, goldByDay] = await Promise.all([
@@ -48,7 +48,7 @@ router.get("/api/analytics/temporal", async (req, res) => {
   }
 });
 
-router.get("/api/analytics/sources", async (req, res) => {
+router.get("/analytics/sources", async (req, res) => {
   try {
     const db = await getDb();
     const [osmOnly, googleOnly, both, totalBronze] = await Promise.all([
@@ -64,7 +64,7 @@ router.get("/api/analytics/sources", async (req, res) => {
   }
 });
 
-router.get("/api/analytics/quality-tiers", async (req, res) => {
+router.get("/analytics/quality-tiers", async (req, res) => {
   try {
     const db = await getDb();
     const tiers = await db.collection("gold_master_pois").aggregate([
@@ -92,7 +92,7 @@ router.get("/api/analytics/quality-tiers", async (req, res) => {
   }
 });
 
-router.get("/api/analytics/city-category-matrix", async (req, res) => {
+router.get("/analytics/city-category-matrix", async (req, res) => {
   try {
     const db = await getDb();
     const rows = await db.collection("gold_master_pois").aggregate([

@@ -3,7 +3,7 @@ import { getDb } from "../lib/mongodb";
 
 const router = Router();
 
-router.get("/api/recommendations", async (req, res) => {
+router.get("/recommendations", async (req, res) => {
   try {
     const db = await getDb();
     const city = req.query.city as string | undefined;
@@ -82,7 +82,7 @@ router.get("/api/recommendations", async (req, res) => {
   }
 });
 
-router.get("/api/recommendations/city-highlights", async (req, res) => {
+router.get("/recommendations/city-highlights", async (req, res) => {
   try {
     const db = await getDb();
     const cities = await db.collection("gold_master_pois").aggregate([
