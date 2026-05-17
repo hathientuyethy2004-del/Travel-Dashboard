@@ -24,6 +24,7 @@ import {
   RefreshCw, ChevronDown, Check, Sun, Moon, Printer, Download,
   Database, MapPin, AlertTriangle, Star, BarChart2, GitBranch,
   ExternalLink, Filter, Activity, TrendingUp, Award,
+  Phone, Globe, CheckCircle2,
 } from "lucide-react";
 import { CHART_COLORS, CHART_COLOR_LIST, formatNumber } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
@@ -86,7 +87,7 @@ export default function Dashboard() {
   const { data: poiByCategory, isLoading: catLoading } = useGetPoiByCategory();
   const { data: funnel, isLoading: funnelLoading } = useGetPipelineFunnel();
   const { data: qualityDist, isLoading: qualLoading } = useGetQualityDistribution();
-  const { data: ratingDist, isLoading: ratingLoading } = useGetRatingDistribution();
+  useGetRatingDistribution();
   const { data: executions, isLoading: execLoading } = useGetPipelineExecutions();
   const { data: quarantineReasons, isLoading: qrLoading } = useGetQuarantineReasons();
 
@@ -139,7 +140,15 @@ export default function Dashboard() {
 
   // For city bar chart: filter by category if set (we can only filter on already-aggregated data)
   const cityChartData = poiByCity ?? [];
-  const catChartData = poiByCategory ?? [];
+  // Group small category slices (< 3% of total) into "Other"
+  const rawCatData = poiByCategory ?? [];
+  const catTotal = rawCatData.reduce((s, d) => s + d.count, 0);
+  const catChartData = (() => {
+    const main = rawCatData.filter((d) => catTotal === 0 || d.count / catTotal >= 0.03);
+    const others = rawCatData.filter((d) => catTotal > 0 && d.count / catTotal < 0.03);
+    const otherSum = others.reduce((s, d) => s + d.count, 0);
+    return otherSum > 0 ? [...main, { category: "Other", count: otherSum }] : main;
+  })();
 
   const funnelData = funnel ? [
     { name: "Bronze", value: funnel.bronze ?? 0, fill: CHART_COLORS.orange, desc: "Raw collected POIs" },
@@ -149,8 +158,6 @@ export default function Dashboard() {
   ] : [];
 
   const qualData = qualityDist ?? [];
-  const ratingData = ratingDist ?? [];
-  const ratingIsEmpty = ratingData.every((d) => d.count === 0);
   const qualIsEmpty = qualData.every((d) => d.count === 0);
   const execData = executions ?? [];
   const qrData = (quarantineReasons ?? []).slice(0, 8);
@@ -296,14 +303,14 @@ export default function Dashboard() {
             </div>
 
             {/* KPI Row — Business */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
               {[
                 { label: "Gold POIs", value: overview?.goldPois, icon: Award, color: "#eab308", hint: "Quality ≥ 0.3 or Google-verified" },
-                { label: "Silver POIs", value: overview?.silverPois, icon: Database, color: "#94a3b8", hint: "All normalized POIs" },
+                { label: "With Address", value: overview?.withAddress, icon: MapPin, color: CHART_COLORS.teal, hint: "Gold POIs that have address data", pctOf: overview?.goldPois },
                 { label: "Bronze POIs", value: overview?.bronzePois, icon: Database, color: CHART_COLORS.orange, hint: "All raw collected POIs" },
                 { label: "Cities", value: overview?.cities, icon: MapPin, color: CHART_COLORS.blue, hint: undefined },
                 { label: "Avg Quality", value: overview?.avgQualityScore, icon: Star, color: CHART_COLORS.purple, decimal: true, hint: "Average quality score across all Gold POIs (0–1)" },
-              ].map(({ label, value, icon: Icon, color, decimal, hint }) => (
+              ].map(({ label, value, icon: Icon, color, decimal, hint, pctOf }) => (
                 <Card key={label} title={hint}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
@@ -315,14 +322,42 @@ export default function Dashboard() {
                     {loading ? (
                       <Skeleton className="h-7 w-20" />
                     ) : (
-                      <p className="text-2xl font-bold" style={{ color }}>
-                        {decimal ? (value as number)?.toFixed(2) : formatNumber(value as number, "compact")}
-                      </p>
+                      <div>
+                        <p className="text-2xl font-bold" style={{ color }}>
+                          {decimal ? (value as number)?.toFixed(2) : formatNumber(value as number, "compact")}
+                        </p>
+                        {pctOf != null && pctOf > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {(((value as number) / pctOf) * 100).toFixed(1)}% of Gold
+                          </p>
+                        )}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
               ))}
             </div>
+
+            {/* Data Enrichment Insight Strip */}
+            {!loading && (overview?.goldPois ?? 0) > 0 && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-5 px-1">
+                {[
+                  { label: "Address", value: overview?.withAddress ?? 0, icon: MapPin, color: CHART_COLORS.teal },
+                  { label: "Phone", value: overview?.withPhone ?? 0, icon: Phone, color: CHART_COLORS.green },
+                  { label: "Website", value: overview?.withWebsite ?? 0, icon: Globe, color: CHART_COLORS.purple },
+                ].map(({ label, value, icon: Icon, color }) => {
+                  const pct = overview?.goldPois ? ((value / overview.goldPois) * 100).toFixed(1) : "0";
+                  return (
+                    <div key={label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color }} />
+                      <span><strong className="text-foreground font-semibold">{pct}%</strong> have {label.toLowerCase()}</span>
+                      <span className="text-muted-foreground/50">·</span>
+                      <span>{value.toLocaleString()} POIs</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* First-run empty state */}
             {!ovLoading && !ovFetching && (overview?.goldPois ?? 0) === 0 && (overview?.bronzePois ?? 0) === 0 && (
@@ -390,34 +425,53 @@ export default function Dashboard() {
 
               <Card>
                 <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
-                  <CardTitle className="text-base">Rating Distribution</CardTitle>
-                  {!ratingLoading && ratingData.length > 0 && (
-                    <CSVLink data={ratingData} filename="rating-distribution.csv"
-                      className="print:hidden flex items-center justify-center w-[26px] h-[26px] rounded-[6px] transition-colors hover:opacity-80"
-                      style={{ backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#F0F1F2", color: isDark ? "#c8c9cc" : "#4b5563" }}>
-                      <Download className="w-3.5 h-3.5" />
-                    </CSVLink>
-                  )}
+                  <div>
+                    <CardTitle className="text-base">Data Coverage</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Field completeness across {loading ? "…" : formatNumber(overview?.goldPois ?? 0, "compact")} Gold POIs
+                    </p>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  {ratingLoading ? <Skeleton className="w-full h-[280px]" /> : ratingIsEmpty ? (
-                    <div className="h-[280px] flex flex-col items-center justify-center gap-3 text-center px-6">
-                      <Star className="w-10 h-10 opacity-20" />
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">No rating data yet</p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">Ratings will appear once Google enrichment assigns scores to POIs</p>
-                      </div>
+                <CardContent className="pt-2">
+                  {loading ? <Skeleton className="w-full h-[280px]" /> : (
+                    <div className="space-y-5 pt-2">
+                      {[
+                        { label: "Name", value: overview?.goldPois ?? 0, color: CHART_COLORS.blue, icon: MapPin },
+                        { label: "Address", value: overview?.withAddress ?? 0, color: CHART_COLORS.teal, icon: MapPin },
+                        { label: "Phone", value: overview?.withPhone ?? 0, color: CHART_COLORS.green, icon: Phone },
+                        { label: "Website", value: overview?.withWebsite ?? 0, color: CHART_COLORS.purple, icon: Globe },
+                        { label: "Rating", value: 0, color: "#94a3b8", icon: Star, pending: true },
+                      ].map(({ label, value, color, icon: FieldIcon, pending }) => {
+                        const total = overview?.goldPois ?? 1;
+                        const pct = pending ? 0 : Math.min((value / total) * 100, 100);
+                        return (
+                          <div key={label}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <FieldIcon className="w-3.5 h-3.5" style={{ color }} />
+                                <span className="text-sm font-medium">{label}</span>
+                                {pending && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                                    pending enrichment
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <span className="text-sm font-semibold tabular-nums">{pending ? "—" : value.toLocaleString()}</span>
+                                <span className="text-xs text-muted-foreground ml-1.5">{pending ? "0%" : `${pct.toFixed(1)}%`}</span>
+                              </div>
+                            </div>
+                            <div className="h-6 rounded-md bg-muted overflow-hidden">
+                              <div className="h-full rounded-md transition-all"
+                                style={{ width: `${pct}%`, backgroundColor: color, opacity: pending ? 0.3 : 0.85 }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+                        Rating coverage will increase after Google Places enrichment runs
+                      </p>
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={280} debounce={0}>
-                      <BarChart data={ratingData} margin={{ left: 0, right: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                        <XAxis dataKey="range" tick={{ fontSize: 12, fill: tickColor }} />
-                        <YAxis tick={{ fontSize: 12, fill: tickColor }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="count" fill={CHART_COLORS.purple} radius={[4, 4, 0, 0]} name="Count" />
-                      </BarChart>
-                    </ResponsiveContainer>
                   )}
                 </CardContent>
               </Card>

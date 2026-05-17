@@ -19,6 +19,9 @@ export interface DashboardOverview {
   dataLineageEdges: number;
   avgQualityScore: number;
   avgRating: number;
+  withAddress: number;
+  withPhone: number;
+  withWebsite: number;
 }
 
 export interface CityPoiCount {

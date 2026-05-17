@@ -16,7 +16,7 @@ router.get("/dashboard/overview", async (req, res): Promise<void> => {
   try {
     const db = await getDb();
 
-    const [bronze, silver, gold, cities, quarantined, pipelineRuns, lineageEdges] = await Promise.all([
+    const [bronze, silver, gold, cities, quarantined, pipelineRuns, lineageEdges, withAddress, withPhone, withWebsite] = await Promise.all([
       db.collection("bronze_pois").countDocuments(),
       db.collection("silver_pois").countDocuments(),
       db.collection("gold_master_pois").countDocuments(),
@@ -24,6 +24,9 @@ router.get("/dashboard/overview", async (req, res): Promise<void> => {
       db.collection("data_quality_quarantine").countDocuments(),
       db.collection("pipeline_executions").countDocuments(),
       db.collection("data_lineage_edges").countDocuments(),
+      db.collection("gold_master_pois").countDocuments({ address: { $nin: [null, ""] } }),
+      db.collection("gold_master_pois").countDocuments({ phone: { $nin: [null, ""] } }),
+      db.collection("gold_master_pois").countDocuments({ website: { $nin: [null, ""] } }),
     ]);
 
     const qualityAgg = await db.collection("gold_master_pois").aggregate([
@@ -46,6 +49,9 @@ router.get("/dashboard/overview", async (req, res): Promise<void> => {
       dataLineageEdges: lineageEdges,
       avgQualityScore: qualityAgg[0]?.avg ?? 0,
       avgRating: ratingAgg[0]?.avg ?? 0,
+      withAddress,
+      withPhone,
+      withWebsite,
     });
 
     res.json(result);

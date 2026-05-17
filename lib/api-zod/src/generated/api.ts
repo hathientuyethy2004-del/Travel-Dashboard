@@ -28,7 +28,10 @@ export const GetDashboardOverviewResponse = zod.object({
   "pipelineRuns": zod.number(),
   "dataLineageEdges": zod.number(),
   "avgQualityScore": zod.number(),
-  "avgRating": zod.number()
+  "avgRating": zod.number(),
+  "withAddress": zod.number(),
+  "withPhone": zod.number(),
+  "withWebsite": zod.number()
 })
 
 
