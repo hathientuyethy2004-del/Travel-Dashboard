@@ -230,6 +230,8 @@ export interface ReportSummary {
 export type GetPoisParams = {
 city?: string;
 category?: string;
+search?: string;
+sortBy?: string;
 limit?: number;
 offset?: number;
 };

@@ -151,6 +151,8 @@ export const getPoisQueryOffsetDefault = 0;
 export const GetPoisQueryParams = zod.object({
   "city": zod.coerce.string().optional(),
   "category": zod.coerce.string().optional(),
+  "search": zod.coerce.string().optional(),
+  "sortBy": zod.coerce.string().optional(),
   "limit": zod.coerce.number().default(getPoisQueryLimitDefault),
   "offset": zod.coerce.number().default(getPoisQueryOffsetDefault)
 })
