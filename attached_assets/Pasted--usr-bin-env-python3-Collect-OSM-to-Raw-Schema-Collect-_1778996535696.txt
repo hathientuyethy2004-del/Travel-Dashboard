@@ -1,0 +1,277 @@
+#!/usr/bin/env python3
+"""
+Collect OSM to Raw Schema
+=========================
+Collect OSM data và lưu vào bronze_pois với trường osm_raw (nguyên bản)
+Chưa xử lý gì cả - chỉ lưu raw data từ OSM API
+"""
+import os
+import json
+import time
+import math
+import hashlib
+import random
+from datetime import datetime, timezone
+from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
+
+MONGODB_URI = os.getenv("MONGODB_URI")
+if not MONGODB_URI:
+    raise RuntimeError("MONGODB_URI must be set to the MongoDB Atlas connection string")
+
+# Multiple Overpass endpoints
+OVERPASS_ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
+]
+
+# Simple cities config (lấy từ cities collection)
+CITIES = {
+    "hanoi": {"name": "Hà Nội", "lat": 21.0278, "lon": 105.8342, "radius_km": 25},
+    "hcm": {"name": "Hồ Chí Minh", "lat": 10.8231, "lon": 106.6297, "radius_km": 25},
+    "danang": {"name": "Đà Nẵng", "lat": 16.0544, "lon": 108.2022, "radius_km": 20},
+    "cantho": {"name": "Cần Thơ", "lat": 10.0282, "lon": 105.7851, "radius_km": 15},
+    "haiphong": {"name": "Hải Phòng", "lat": 20.8449, "lon": 106.6881, "radius_km": 15},
+    "hue": {"name": "Huế", "lat": 16.4637, "lon": 107.5909, "radius_km": 15},
+    "nhatrang": {"name": "Nha Trang", "lat": 12.2588, "lon": 109.1967, "radius_km": 15},
+    "dalat": {"name": "Đà Lạt", "lat": 11.9404, "lon": 108.4453, "radius_km": 12},
+    "vungtau": {"name": "Vũng Tàu", "lat": 10.2441, "lon": 107.0708, "radius_km": 12},
+}
+
+# Simple categories
+CATEGORIES = {
+    "restaurant": [("amenity", "restaurant"), ("amenity", "fast_food")],
+    # "cafe": [("amenity", "cafe"), ("amenity", "coffee_shop")],
+    # "bar": [("amenity", "bar"), ("amenity", "pub")],
+    "hotel": [("tourism", "hotel"), ("tourism", "guest_house")],
+    # "shop": [("shop", "supermarket"), ("shop", "convenience")],
+    "attraction": [("tourism", "attraction"), ("tourism", "museum")]
+    # "bank": [("amenity", "bank"), ("amenity", "atm")],
+    # "pharmacy": [("amenity", "pharmacy"), ("shop", "pharmacy")],
+    # "fuel": [("amenity", "fuel"), ("amenity", "charging_station")],
+}
+
+
+def create_overpass_query(lat, lon, radius_m, tags):
+    """Create Overpass query for multiple tags"""
+    tag_filters = []
+    for key, value in tags:
+        tag_filters.append(f'    node["{key}"="{value}"](around:{radius_m},{lat},{lon});')
+        tag_filters.append(f'    way["{key}"="{value}"](around:{radius_m},{lat},{lon});')
+        tag_filters.append(f'    relation["{key}"="{value}"](around:{radius_m},{lat},{lon});')
+    
+    query = f"""
+[out:json][timeout:180];
+(
+{chr(10).join(tag_filters)}
+);
+out body center tags meta;
+"""
+    return query
+
+
+def try_overpass_query(query, headers, timeout=180, max_retries=3):
+    """Try multiple endpoints"""
+    import requests
+    
+    endpoints = OVERPASS_ENDPOINTS.copy()
+    random.shuffle(endpoints)
+    
+    last_error = None
+    for endpoint in endpoints:
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(
+                    endpoint,
+                    params={"data": query},
+                    headers=headers,
+                    timeout=timeout
+                )
+                if response.status_code == 200:
+                    return response, endpoint
+                elif response.status_code == 429:
+                    time.sleep((attempt + 1) * 5)
+                    continue
+                else:
+                    response.raise_for_status()
+            except Exception as e:
+                last_error = e
+                time.sleep((attempt + 1) * 2)
+                continue
+    
+    raise last_error if last_error else Exception("All endpoints failed")
+
+
+def collect_osm_raw(cities=None, categories=None):
+    """Collect OSM raw data to bronze_pois"""
+    import requests
+    
+    print("=" * 70)
+    print("🌍 COLLECT OSM RAW DATA")
+    print("=" * 70)
+    
+    client = MongoClient(MONGODB_URI)
+    db = client.smart_travel_platform
+    bronze = db.bronze_pois
+    
+    print(f"✅ Connected to MongoDB")
+    print(f"📁 Target: bronze_pois")
+    
+    headers = {
+        'User-Agent': 'SmartTravel-RawCollector/1.0',
+        'Accept': 'application/json'
+    }
+    
+    total_collected = 0
+    seen_keys = set()
+    
+    selected_cities = {code: CITIES[code] for code in (cities or CITIES.keys()) if code in CITIES}
+    selected_categories = {
+        code: CATEGORIES[code] for code in (categories or CATEGORIES.keys()) if code in CATEGORIES
+    }
+
+    for city_code, city in selected_cities.items():
+        print(f"\n📍 {city['name']}")
+        
+        lat, lon = city["lat"], city["lon"]
+        radius_m = int(city["radius_km"] * 1000)
+        
+        for category, tags in selected_categories.items():
+            inserted = 0
+            skipped = 0
+            try:
+                query = create_overpass_query(lat, lon, radius_m, tags)
+                response, endpoint = try_overpass_query(query, headers)
+                
+                data = response.json()
+                elements = data.get("elements", [])
+                
+                print(f"   📦 {category}: {len(elements)} elements", end="", flush=True)
+                
+                for element in elements:
+                    osm_id = element.get("id")
+                    osm_type = element.get("type")
+                    
+                    # Create unique key
+                    u_key = hashlib.md5(f"{city_code}_{osm_type}_{osm_id}".encode()).hexdigest()[:16]
+                    
+                    if u_key in seen_keys:
+                        skipped += 1
+                        continue
+                    seen_keys.add(u_key)
+                    
+                    # Skip if exists in DB
+                    if bronze.find_one({"u_key": u_key}, {"_id": 1}):
+                        skipped += 1
+                        continue
+                    
+                    tags_data = element.get("tags", {})
+                    
+                    # Get location
+                    if "lat" in element and "lon" in element:
+                        item_lat, item_lon = element["lat"], element["lon"]
+                    elif "center" in element:
+                        item_lat = element["center"]["lat"]
+                        item_lon = element["center"]["lon"]
+                    else:
+                        continue
+                    
+                    # Build document
+                    doc = {
+                        "u_key": u_key,
+                        "poi_id": f"osm_{osm_type}_{osm_id}",
+                        
+                        # === RAW OSM DATA (từng element nguyên bản) ===
+                        "osm_raw": {
+                            "element": element,   # Full OSM element (chỉ element này)
+                            "endpoint": endpoint,
+                            "fetched_at": datetime.now(timezone.utc).isoformat()
+                        },
+                        "google_raw": None,
+                        
+                        # === FLAGS ===
+                        "has_osm_data": True,
+                        "has_google_data": False,
+                        "data_sources": ["osm"],
+                        
+                        # === BASIC INFO ===
+                        "name": tags_data.get("name") or tags_data.get("name:en") or "Unknown",
+                        "city": city_code,
+                        "city_name": city["name"],
+                        "country": "Vietnam",
+                        "category": category,
+                        "location": {
+                            "lat": item_lat,
+                            "lon": item_lon
+                        },
+                        
+                        # === IDS ===
+                        "osm_id": osm_id,
+                        "osm_type": osm_type,
+                        "google_place_id": None,
+                        
+                        # === METADATA ===
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "_layer": "bronze",
+                        "_source": "osm_collector"
+                    }
+                    
+                    # Insert ngay từng POI
+                    try:
+                        bronze.insert_one(doc)
+                        inserted += 1
+                        total_collected += 1
+                    except Exception as ie:
+                        if "quota" in str(ie).lower() or "space" in str(ie).lower():
+                            print(f"\n   ❌ MongoDB quota exceeded! Stopping.")
+                            client.close()
+                            return
+                        skipped += 1
+                
+                print(f" → saved {inserted}, skipped {skipped}")
+                time.sleep(1.5)  # Rate limit
+                
+            except Exception as e:
+                print(f"\n   ⚠️ {category}: {str(e)[:60]}")
+                continue
+    
+    # Summary
+    print("\n" + "=" * 70)
+    print("📊 SUMMARY")
+    print("=" * 70)
+    total_db = bronze.count_documents({})
+    osm_count = bronze.count_documents({"has_osm_data": True})
+    google_count = bronze.count_documents({"has_google_data": True})
+    both_count = bronze.count_documents({"has_osm_data": True, "has_google_data": True})
+    
+    print(f"   Total POIs: {total_db}")
+    print(f"   With OSM raw: {osm_count}")
+    print(f"   With Google raw: {google_count}")
+    print(f"   With both: {both_count}")
+    
+    # Show sample
+    sample = bronze.find_one({"has_osm_data": True})
+    if sample:
+        print(f"\n📌 Sample: {sample['name']}")
+        print(f"   Has osm_raw.element: {'element' in sample.get('osm_raw', {})}")
+        print(f"   Has osm_raw.api_response: {'api_response' in sample.get('osm_raw', {})}")
+    
+    client.close()
+    print("\n✅ Done!")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Collect OSM raw POI data into bronze_pois")
+    parser.add_argument("--cities", default="", help="Comma-separated city codes. Default: all")
+    parser.add_argument("--categories", default="", help="Comma-separated categories. Default: all")
+    args = parser.parse_args()
+
+    city_filter = [item.strip() for item in args.cities.split(",") if item.strip()] or None
+    category_filter = [item.strip() for item in args.categories.split(",") if item.strip()] or None
+    collect_osm_raw(cities=city_filter, categories=category_filter)
