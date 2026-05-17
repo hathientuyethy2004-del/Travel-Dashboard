@@ -25,6 +25,7 @@ def create_job(job_type: str, cities: Optional[List[str]] = None, categories: Op
         "error": None,
     }
     get_col("etl_jobs").insert_one(doc)
+    doc.pop("_id", None)
     return doc
 
 def update_job(job_id: str, **kwargs):

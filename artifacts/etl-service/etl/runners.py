@@ -338,14 +338,15 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
     quarantine = get_col("data_quality_quarantine")
     lineage = get_col("data_lineage_edges")
 
-    query = {}
+    # Only process bronze records not yet promoted (incremental)
+    query: dict = {"_silver_promoted": {"$ne": True}}
     if cities:
         query["city"] = {"$in": cities}
     if categories:
         query["category"] = {"$in": categories}
 
     total = bronze.count_documents(query)
-    append_log(job_id, f"Bronze→Silver: {total} bronze records to process", "info")
+    append_log(job_id, f"Bronze→Silver: {total} unprocessed bronze records to promote", "info")
 
     processed = 0
     quarantined = 0
@@ -372,6 +373,8 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
                     }},
                     upsert=True,
                 )
+                # Mark bronze record as processed so it's not re-evaluated next run
+                bronze.update_one({"_id": doc["_id"]}, {"$set": {"_silver_promoted": True}})
                 quarantined += 1
                 continue
 
@@ -434,6 +437,8 @@ def _bronze_to_silver(job_id: str, run_id: str, cities: list, categories: list) 
                 "updated_at": now_iso(),
             }
             silver.update_one({"u_key": doc["u_key"]}, {"$set": silver_doc}, upsert=True)
+            # Mark bronze record as processed so it's skipped on future runs
+            bronze.update_one({"_id": doc["_id"]}, {"$set": {"_silver_promoted": True}})
 
             # ── Lineage edge: bronze → silver ────────────────────────────────
             lineage.update_one(

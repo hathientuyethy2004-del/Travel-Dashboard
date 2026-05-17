@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional, List
 from etl import jobs as job_manager
+from etl import runners
 from etl.config import CITIES, CATEGORIES
 
 router = APIRouter(prefix="/etl/jobs", tags=["jobs"])
@@ -27,7 +28,7 @@ def trigger_job(req: TriggerJobRequest, background_tasks: BackgroundTasks):
     categories = [c for c in (req.categories or []) if c in CATEGORIES] or []
     job = job_manager.create_job(req.jobType, cities=cities, categories=categories, limit=req.limit)
     background_tasks.add_task(
-        job_manager.run_job_async,
+        runners.run_job,
         job["jobId"], req.jobType, cities, categories, req.limit
     )
     return job

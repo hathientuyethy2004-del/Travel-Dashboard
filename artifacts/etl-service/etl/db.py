@@ -34,8 +34,15 @@ def ensure_indexes():
     db.bronze_pois.create_index([("u_key", ASCENDING)], unique=True)
     db.bronze_pois.create_index([("city", ASCENDING), ("category", ASCENDING)])
     db.bronze_pois.create_index([("has_google_data", ASCENDING)])
+    db.bronze_pois.create_index([("_silver_promoted", ASCENDING)])  # for incremental b→s
 
-    # Silver
+    # Silver — drop legacy indexes that block upserts with null fields
+    for _idx in ["place_id_1__city_1", "_dedupe_key_1", "city_1__dedupe_key_1",
+                 "_dedupe_candidates_1", "source_identity_key_1", "city_1"]:
+        try:
+            db.silver_pois.drop_index(_idx)
+        except Exception:
+            pass
     db.silver_pois.create_index([("u_key", ASCENDING)], unique=True)
     db.silver_pois.create_index([("bronze_ref", ASCENDING)])
     db.silver_pois.create_index([("city", ASCENDING), ("category", ASCENDING)])

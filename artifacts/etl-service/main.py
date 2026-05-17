@@ -13,9 +13,26 @@ from etl import scheduler as sched
 from routers import jobs, schedules
 
 
+def _cleanup_stale_jobs():
+    """Reset pending/running jobs left over from a previous server instance."""
+    from etl.db import get_col, now_iso
+    jobs_col = get_col("etl_jobs")
+    result = jobs_col.update_many(
+        {"status": {"$in": ["pending", "running"]}},
+        {"$set": {
+            "status": "failed",
+            "completedAt": now_iso(),
+            "error": "Service restarted — job was interrupted before completion.",
+        }}
+    )
+    if result.modified_count:
+        print(f"[startup] Reset {result.modified_count} stale job(s) to 'failed'")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_indexes()
+    _cleanup_stale_jobs()
     sched.start_scheduler()
     yield
     sched.stop_scheduler()
