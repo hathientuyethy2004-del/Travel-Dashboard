@@ -1,8 +1,18 @@
 # Naming Conventions & Data Standards
 
+## Danh sách bảng
+
+- [Bảng 1. Collection Names - Format, Ví dụ](#collection-names)
+- [Bảng 2. Field Names - Format, Ví dụ](#field-names)
+- [Bảng 3. Identifier Formats - Loại, Format, Ví dụ](#identifier-formats)
+- [Bảng 4. City Codes - Code, Thành phố](#city-codes)
+- [Bảng 5. Category Codes - Code, Mô tả](#category-codes)
+
 ## Naming Conventions
 
 ### Collection Names
+
+**Bảng 1. Collection Names - Format, Ví dụ.**
 
 | Format | Ví dụ |
 |--------|-------|
@@ -12,6 +22,8 @@
 
 ### Field Names
 
+**Bảng 2. Field Names - Format, Ví dụ.**
+
 | Format | Ví dụ |
 |--------|-------|
 | camelCase (Node.js/MongoDB) | `u_key`, `quality_score`, `has_google_data` |
@@ -19,6 +31,8 @@
 | Lưu ý: MongoDB dùng snake_case cho POI fields | — |
 
 ### Identifier Formats
+
+**Bảng 3. Identifier Formats - Loại, Format, Ví dụ.**
 
 | Loại | Format | Ví dụ |
 |------|--------|-------|
@@ -29,6 +43,8 @@
 | Schedule ID | UUID v4 | `b2c3d4e5-f6a7-...` |
 
 ### City Codes
+
+**Bảng 4. City Codes - Code, Thành phố.**
 
 | Code | Thành phố |
 |------|----------|
@@ -44,6 +60,8 @@
 | `quynhon` | Quy Nhơn |
 
 ### Category Codes
+
+**Bảng 5. Category Codes - Code, Mô tả.**
 
 | Code | Mô tả |
 |------|-------|

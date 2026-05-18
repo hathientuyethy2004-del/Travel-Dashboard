@@ -1,0 +1,183 @@
+% Compile with pdfLaTeX on Overleaf
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.2em}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Danh mục thuật ngữ}
+\end{center}
+
+\section*{Danh sách bảng}
+\addcontentsline{toc}{section}{Danh sách bảng}
+
+\begin{itemize}
+  \item Bảng 1. Nhóm thuật ngữ -- Nhóm thuật ngữ, Ví dụ thuật ngữ, Vai trò trong báo cáo.
+  \item Bảng 2. Danh mục thuật ngữ chi tiết -- Thuật ngữ, Tên đầy đủ / tiếng Anh, Giải thích trong dự án.
+\end{itemize}
+
+
+Danh mục này tổng hợp các thuật ngữ, chữ viết tắt và khái niệm được sử dụng trong dự án Smart Travel Platform và báo cáo luận văn. Các định nghĩa được trình bày theo ngữ cảnh của đề tài, tập trung vào nền tảng dữ liệu du lịch, pipeline xử lý dữ liệu, quản trị dữ liệu, giao diện lập trình ứng dụng và triển khai hệ thống.
+
+\section*{Nhóm thuật ngữ}
+
+\begin{longtable}{@{}p{0.24\textwidth}p{0.28\textwidth}p{0.38\textwidth}@{}}
+\caption{Nhóm thuật ngữ -- Nhóm thuật ngữ, Ví dụ thuật ngữ, Vai trò trong báo cáo.}\\
+\toprule
+\textbf{Nhóm thuật ngữ} & \textbf{Ví dụ thuật ngữ} & \textbf{Vai trò trong báo cáo} \\
+\midrule
+Dữ liệu và mô hình dữ liệu & POI, Bronze, Silver, Gold, metadata, lineage & Giải thích đối tượng dữ liệu, cách phân lớp và cách truy vết dữ liệu trong hệ thống. \\
+Pipeline và xử lý & ETL, batch processing, enrichment, validation, scoring & Mô tả các bước thu thập, chuẩn hóa, làm giàu và kiểm tra chất lượng dữ liệu. \\
+API và dashboard & REST API, OpenAPI, endpoint, dashboard, KPI & Làm rõ cách dữ liệu Gold được phục vụ cho giao diện, báo cáo và consumer bên ngoài. \\
+Quản trị và bảo mật & Governance, RBAC, secrets, quarantine, pending review & Trình bày chính sách kiểm soát chất lượng, phân quyền, bảo vệ dữ liệu và xử lý ngoại lệ. \\
+Triển khai và vận hành & Docker Compose, MongoDB Atlas, FastAPI, Express, APScheduler & Mô tả môi trường chạy, thành phần kỹ thuật và cơ chế vận hành pipeline. \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.92\textwidth}
+\centering
+\textbf{Nhóm thuật ngữ trong báo cáo}\\[0.6em]
+\begin{tabular}{c c c}
+Dữ liệu & Xử lý & Phục vụ \\
+POI, metadata, quality score & ETL, Bronze, Silver, Gold & API, dashboard, KPI \\
+\end{tabular}\\[0.8em]
+\begin{tabular}{c c}
+Quản trị: governance, lineage, RBAC & Triển khai: Docker Compose, MongoDB, FastAPI
+\end{tabular}
+\end{minipage}}
+\caption{Các nhóm thuật ngữ chính được sử dụng trong dự án và báo cáo.}
+\end{figure}
+
+\section*{Danh mục thuật ngữ chi tiết}
+
+\begin{longtable}{@{}p{0.22\textwidth}p{0.25\textwidth}p{0.43\textwidth}@{}}
+\caption{Danh mục thuật ngữ chi tiết -- Thuật ngữ, Tên đầy đủ / tiếng Anh, Giải thích trong dự án.}\\
+\toprule
+\textbf{Thuật ngữ} & \textbf{Tên đầy đủ / tiếng Anh} & \textbf{Giải thích trong dự án} \\
+\midrule
+\endhead
+
+API & Application Programming Interface & Giao diện lập trình ứng dụng, cho phép dashboard hoặc hệ thống bên ngoài truy cập dữ liệu và chức năng của nền tảng. \\
+
+APScheduler & Advanced Python Scheduler & Thư viện Python dùng để lập lịch các job ETL định kỳ như \texttt{nightly\_sync}. \\
+
+Batch processing & Xử lý theo lô & Phương pháp xử lý dữ liệu theo đợt hoặc theo lịch, phù hợp với dữ liệu POI không yêu cầu cập nhật thời gian thực. \\
+
+Bronze layer & Lớp đồng & Lớp lưu dữ liệu thô gần với nguồn ban đầu, bao gồm raw JSON từ OpenStreetMap và Google Places. \\
+
+CI/CD & Continuous Integration / Continuous Deployment & Quy trình tích hợp, build, kiểm tra và triển khai phần mềm một cách có kiểm soát. \\
+
+Dashboard & Bảng điều khiển & Giao diện hiển thị KPI, thống kê POI, trạng thái pipeline, chất lượng dữ liệu và báo cáo vận hành. \\
+
+Data catalog & Danh mục dữ liệu & Hệ thống hoặc tập metadata mô tả dataset, nguồn dữ liệu, schema, owner và cách sử dụng dữ liệu. \\
+
+Data contract & Hợp đồng dữ liệu & Thỏa thuận về cấu trúc, kiểu dữ liệu, ý nghĩa và kỳ vọng chất lượng giữa bên tạo dữ liệu và bên sử dụng dữ liệu. \\
+
+Data governance & Quản trị dữ liệu & Tập hợp nguyên tắc, vai trò và quy trình để bảo đảm dữ liệu được quản lý, sử dụng, bảo vệ và chia sẻ có kiểm soát. \\
+
+Data lineage & Truy vết dữ liệu & Khả năng xác định dữ liệu đến từ đâu, đã qua bước xử lý nào và được tạo bởi job nào. \\
+
+Data quality & Chất lượng dữ liệu & Mức độ dữ liệu đáp ứng các tiêu chí như đầy đủ, hợp lệ, nhất quán, kịp thời và duy nhất. \\
+
+DataOps & Vận hành dữ liệu & Tư duy vận hành pipeline dữ liệu bằng tự động hóa, kiểm thử, giám sát và cải tiến liên tục. \\
+
+Docker Compose & Công cụ điều phối container cục bộ & Công cụ dùng để chạy đồng thời frontend, API server, ETL service và MongoDB trong môi trường phát triển/thực nghiệm. \\
+
+ETL & Extract, Transform, Load & Quy trình trích xuất, biến đổi và nạp dữ liệu từ nguồn ngoài vào các lớp dữ liệu của hệ thống. \\
+
+ETL Service & Dịch vụ xử lý dữ liệu & Service Python/FastAPI thực hiện thu thập, làm giàu, validation, scoring, promote và rebuild dữ liệu. \\
+
+FastAPI & Python web framework & Framework Python dùng để xây dựng ETL Service và các endpoint phục vụ pipeline. \\
+
+Frontend & Giao diện người dùng & Thành phần React/Vite hiển thị dashboard và tương tác với API server. \\
+
+Gold layer & Lớp vàng & Lớp dữ liệu chính thức, chứa các POI đủ chất lượng để phục vụ dashboard, API và phân tích. \\
+
+Google Places & Dịch vụ dữ liệu địa điểm của Google & Nguồn dữ liệu thương mại dùng để làm giàu thông tin POI như rating, địa chỉ, điện thoại, website và review count. \\
+
+Governance & Quản trị & Cách tổ chức trách nhiệm, chính sách, metadata, bảo mật và kiểm soát thay đổi trong nền tảng dữ liệu. \\
+
+Ingestion & Nạp dữ liệu / thu nhận dữ liệu & Quá trình lấy dữ liệu từ nguồn ngoài và đưa vào lớp Bronze của hệ thống. \\
+
+JSON & JavaScript Object Notation & Định dạng dữ liệu bán cấu trúc được dùng phổ biến trong API và raw response từ nguồn ngoài. \\
+
+KPI & Key Performance Indicator & Chỉ số đo lường quan trọng, ví dụ số POI Gold, enrichment rate, quarantine rate và average quality score. \\
+
+Lakehouse & Kiến trúc hồ dữ liệu hợp nhất & Kiến trúc kết hợp ưu điểm của data lake và data warehouse; trong dự án được tham chiếu ở mức tư duy thiết kế. \\
+
+Medallion Architecture & Kiến trúc nhiều lớp huy chương & Cách tổ chức dữ liệu thành Bronze, Silver và Gold để tăng dần mức độ xử lý và độ tin cậy. \\
+
+Metadata & Siêu dữ liệu & Dữ liệu mô tả dữ liệu, bao gồm nguồn gốc, schema, thời điểm xử lý, job tạo bản ghi và trạng thái chất lượng. \\
+
+MongoDB & Document database & Cơ sở dữ liệu document dùng để lưu Bronze, Silver, Gold, job state, schedule, config, pending review và quarantine. \\
+
+MongoDB Atlas & Dịch vụ MongoDB trên cloud & Tùy chọn lưu trữ MongoDB được quản lý trên cloud; có thể dùng thay MongoDB local qua \texttt{MONGODB\_URI}. \\
+
+Nightly sync & Đồng bộ ban đêm & Job định kỳ dùng để làm giàu dữ liệu và rebuild các lớp Silver/Gold. \\
+
+OpenAPI & Đặc tả API mở & Chuẩn mô tả endpoint, request, response và schema, giúp backend và frontend thống nhất hợp đồng API. \\
+
+OpenStreetMap & Bản đồ mở cộng đồng & Nguồn dữ liệu mở dùng để thu thập POI thông qua Overpass API. \\
+
+Overpass API & API truy vấn OpenStreetMap & Dịch vụ cho phép truy vấn dữ liệu OSM theo vùng địa lý, tag, thành phố hoặc danh mục. \\
+
+Pending Review & Hàng đợi chờ duyệt & Vùng lưu các POI có điểm chất lượng trung gian, cần Data Steward xem xét trước khi đưa vào Gold. \\
+
+Pipeline & Đường ống xử lý dữ liệu & Chuỗi bước xử lý dữ liệu từ thu thập, Bronze, validation, enrichment, Silver, review và Gold. \\
+
+POI & Point of Interest & Điểm quan tâm du lịch, ví dụ nhà hàng, khách sạn, quán cà phê, công viên, điểm tham quan hoặc khu mua sắm. \\
+
+Quality score & Điểm chất lượng & Chỉ số từ 0 đến 1 dùng để đánh giá mức độ sẵn sàng sử dụng của một bản ghi POI. \\
+
+Quarantine & Vùng cách ly dữ liệu lỗi & Collection lưu các bản ghi không đạt validation, ví dụ thiếu tọa độ hoặc thiếu tên hợp lệ. \\
+
+RapidAPI & Nền tảng trung gian API & Nền tảng được dùng để truy cập Google Places trong dự án. \\
+
+RBAC & Role-Based Access Control & Mô hình phân quyền theo vai trò, ví dụ Admin, Data Engineer, Data Steward và API Consumer. \\
+
+React & Thư viện giao diện người dùng & Công nghệ dùng để xây dựng dashboard phía frontend. \\
+
+REST API & Representational State Transfer API & Kiểu thiết kế API dựa trên tài nguyên và HTTP, được dùng làm lớp giao tiếp chính của hệ thống. \\
+
+Rebuild layers & Tái tạo các lớp dữ liệu & Quá trình xây dựng lại Silver và Gold từ dữ liệu Bronze/Silver khi thay đổi logic hoặc cần đồng bộ lại. \\
+
+Silver layer & Lớp bạc & Lớp dữ liệu đã được làm sạch, chuẩn hóa, làm giàu và tính điểm chất lượng. \\
+
+SLO & Service Level Objective & Mục tiêu mức dịch vụ, ví dụ latency API, tỷ lệ job thành công, freshness của Gold layer. \\
+
+Source-to-target mapping & Ánh xạ nguồn sang đích & Quy tắc chuyển trường dữ liệu từ OSM/Google sang các collection Bronze, Silver hoặc Gold. \\
+
+Streaming & Xử lý dòng & Phương pháp xử lý dữ liệu liên tục gần thời gian thực; hiện chưa phải hướng triển khai chính của dự án. \\
+
+TypeScript & Ngôn ngữ JavaScript có kiểu tĩnh & Được dùng ở API server và frontend để giảm lỗi kiểu dữ liệu trong quá trình phát triển. \\
+
+Uvicorn & ASGI server & Máy chủ chạy FastAPI trong ETL Service. \\
+
+\texttt{u\_key} & Unique key & Khóa định danh xuyên suốt các lớp dữ liệu, dùng để upsert, dedup và truy vết POI. \\
+
+Validation & Kiểm tra hợp lệ dữ liệu & Quá trình kiểm tra bản ghi có đủ điều kiện để đưa vào Silver hoặc Gold hay không. \\
+
+Vite & Frontend build tool & Công cụ build và chạy môi trường phát triển cho React dashboard. \\
+
+Zod & TypeScript schema validation & Thư viện kiểm tra dữ liệu runtime, hỗ trợ thống nhất schema giữa API và frontend. \\
+
+\bottomrule
+\end{longtable}
+
+\end{document}

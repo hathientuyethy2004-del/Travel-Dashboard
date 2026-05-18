@@ -1,8 +1,18 @@
 # Metadata Documentation
 
+## Danh sách bảng
+
+- [Bảng 1. Business Metadata - Dataset, Business Name, Mô tả nghiệp vụ, Owner, Classification](#business-metadata)
+- [Bảng 2. bronze_pois - Metadata, Giá trị](#bronzepois)
+- [Bảng 3. silver_pois - Metadata, Giá trị](#silverpois)
+- [Bảng 4. gold_master_pois - Metadata, Giá trị](#goldmasterpois)
+- [Bảng 5. Operational Metadata - Metadata, Source, Mô tả](#operational-metadata)
+
 ## Business Metadata
 
 Business metadata mô tả ý nghĩa nghiệp vụ của dữ liệu.
+
+**Bảng 1. Business Metadata - Dataset, Business Name, Mô tả nghiệp vụ, Owner, Classification.**
 
 | Dataset | Business Name | Mô tả nghiệp vụ | Owner | Classification |
 |---------|--------------|----------------|-------|---------------|
@@ -20,6 +30,8 @@ Technical metadata mô tả đặc điểm kỹ thuật của dữ liệu.
 
 ### bronze_pois
 
+**Bảng 2. bronze_pois - Metadata, Giá trị.**
+
 | Metadata | Giá trị |
 |---------|---------|
 | Database | MongoDB Atlas |
@@ -34,6 +46,8 @@ Technical metadata mô tả đặc điểm kỹ thuật của dữ liệu.
 
 ### silver_pois
 
+**Bảng 3. silver_pois - Metadata, Giá trị.**
+
 | Metadata | Giá trị |
 |---------|---------|
 | Source | Transformed từ `bronze_pois` |
@@ -41,6 +55,8 @@ Technical metadata mô tả đặc điểm kỹ thuật của dữ liệu.
 | Rebuild trigger | Sau mỗi lần collect hoặc nightly_sync |
 
 ### gold_master_pois
+
+**Bảng 4. gold_master_pois - Metadata, Giá trị.**
 
 | Metadata | Giá trị |
 |---------|---------|
@@ -54,6 +70,8 @@ Technical metadata mô tả đặc điểm kỹ thuật của dữ liệu.
 ## Operational Metadata
 
 Operational metadata theo dõi hoạt động của pipeline.
+
+**Bảng 5. Operational Metadata - Metadata, Source, Mô tả.**
 
 | Metadata | Source | Mô tả |
 |---------|--------|-------|

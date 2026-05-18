@@ -1,8 +1,22 @@
 # Data Quality Rules — Quy chuẩn chất lượng dữ liệu
 
+## Danh sách bảng
+
+- [Bảng 1. Data Quality Standards - Chiều, Mô tả, Cách đo](#data-quality-standards)
+- [Bảng 2. Bronze Layer Validation - Rule ID, Field, Điều kiện thất bại, Hành động](#bronze-layer-validation)
+- [Bảng 3. Silver Layer Validation (Quality Score) - Component, Weight, Điều kiện](#silver-layer-validation-quality-score)
+- [Bảng 4. Gold Promotion Rules - Rule, Điều kiện, Kết quả](#gold-promotion-rules)
+- [Bảng 5. Data Cleansing Rules - Field, Rule, Ví dụ](#data-cleansing-rules)
+- [Bảng 6. Deduplication Rules - Scope, Key, Phương pháp](#deduplication-rules)
+- [Bảng 7. Metrics theo dõi - Metric, Mô tả, Target](#metrics-theo-dõi)
+- [Bảng 8. Anomaly Detection - Loại bất thường, Ngưỡng cảnh báo, Hành động](#anomaly-detection)
+- [Bảng 9. Freshness Monitoring - Layer, Max age acceptable, Hành động nếu quá hạn](#freshness-monitoring)
+
 ## Data Quality Standards
 
 Smart Travel Platform định nghĩa chất lượng dữ liệu theo 5 chiều:
+
+**Bảng 1. Data Quality Standards - Chiều, Mô tả, Cách đo.**
 
 | Chiều | Mô tả | Cách đo |
 |-------|-------|---------|
@@ -18,12 +32,16 @@ Smart Travel Platform định nghĩa chất lượng dữ liệu theo 5 chiều:
 
 ### Bronze Layer Validation
 
+**Bảng 2. Bronze Layer Validation - Rule ID, Field, Điều kiện thất bại, Hành động.**
+
 | Rule ID | Field | Điều kiện thất bại | Hành động |
 |---------|-------|-------------------|----------|
 | `VR-001` | `location` | `location` null hoặc `location.lat` null | Quarantine |
 | `VR-002` | `name` | Tên OSM trống/"unknown" VÀ không có Google data | Quarantine |
 
 ### Silver Layer Validation (Quality Score)
+
+**Bảng 3. Silver Layer Validation (Quality Score) - Component, Weight, Điều kiện.**
 
 | Component | Weight | Điều kiện |
 |-----------|--------|----------|
@@ -35,6 +53,8 @@ Smart Travel Platform định nghĩa chất lượng dữ liệu theo 5 chiều:
 
 ### Gold Promotion Rules
 
+**Bảng 4. Gold Promotion Rules - Rule, Điều kiện, Kết quả.**
+
 | Rule | Điều kiện | Kết quả |
 |------|----------|---------|
 | `PR-001` | `quality_score >= 0.5` | Auto-promote lên Gold |
@@ -44,6 +64,8 @@ Smart Travel Platform định nghĩa chất lượng dữ liệu theo 5 chiều:
 ---
 
 ## Data Cleansing Rules
+
+**Bảng 5. Data Cleansing Rules - Field, Rule, Ví dụ.**
 
 | Field | Rule | Ví dụ |
 |-------|------|-------|
@@ -57,6 +79,8 @@ Smart Travel Platform định nghĩa chất lượng dữ liệu theo 5 chiều:
 
 ## Deduplication Rules
 
+**Bảng 6. Deduplication Rules - Scope, Key, Phương pháp.**
+
 | Scope | Key | Phương pháp |
 |-------|-----|-------------|
 | Bronze POIs | `u_key` | Unique index, upsert |
@@ -68,6 +92,8 @@ Smart Travel Platform định nghĩa chất lượng dữ liệu theo 5 chiều:
 ## Data Quality Monitoring
 
 ### Metrics theo dõi
+
+**Bảng 7. Metrics theo dõi - Metric, Mô tả, Target.**
 
 | Metric | Mô tả | Target |
 |--------|-------|--------|
@@ -89,6 +115,8 @@ Các metric này được hiển thị trực tiếp trên Dashboard:
 
 ## Anomaly Detection
 
+**Bảng 8. Anomaly Detection - Loại bất thường, Ngưỡng cảnh báo, Hành động.**
+
 | Loại bất thường | Ngưỡng cảnh báo | Hành động |
 |----------------|----------------|----------|
 | Gold count giảm đột ngột | > 10% drop trong 1 ngày | Kiểm tra pipeline |
@@ -99,6 +127,8 @@ Các metric này được hiển thị trực tiếp trên Dashboard:
 ---
 
 ## Freshness Monitoring
+
+**Bảng 9. Freshness Monitoring - Layer, Max age acceptable, Hành động nếu quá hạn.**
 
 | Layer | Max age acceptable | Hành động nếu quá hạn |
 |-------|-------------------|----------------------|

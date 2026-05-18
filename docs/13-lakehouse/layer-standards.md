@@ -1,5 +1,14 @@
 # Layer Standards — Tiêu chuẩn từng lớp
 
+## Danh sách bảng
+
+- [Bảng 1. Required Fields - Field, Bắt buộc, Mô tả](#required-fields)
+- [Bảng 2. Required Fields - Field, Bắt buộc, Mô tả](#required-fields)
+- [Bảng 3. Required Fields - Field, Bắt buộc, Notes](#required-fields)
+- [Bảng 4. Producer/Consumer Contract - Contract, Producer, Consumer, Format](#producerconsumer-contract)
+- [Bảng 5. Schema Evolution Rules - Loại thay đổi, Allowed, Process](#schema-evolution-rules)
+- [Bảng 6. Lineage Tracking - Field, Mô tả](#lineage-tracking)
+
 ## Bronze Standards
 
 ### Nguyên tắc
@@ -10,6 +19,8 @@
 - **Timestamp:** Mỗi record có `ingestedAt` và `updatedAt`
 
 ### Required Fields
+
+**Bảng 1. Required Fields - Field, Bắt buộc, Mô tả.**
 
 | Field | Bắt buộc | Mô tả |
 |-------|----------|-------|
@@ -40,6 +51,8 @@
 - **Reproducible:** Có thể rebuild từ Bronze bất kỳ lúc nào
 
 ### Required Fields
+
+**Bảng 2. Required Fields - Field, Bắt buộc, Mô tả.**
 
 | Field | Bắt buộc | Mô tả |
 |-------|----------|-------|
@@ -87,6 +100,8 @@ website: Google website
 
 ### Required Fields
 
+**Bảng 3. Required Fields - Field, Bắt buộc, Notes.**
+
 | Field | Bắt buộc | Notes |
 |-------|----------|-------|
 | `u_key` | ✅ | Unique |
@@ -109,6 +124,8 @@ website: Google website
 
 ### Producer/Consumer Contract
 
+**Bảng 4. Producer/Consumer Contract - Contract, Producer, Consumer, Format.**
+
 | Contract | Producer | Consumer | Format |
 |---------|---------|---------|--------|
 | Gold POI API | ETL Service | API Server / Frontend | MongoDB document |
@@ -116,6 +133,8 @@ website: Google website
 | ETL Job API | ETL Service | API Server (proxy) | FastAPI JSON |
 
 ### Schema Evolution Rules
+
+**Bảng 5. Schema Evolution Rules - Loại thay đổi, Allowed, Process.**
 
 | Loại thay đổi | Allowed | Process |
 |--------------|---------|---------|
@@ -132,6 +151,8 @@ website: Google website
 ### Lineage Tracking
 
 Collection `data_lineage_edges` theo dõi quan hệ nguồn gốc:
+
+**Bảng 6. Lineage Tracking - Field, Mô tả.**
 
 | Field | Mô tả |
 |-------|-------|

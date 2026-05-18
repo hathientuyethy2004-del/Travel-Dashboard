@@ -1,8 +1,20 @@
 # KPI Definitions & Metric Catalog
 
+## Danh sách bảng
+
+- [Bảng 1. Pipeline Health KPIs - KPI, Định nghĩa, Formula, Target](#pipeline-health-kpis)
+- [Bảng 2. Data Quality KPIs - KPI, Định nghĩa, Formula, Target](#data-quality-kpis)
+- [Bảng 3. Phân bố POI theo thành phố - Metric, Mô tả](#phân-bố-poi-theo-thành-phố)
+- [Bảng 4. Phân bố POI theo danh mục - Metric, Mô tả](#phân-bố-poi-theo-danh-mục)
+- [Bảng 5. Overview Tab - Widget, Data Source, Refresh](#overview-tab)
+- [Bảng 6. Pipeline Monitor Tab - Widget, Data Source](#pipeline-monitor-tab)
+- [Bảng 7. Báo cáo định kỳ - Báo cáo, Tần suất, Nội dung, Endpoint](#báo-cáo-định-kỳ)
+
 ## Dashboard KPIs
 
 ### Pipeline Health KPIs
+
+**Bảng 1. Pipeline Health KPIs - KPI, Định nghĩa, Formula, Target.**
 
 | KPI | Định nghĩa | Formula | Target |
 |-----|-----------|---------|--------|
@@ -14,6 +26,8 @@
 | **Pending Review** | Số records chờ duyệt | `COUNT(pending_review_pois)` | < 500 |
 
 ### Data Quality KPIs
+
+**Bảng 2. Data Quality KPIs - KPI, Định nghĩa, Formula, Target.**
 
 | KPI | Định nghĩa | Formula | Target |
 |-----|-----------|---------|--------|
@@ -29,6 +43,8 @@
 
 ### Phân bố POI theo thành phố
 
+**Bảng 3. Phân bố POI theo thành phố - Metric, Mô tả.**
+
 | Metric | Mô tả |
 |--------|-------|
 | `city_poi_count` | Số Gold POI theo từng thành phố |
@@ -37,6 +53,8 @@
 | `city_avg_rating` | Avg rating theo thành phố |
 
 ### Phân bố POI theo danh mục
+
+**Bảng 4. Phân bố POI theo danh mục - Metric, Mô tả.**
 
 | Metric | Mô tả |
 |--------|-------|
@@ -58,6 +76,8 @@ Gold:   [████████       ] N * ~50% (score >= 0.5)
 
 ### Overview Tab
 
+**Bảng 5. Overview Tab - Widget, Data Source, Refresh.**
+
 | Widget | Data Source | Refresh |
 |--------|-------------|---------|
 | Gold POIs count | `GET /api/dashboard/overview` | On load |
@@ -73,6 +93,8 @@ Gold:   [████████       ] N * ~50% (score >= 0.5)
 
 ### Pipeline Monitor Tab
 
+**Bảng 6. Pipeline Monitor Tab - Widget, Data Source.**
+
 | Widget | Data Source |
 |--------|-------------|
 | Recent ETL jobs | `GET /api/pipeline/executions` |
@@ -85,6 +107,8 @@ Gold:   [████████       ] N * ~50% (score >= 0.5)
 ## BI & Reporting
 
 ### Báo cáo định kỳ
+
+**Bảng 7. Báo cáo định kỳ - Báo cáo, Tần suất, Nội dung, Endpoint.**
 
 | Báo cáo | Tần suất | Nội dung | Endpoint |
 |---------|----------|---------|---------|

@@ -1,8 +1,20 @@
 # SLA / SLO — Smart Travel Platform
 
+## Danh sách bảng
+
+- [Bảng 1. API Server - Metric, Target, Measurement](#api-server)
+- [Bảng 2. ETL Service - Metric, Target, Measurement](#etl-service)
+- [Bảng 3. Data Freshness SLA - Layer, SLA, Penalty](#data-freshness-sla)
+- [Bảng 4. Availability SLA - Service, Target, Maintenance window](#availability-sla)
+- [Bảng 5. Data Quality SLO - Metric, Target](#data-quality-slo)
+- [Bảng 6. Recovery Time Objectives (RTO) - Sự cố, RTO, Quy trình](#recovery-time-objectives-rto)
+- [Bảng 7. Recovery Point Objectives (RPO) - Data, RPO](#recovery-point-objectives-rpo)
+
 ## Service Level Objectives (SLO)
 
 ### API Server
+
+**Bảng 1. API Server - Metric, Target, Measurement.**
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
@@ -12,6 +24,8 @@
 | Error rate | < 1% | 5xx responses / total |
 
 ### ETL Service
+
+**Bảng 2. ETL Service - Metric, Target, Measurement.**
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
@@ -23,6 +37,8 @@
 
 ## Data Freshness SLA
 
+**Bảng 3. Data Freshness SLA - Layer, SLA, Penalty.**
+
 | Layer | SLA | Penalty |
 |-------|-----|---------|
 | Gold layer | Cập nhật ít nhất 1 lần/ngày | Alert + manual trigger |
@@ -32,6 +48,8 @@
 ---
 
 ## Availability SLA
+
+**Bảng 4. Availability SLA - Service, Target, Maintenance window.**
 
 | Service | Target | Maintenance window |
 |---------|--------|-------------------|
@@ -43,6 +61,8 @@
 ---
 
 ## Data Quality SLO
+
+**Bảng 5. Data Quality SLO - Metric, Target.**
 
 | Metric | Target |
 |--------|--------|
@@ -57,6 +77,8 @@
 
 ## Recovery Time Objectives (RTO)
 
+**Bảng 6. Recovery Time Objectives (RTO) - Sự cố, RTO, Quy trình.**
+
 | Sự cố | RTO | Quy trình |
 |-------|-----|----------|
 | API Server down | 15 phút | Restart workflow |
@@ -68,6 +90,8 @@
 ---
 
 ## Recovery Point Objectives (RPO)
+
+**Bảng 7. Recovery Point Objectives (RPO) - Data, RPO.**
 
 | Data | RPO |
 |------|-----|

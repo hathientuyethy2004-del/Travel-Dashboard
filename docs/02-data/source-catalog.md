@@ -1,5 +1,15 @@
 # Source Catalog — Danh mục nguồn dữ liệu
 
+## Danh sách bảng
+
+- [Bảng 1. Nguồn 1: OpenStreetMap (OSM) - Thuộc tính, Giá trị](#nguồn-1-openstreetmap-osm)
+- [Bảng 2. Dữ liệu thu thập - Field OSM, Field hệ thống, Mô tả](#dữ-liệu-thu-thập)
+- [Bảng 3. Nguồn 2: Google Places (RapidAPI) - Thuộc tính, Giá trị](#nguồn-2-google-places-rapidapi)
+- [Bảng 4. Endpoints sử dụng - Endpoint, URL, Mục đích](#endpoints-sử-dụng)
+- [Bảng 5. Dữ liệu thu thập - Field Google, Field hệ thống, Mô tả](#dữ-liệu-thu-thập)
+- [Bảng 6. Source Registry - ID, Tên, Loại, Tần suất, Độ tin cậy, Owner](#source-registry)
+- [Bảng 7. Data Freshness - Layer, Nguồn, Tần suất cập nhật](#data-freshness)
+
 ## Tổng quan
 
 Smart Travel Platform thu thập dữ liệu từ 2 nguồn chính: **OpenStreetMap (OSM)** và **Google Places**. Các nguồn này được kết hợp để tạo ra bộ dữ liệu POI chất lượng cao.
@@ -7,6 +17,8 @@ Smart Travel Platform thu thập dữ liệu từ 2 nguồn chính: **OpenStreet
 ---
 
 ## Nguồn 1: OpenStreetMap (OSM)
+
+**Bảng 1. Nguồn 1: OpenStreetMap (OSM) - Thuộc tính, Giá trị.**
 
 | Thuộc tính | Giá trị |
 |-----------|---------|
@@ -40,6 +52,8 @@ out center;
 
 ### Dữ liệu thu thập
 
+**Bảng 2. Dữ liệu thu thập - Field OSM, Field hệ thống, Mô tả.**
+
 | Field OSM | Field hệ thống | Mô tả |
 |-----------|---------------|-------|
 | `name` | `name` | Tên địa điểm |
@@ -61,6 +75,8 @@ out center;
 
 ## Nguồn 2: Google Places (RapidAPI)
 
+**Bảng 3. Nguồn 2: Google Places (RapidAPI) - Thuộc tính, Giá trị.**
+
 | Thuộc tính | Giá trị |
 |-----------|---------|
 | **Tên nguồn** | Google Map Places API via RapidAPI |
@@ -72,6 +88,8 @@ out center;
 | **Key quản lý** | Xoay vòng 21 keys (env: `RAPIDAPI_KEYS`) |
 
 ### Endpoints sử dụng
+
+**Bảng 4. Endpoints sử dụng - Endpoint, URL, Mục đích.**
 
 | Endpoint | URL | Mục đích |
 |----------|-----|---------|
@@ -88,6 +106,8 @@ Hệ thống sử dụng `RoundRobinKeyManager` để:
 4. Reset key vào đầu ngày mới
 
 ### Dữ liệu thu thập
+
+**Bảng 5. Dữ liệu thu thập - Field Google, Field hệ thống, Mô tả.**
 
 | Field Google | Field hệ thống | Mô tả |
 |-------------|---------------|-------|
@@ -125,6 +145,8 @@ Google Places API                           bronze_pois
 
 ## Source Registry
 
+**Bảng 6. Source Registry - ID, Tên, Loại, Tần suất, Độ tin cậy, Owner.**
+
 | ID | Tên | Loại | Tần suất | Độ tin cậy | Owner |
 |----|-----|------|----------|-----------|-------|
 | `osm` | OpenStreetMap | Public API | Theo lịch ETL | Medium | Data Engineering |
@@ -133,6 +155,8 @@ Google Places API                           bronze_pois
 ---
 
 ## Data Freshness
+
+**Bảng 7. Data Freshness - Layer, Nguồn, Tần suất cập nhật.**
 
 | Layer | Nguồn | Tần suất cập nhật |
 |-------|-------|------------------|

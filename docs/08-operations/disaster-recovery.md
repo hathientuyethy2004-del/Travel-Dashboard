@@ -1,6 +1,13 @@
 # Disaster Recovery Plan
 
+## Danh sách bảng
+
+- [Bảng 1. DR Overview - RTO Target, RPO Target](#dr-overview)
+- [Bảng 2. MongoDB Atlas - Backup type, Tần suất, Retention](#mongodb-atlas)
+
 ## DR Overview
+
+**Bảng 1. DR Overview - RTO Target, RPO Target.**
 
 | RTO Target | RPO Target |
 |-----------|-----------|
@@ -11,6 +18,8 @@
 ## Backup Strategy
 
 ### MongoDB Atlas
+
+**Bảng 2. MongoDB Atlas - Backup type, Tần suất, Retention.**
 
 | Backup type | Tần suất | Retention |
 |-------------|----------|-----------|

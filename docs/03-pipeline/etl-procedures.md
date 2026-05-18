@@ -1,5 +1,11 @@
 # ETL Procedures — Quy trình ETL/ELT
 
+## Danh sách bảng
+
+- [Bảng 1. Bronze → Silver - Rule, Mô tả](#bronze-silver)
+- [Bảng 2. Silver → Gold - Rule, Mô tả](#silver-gold)
+- [Bảng 3. Business Rules - Rule ID, Rule, Ví dụ](#business-rules)
+
 ## Extract Procedure
 
 ### OSM Extraction
@@ -49,6 +55,8 @@ Procedure:
 
 ### Bronze → Silver
 
+**Bảng 1. Bronze → Silver - Rule, Mô tả.**
+
 | Rule | Mô tả |
 |------|-------|
 | `T-001` | Extract `name`: ưu tiên Google name > OSM name > "unknown" |
@@ -63,6 +71,8 @@ Procedure:
 | `T-010` | Set `promoted_at = now()` |
 
 ### Silver → Gold
+
+**Bảng 2. Silver → Gold - Rule, Mô tả.**
 
 | Rule | Mô tả |
 |------|-------|
@@ -143,6 +153,8 @@ quality_score: {
 ---
 
 ## Business Rules
+
+**Bảng 3. Business Rules - Rule ID, Rule, Ví dụ.**
 
 | Rule ID | Rule | Ví dụ |
 |---------|------|-------|

@@ -1,5 +1,12 @@
 # Pipeline Architecture — Thiết kế pipeline
 
+## Danh sách bảng
+
+- [Bảng 1. Job Types - Job, Mô tả, Dependency](#job-types)
+- [Bảng 2. Scheduler Seeds (mặc định) - Schedule, Cron, Job](#scheduler-seeds-mặc-định)
+- [Bảng 3. Fast Rebuild vs Record-by-Record - Mode, Cơ chế, Tốc độ, Khi dùng](#fast-rebuild-vs-record-by-record)
+- [Bảng 4. Error Handling - Tình huống, Xử lý](#error-handling)
+
 ## Tổng quan
 
 Smart Travel Platform sử dụng **Medallion Architecture** với 3 lớp dữ liệu Bronze → Silver → Gold, kết hợp giữa batch processing và aggregation pipeline của MongoDB.
@@ -29,6 +36,8 @@ Smart Travel Platform sử dụng **Medallion Architecture** với 3 lớp dữ 
 ## DAG Design
 
 ### Job Types
+
+**Bảng 1. Job Types - Job, Mô tả, Dependency.**
 
 | Job | Mô tả | Dependency |
 |-----|-------|-----------|
@@ -89,6 +98,8 @@ enrich_google (batch 500) ──▶ _rebuild_silver_gold_fast
 
 ### Scheduler Seeds (mặc định)
 
+**Bảng 2. Scheduler Seeds (mặc định) - Schedule, Cron, Job.**
+
 | Schedule | Cron | Job |
 |----------|------|-----|
 | nightly_sync | `0 2 * * *` | `nightly_sync` |
@@ -142,6 +153,8 @@ enrich_google (batch 500) ──▶ _rebuild_silver_gold_fast
 
 ## Fast Rebuild vs Record-by-Record
 
+**Bảng 3. Fast Rebuild vs Record-by-Record - Mode, Cơ chế, Tốc độ, Khi dùng.**
+
 | Mode | Cơ chế | Tốc độ | Khi dùng |
 |------|--------|--------|---------|
 | `_rebuild_silver_gold_fast` | MongoDB $out aggregation | ~giây cho 100K+ | Nightly sync, rebuild toàn bộ |
@@ -150,6 +163,8 @@ enrich_google (batch 500) ──▶ _rebuild_silver_gold_fast
 ---
 
 ## Error Handling
+
+**Bảng 4. Error Handling - Tình huống, Xử lý.**
 
 | Tình huống | Xử lý |
 |-----------|-------|

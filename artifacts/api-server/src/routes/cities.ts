@@ -4,44 +4,38 @@ import { GetCitiesResponseItem } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-// English name lookup derived from OSM city_name values
-const CITY_NAME_EN: Record<string, string> = {
-  hcm:       "Ho Chi Minh City",
-  hanoi:     "Hanoi",
-  danang:    "Da Nang",
-  nhatrang:  "Nha Trang",
-  dalat:     "Da Lat",
-  hue:       "Hue",
-  haiphong:  "Hai Phong",
-  cantho:    "Can Tho",
-  quynhon:   "Quy Nhon",
-  vungtau:   "Vung Tau",
-};
-
 router.get("/cities", async (req, res): Promise<void> => {
   try {
     const db = await getDb();
 
-    // Derive city list from gold_master_pois — the cities collection is not populated
-    const cities = await db.collection("gold_master_pois").aggregate([
+    const cities = await db.collection("config_cities").aggregate([
       {
-        $group: {
-          _id:      "$city",
-          name:     { $first: "$city_name" },
-          poiCount: { $sum: 1 },
+        $lookup: {
+          from: "gold_master_pois",
+          let: { cityCode: "$code" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$city", "$$cityCode"] } } },
+            { $count: "count" },
+          ],
+          as: "poiStats",
         },
       },
-      { $sort: { poiCount: -1 } },
+      {
+        $addFields: {
+          poiCount: { $ifNull: [{ $arrayElemAt: ["$poiStats.count", 0] }, 0] },
+        },
+      },
+      { $sort: { poiCount: -1, name: 1 } },
     ]).toArray();
 
     const result = cities.map((c) =>
       GetCitiesResponseItem.parse({
-        cityCode:    c._id ?? "",
+        cityCode:    c.code ?? "",
         name:        c.name ?? c._id ?? "",
-        nameEn:      CITY_NAME_EN[c._id as string] ?? "",
-        region:      "",
+        nameEn:      c.nameEn ?? "",
+        region:      c.region ?? "",
         population:  c.poiCount as number,
-        description: null,
+        description: c.description ?? null,
       })
     );
 

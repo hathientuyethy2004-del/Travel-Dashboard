@@ -1,0 +1,11 @@
+.git
+node_modules
+**/node_modules
+**/dist
+**/.vite
+__pycache__
+**/__pycache__
+*.pyc
+.env
+.DS_Store
+artifacts/mockup-sandbox/dist

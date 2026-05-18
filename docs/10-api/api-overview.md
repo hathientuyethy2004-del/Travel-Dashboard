@@ -1,5 +1,17 @@
 # API Documentation Overview
 
+## Danh sách bảng
+
+- [Bảng 1. Health - Method, Path, Mô tả](#health)
+- [Bảng 2. Dashboard - Method, Path, Mô tả](#dashboard)
+- [Bảng 3. POIs (Gold Layer) - Method, Path, Query Params, Mô tả](#pois-gold-layer)
+- [Bảng 4. Cities - Method, Path, Mô tả](#cities)
+- [Bảng 5. Analytics - Method, Path, Mô tả](#analytics)
+- [Bảng 6. Pipeline - Method, Path, Mô tả](#pipeline)
+- [Bảng 7. Recommendations - Method, Path, Query Params, Mô tả](#recommendations)
+- [Bảng 8. Reports - Method, Path, Mô tả](#reports)
+- [Bảng 9. ETL (Proxy to ETL Service) - Method, Path, Body, Mô tả](#etl-proxy-to-etl-service)
+
 ## REST API
 
 **Base URL:** `/api`  
@@ -13,11 +25,15 @@
 
 ### Health
 
+**Bảng 1. Health - Method, Path, Mô tả.**
+
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/api/healthz` | Health check |
 
 ### Dashboard
+
+**Bảng 2. Dashboard - Method, Path, Mô tả.**
 
 | Method | Path | Mô tả |
 |--------|------|-------|
@@ -31,6 +47,8 @@
 
 ### POIs (Gold Layer)
 
+**Bảng 3. POIs (Gold Layer) - Method, Path, Query Params, Mô tả.**
+
 | Method | Path | Query Params | Mô tả |
 |--------|------|-------------|-------|
 | GET | `/api/pois` | `city`, `category`, `page`, `limit` | Browse Gold POIs |
@@ -38,11 +56,15 @@
 
 ### Cities
 
+**Bảng 4. Cities - Method, Path, Mô tả.**
+
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/api/cities` | Danh sách thành phố hỗ trợ |
 
 ### Analytics
+
+**Bảng 5. Analytics - Method, Path, Mô tả.**
 
 | Method | Path | Mô tả |
 |--------|------|-------|
@@ -51,6 +73,8 @@
 
 ### Pipeline
 
+**Bảng 6. Pipeline - Method, Path, Mô tả.**
+
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/api/pipeline/executions` | Recent pipeline executions |
@@ -58,17 +82,23 @@
 
 ### Recommendations
 
+**Bảng 7. Recommendations - Method, Path, Query Params, Mô tả.**
+
 | Method | Path | Query Params | Mô tả |
 |--------|------|-------------|-------|
 | GET | `/api/recommendations` | `city`, `category` | POI recommendations |
 
 ### Reports
 
+**Bảng 8. Reports - Method, Path, Mô tả.**
+
 | Method | Path | Mô tả |
 |--------|------|-------|
 | GET | `/api/reports/*` | Periodic report data |
 
 ### ETL (Proxy to ETL Service)
+
+**Bảng 9. ETL (Proxy to ETL Service) - Method, Path, Body, Mô tả.**
 
 | Method | Path | Body | Mô tả |
 |--------|------|------|-------|

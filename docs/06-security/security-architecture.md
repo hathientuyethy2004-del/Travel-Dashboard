@@ -1,8 +1,19 @@
 # Security Architecture
 
+## Danh sách bảng
+
+- [Bảng 1. Identity Management - Component, Identity, Auth Method](#identity-management)
+- [Bảng 2. Encryption Standards - Data, Standard, Notes](#encryption-standards)
+- [Bảng 3. Key Management - Key, Rotation, Storage](#key-management)
+- [Bảng 4. Backup & Recovery - Resource, Backup, Retention](#backup-recovery)
+- [Bảng 5. Input Validation - Layer, Validation](#input-validation)
+- [Bảng 6. Ưu tiên xử lý - Severity, Response Time, Ví dụ](#ưu-tiên-xử-lý)
+
 ## IAM Design
 
 ### Identity Management
+
+**Bảng 1. Identity Management - Component, Identity, Auth Method.**
 
 | Component | Identity | Auth Method |
 |-----------|----------|------------|
@@ -46,6 +57,8 @@ Internet
 
 ### Encryption Standards
 
+**Bảng 2. Encryption Standards - Data, Standard, Notes.**
+
 | Data | Standard | Notes |
 |------|----------|-------|
 | MongoDB at rest | AES-256 | Atlas built-in |
@@ -55,12 +68,16 @@ Internet
 
 ### Key Management
 
+**Bảng 3. Key Management - Key, Rotation, Storage.**
+
 | Key | Rotation | Storage |
 |-----|----------|---------|
 | MongoDB password | Manual, khi cần | Replit Secrets |
 | RapidAPI keys | Automatic round-robin (21 keys) | Replit Secrets |
 
 ### Backup & Recovery
+
+**Bảng 4. Backup & Recovery - Resource, Backup, Retention.**
 
 | Resource | Backup | Retention |
 |---------|--------|-----------|
@@ -87,6 +104,8 @@ Internet
 6. **CÓ** sử dụng `os.getenv("SECRET_NAME")` trong Python
 
 ### Input Validation
+
+**Bảng 5. Input Validation - Layer, Validation.**
 
 | Layer | Validation |
 |-------|-----------|
@@ -123,6 +142,8 @@ Internet
 ```
 
 ### Ưu tiên xử lý
+
+**Bảng 6. Ưu tiên xử lý - Severity, Response Time, Ví dụ.**
 
 | Severity | Response Time | Ví dụ |
 |----------|--------------|-------|

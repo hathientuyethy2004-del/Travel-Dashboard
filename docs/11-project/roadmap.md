@@ -1,5 +1,16 @@
 # Project Roadmap & Management
 
+## Danh sách bảng
+
+- [Bảng 1. Phase 1 — Foundation (Hiện tại ✅) - Milestone, Status, Mô tả](#phase-1-foundation-hiện-tại)
+- [Bảng 2. Phase 2 — Quality & Coverage (Q3 2025) - Milestone, Priority, Mô tả](#phase-2-quality-coverage-q3-2025)
+- [Bảng 3. Phase 3 — Scale & Intelligence (Q4 2025) - Milestone, Priority, Mô tả](#phase-3-scale-intelligence-q4-2025)
+- [Bảng 4. Phase 4 — Enterprise (2026) - Milestone, Priority, Mô tả](#phase-4-enterprise-2026)
+- [Bảng 5. Current Milestones - Milestone, Target, Status](#current-milestones)
+- [Bảng 6. Risk Register - Risk, Probability, Impact, Mitigation](#risk-register)
+- [Bảng 7. Versioning Strategy - Loại, Version format, Ví dụ](#versioning-strategy)
+- [Bảng 8. Rollback Plan - Component, Rollback method, Time](#rollback-plan)
+
 ## Vision
 
 Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt Nam, với khả năng phục vụ cả internal analytics và external API consumers.
@@ -9,6 +20,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 ## Roadmap
 
 ### Phase 1 — Foundation (Hiện tại ✅)
+
+**Bảng 1. Phase 1 — Foundation (Hiện tại ✅) - Milestone, Status, Mô tả.**
 
 | Milestone | Status | Mô tả |
 |-----------|--------|-------|
@@ -23,6 +36,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 
 ### Phase 2 — Quality & Coverage (Q3 2025)
 
+**Bảng 2. Phase 2 — Quality & Coverage (Q3 2025) - Milestone, Priority, Mô tả.**
+
 | Milestone | Priority | Mô tả |
 |-----------|----------|-------|
 | Auth middleware | High | Bảo vệ API với JWT/API key |
@@ -33,6 +48,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 
 ### Phase 3 — Scale & Intelligence (Q4 2025)
 
+**Bảng 3. Phase 3 — Scale & Intelligence (Q4 2025) - Milestone, Priority, Mô tả.**
+
 | Milestone | Priority | Mô tả |
 |-----------|----------|-------|
 | ML deduplication | Medium | Thay fuzzy matching bằng ML model |
@@ -42,6 +59,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 | Mobile SDK | Low | iOS/Android SDK |
 
 ### Phase 4 — Enterprise (2026)
+
+**Bảng 4. Phase 4 — Enterprise (2026) - Milestone, Priority, Mô tả.**
 
 | Milestone | Priority | Mô tả |
 |-----------|----------|-------|
@@ -54,6 +73,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 
 ## Current Milestones
 
+**Bảng 5. Current Milestones - Milestone, Target, Status.**
+
 | Milestone | Target | Status |
 |-----------|--------|--------|
 | 10,000 Gold POIs | Q2 2025 | In progress |
@@ -64,6 +85,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 ---
 
 ## Risk Register
+
+**Bảng 6. Risk Register - Risk, Probability, Impact, Mitigation.**
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|-----------|
@@ -81,6 +104,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 
 ### Versioning Strategy
 
+**Bảng 7. Versioning Strategy - Loại, Version format, Ví dụ.**
+
 | Loại | Version format | Ví dụ |
 |------|---------------|-------|
 | API | Semantic versioning | `v0.2.0` → `v0.3.0` |
@@ -88,6 +113,8 @@ Trở thành nền tảng dữ liệu POI du lịch tin cậy nhất cho Việt 
 | Quality formula | Sequential | `qscore_v1` → `qscore_v2` |
 
 ### Rollback Plan
+
+**Bảng 8. Rollback Plan - Component, Rollback method, Time.**
 
 | Component | Rollback method | Time |
 |-----------|----------------|------|

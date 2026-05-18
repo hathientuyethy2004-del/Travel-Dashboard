@@ -1,5 +1,11 @@
 # Data Flow — Luồng dữ liệu
 
+## Danh sách bảng
+
+- [Bảng 1. Batch Processing Flow - Batch, Trigger, Records, Duration](#batch-processing-flow)
+- [Bảng 2. Quality Score Formula - Score, Ý nghĩa, Hành động](#quality-score-formula)
+- [Bảng 3. Quality Score Formula - Scenario, Max Score](#quality-score-formula)
+
 ## End-to-End Data Flow
 
 ```
@@ -87,6 +93,8 @@ Không áp dụng. Hệ thống hiện tại sử dụng **batch processing** th
 
 ## Batch Processing Flow
 
+**Bảng 1. Batch Processing Flow - Batch, Trigger, Records, Duration.**
+
 | Batch | Trigger | Records | Duration |
 |-------|---------|---------|----------|
 | `collect_osm` | Manual / scheduled | Toàn bộ city+category | 5–30 phút |
@@ -113,6 +121,8 @@ final_score = round(min(score, 1.0), 4)
 
 **Thang điểm:**
 
+**Bảng 2. Quality Score Formula - Score, Ý nghĩa, Hành động.**
+
 | Score | Ý nghĩa | Hành động |
 |-------|---------|----------|
 | 0.00 – 0.29 | Chất lượng thấp | Giữ ở Silver |
@@ -120,6 +130,8 @@ final_score = round(min(score, 1.0), 4)
 | 0.50 – 1.00 | Đủ điều kiện | Promote lên Gold |
 
 **Điểm tối đa theo trường hợp:**
+
+**Bảng 3. Quality Score Formula - Scenario, Max Score.**
 
 | Scenario | Max Score |
 |----------|-----------|

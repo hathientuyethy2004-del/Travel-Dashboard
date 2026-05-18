@@ -1,0 +1,264 @@
+% Compile with pdfLaTeX on Overleaf
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.2em}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Chương 3. Thiết kế và Triển khai hệ thống}
+
+\vspace{0.3em}
+{\large\itshape (Thiết kế và triển khai hệ thống)}
+\end{center}
+
+\section*{Danh sách bảng}
+\addcontentsline{toc}{section}{Danh sách bảng}
+
+\begin{itemize}
+  \item Bảng 1. Các thành phần chính -- Thành phần, Công nghệ chính, Vai trò trong hệ thống.
+  \item Bảng 2. Mô hình dữ liệu -- Collection, Lớp dữ liệu, Nội dung lưu trữ chính.
+  \item Bảng 3. Đường ống xử lý dữ liệu -- Job, Đầu vào chính, Kết quả đầu ra.
+  \item Bảng 4. Giao diện lập trình ứng dụng của hệ thống -- Nhóm API, Endpoint tiêu biểu, Dữ liệu hoặc chức năng cung cấp.
+\end{itemize}
+
+
+\setcounter{section}{2}
+
+\section{Tổng quan chương}
+
+Chương này trình bày cách Smart Travel Platform được thiết kế và triển khai trong thực tế. Nội dung được tổng hợp từ các tài liệu trong thư mục \texttt{docs}, bao gồm tài liệu kiến trúc tổng thể, tiêu chuẩn dữ liệu, luồng pipeline, quy tắc chất lượng, governance, bảo mật, hạ tầng, API, vận hành và hướng dẫn người dùng. Trọng tâm của chương không chỉ là mô tả các thành phần kỹ thuật, mà còn làm rõ logic thiết kế phía sau hệ thống: dữ liệu du lịch được thu thập từ nhiều nguồn, chuẩn hóa qua các lớp xử lý, đánh giá chất lượng, đưa vào lớp phục vụ và sau đó được khai thác qua dashboard cũng như REST API.
+
+Mục tiêu thiết kế của hệ thống là xây dựng một nền tảng dữ liệu POI vừa đủ cho quy mô nhỏ đến trung bình, có khả năng vận hành ổn định và có đường mở rộng rõ ràng. Dữ liệu POI có tính không đồng nhất cao, vì cùng một địa điểm có thể xuất hiện ở nhiều nguồn với tên, tọa độ, địa chỉ, danh mục hoặc thông tin liên hệ khác nhau. Do đó, hệ thống được thiết kế theo hướng ưu tiên batch processing, Medallion Architecture, MongoDB document model, API contract, data quality score, lineage và dashboard vận hành. Cách tiếp cận này phù hợp với dữ liệu du lịch vì nhu cầu cập nhật không yêu cầu thời gian thực tuyệt đối, trong khi yêu cầu kiểm soát chất lượng và truy vết lại rất quan trọng.
+
+\section{Kiến trúc tổng thể hệ thống}
+
+\subsection{Kiến trúc tổng quan}
+
+Smart Travel Platform được tổ chức theo mô hình nhiều lớp, trong đó dashboard, API server, ETL service và MongoDB Atlas có trách nhiệm tách biệt nhưng liên kết chặt chẽ. Dashboard được xây dựng bằng React/Vite và đóng vai trò lớp tương tác chính cho người dùng, bao gồm các màn hình tổng quan KPI, POI Explorer, Analytics, Pipeline Monitor, Reports và Settings. API Server sử dụng Node.js/Express để cung cấp REST API thống nhất cho dashboard và các consumer khác, đồng thời đóng vai trò proxy cho một số thao tác liên quan đến ETL. ETL Service sử dụng Python/FastAPI để thực hiện thu thập dữ liệu, làm giàu, validation, scoring, promote và rebuild các lớp dữ liệu. MongoDB Atlas là lớp lưu trữ bền vững, chứa dữ liệu Bronze, Silver, Gold, hàng đợi review, quarantine, trạng thái job, lịch chạy và cấu hình tham chiếu.
+
+\begin{verbatim}
+Data Sources -> ETL Service -> Bronze -> Silver -> Gold
+                         |                    |
+                         v                    v
+                    Job State          API / Dashboard
+\end{verbatim}
+
+Luồng thiết kế này giúp hệ thống tránh việc dashboard truy cập trực tiếp vào dữ liệu thô hoặc logic pipeline. Dashboard chỉ làm việc với API, API ưu tiên đọc dữ liệu đã đủ tin cậy từ \texttt{gold\_master\_pois}, còn ETL Service chịu trách nhiệm xử lý dữ liệu theo pipeline. Nhờ đó, hệ thống giảm phụ thuộc giữa giao diện và quy trình xử lý dữ liệu, đồng thời dễ kiểm soát lỗi hơn khi một thành phần thay đổi.
+
+\subsection{Kiến trúc hồ dữ liệu hợp nhất và mô hình nhiều lớp}
+
+Dự án tham chiếu tư duy Lakehouse và Medallion Architecture, nhưng triển khai ở mức phù hợp với quy mô hiện tại. Lớp Bronze lưu dữ liệu thô gần với nguồn ban đầu, bao gồm raw JSON từ OpenStreetMap và Google Places. Lớp Silver lưu dữ liệu đã được làm sạch, chuẩn hóa, hợp nhất và tính điểm chất lượng. Lớp Gold lưu các bản ghi master POI đã đủ tin cậy để phục vụ dashboard, API, báo cáo và phân tích. Ngoài ba lớp chính, hệ thống còn có \texttt{pending\_review\_pois} cho dữ liệu cần người duyệt và \texttt{data\_quality\_quarantine} cho dữ liệu lỗi hoặc không đạt validation.
+
+Cách triển khai này giữ lại tinh thần của lakehouse là bảo toàn dữ liệu nguồn, xử lý qua nhiều lớp tin cậy và cung cấp lớp phục vụ ổn định, nhưng không đưa vào các thành phần hạ tầng nặng như Spark, Iceberg, Trino, MinIO hoặc OpenMetadata. Đây là lựa chọn có chủ đích: với khối lượng dữ liệu hiện tại, MongoDB aggregation, batch job và Docker Compose đã đủ để chứng minh kiến trúc. Khi dữ liệu tăng mạnh hoặc nhu cầu phân tích phức tạp hơn, hệ thống có thể mở rộng sang object storage, table format, orchestrator mạnh hơn hoặc engine phân tán mà không cần thay đổi nguyên tắc thiết kế cốt lõi.
+
+\subsection{Các thành phần chính}
+
+Dashboard là thành phần trình bày và vận hành dữ liệu. Nó không chỉ hiển thị danh sách POI mà còn cho phép người dùng quan sát funnel Bronze--Silver--Gold, phân bố điểm chất lượng, thống kê theo thành phố, thống kê theo danh mục, trạng thái pipeline và các báo cáo định kỳ. API Server là lớp giao tiếp chính, đảm nhận các nhóm endpoint như \texttt{/api/dashboard/*}, \texttt{/api/pois/*}, \texttt{/api/cities}, \texttt{/api/pipeline/*}, \texttt{/api/reports/*} và \texttt{/api/etl/*}. ETL Service là thành phần xử lý dữ liệu, bao gồm các job như \texttt{collect\_osm}, \texttt{collect\_google\_places}, \texttt{enrich\_google}, \texttt{bronze\_to\_silver}, \texttt{silver\_to\_gold}, \texttt{rebuild\_layers}, \texttt{full\_pipeline} và \texttt{nightly\_sync}. MongoDB Atlas đóng vai trò storage chính, còn OpenStreetMap, Overpass API, Google Places và RapidAPI là các nguồn dữ liệu bên ngoài.
+
+\begin{longtable}{@{}p{0.22\textwidth}p{0.28\textwidth}p{0.40\textwidth}@{}}
+\caption{Các thành phần chính -- Thành phần, Công nghệ chính, Vai trò trong hệ thống.}\\
+\toprule
+\textbf{Thành phần} & \textbf{Công nghệ chính} & \textbf{Vai trò trong hệ thống} \\
+\midrule
+Dashboard & React, Vite, Tailwind CSS, Recharts & Hiển thị KPI, POI Explorer, Analytics, Pipeline Monitor, Reports và Settings cho người dùng cuối. \\
+API Server & Node.js, Express, TypeScript, OpenAPI/Zod & Cung cấp REST API, đọc Gold layer, proxy một số thao tác ETL và chuẩn hóa response cho frontend. \\
+ETL Service & Python, FastAPI, APScheduler, PyMongo & Thu thập, làm giàu, kiểm tra chất lượng, promote dữ liệu và quản lý lịch chạy pipeline. \\
+MongoDB Atlas & Document database, index, aggregation & Lưu Bronze, Silver, Gold, job state, schedule, config, pending review và quarantine. \\
+Nguồn dữ liệu & OpenStreetMap, Overpass API, Google Places/RapidAPI & Cung cấp dữ liệu POI thô và dữ liệu làm giàu như rating, địa chỉ, website, phone. \\
+\bottomrule
+\end{longtable}
+
+\section{Thiết kế dữ liệu}
+
+\subsection{Mô hình dữ liệu}
+
+Hệ thống sử dụng MongoDB document model thay vì schema quan hệ cứng. Lựa chọn này phù hợp với dữ liệu POI vì mỗi nguồn có thể cung cấp một tập trường khác nhau. Một bản ghi OSM có thể giàu tags địa chỉ nhưng thiếu rating; một bản ghi Google Places có thể có \texttt{place\_id}, rating, review count, formatted address và website; một số bản ghi chỉ có tọa độ và tên cơ bản. Mô hình document cho phép lưu raw JSON ở lớp Bronze, sau đó chuẩn hóa dần ở Silver và Gold mà không cần thiết kế nhiều bảng phụ ngay từ đầu.
+
+\texttt{bronze\_pois} lưu dữ liệu gốc từ OSM và Google Places, bao gồm \texttt{osm\_raw}, \texttt{google\_raw}, \texttt{has\_osm\_data}, \texttt{has\_google\_data}, \texttt{ingestedAt} và \texttt{updatedAt}. \texttt{silver\_pois} lưu bản ghi đã được làm sạch và tính \texttt{quality\_score}, với các trường đã chuẩn hóa như \texttt{name}, \texttt{address}, \texttt{phone}, \texttt{website}, \texttt{rating}, \texttt{review\_count}, \texttt{price\_level}, \texttt{source\_run\_id} và \texttt{promoted\_at}. \texttt{gold\_master\_pois} là nguồn dữ liệu chính thức cho API và dashboard, chỉ chứa các POI đạt ngưỡng chất lượng hoặc được duyệt phù hợp. \texttt{pending\_review\_pois} lưu các bản ghi có điểm trung gian cần Data Steward xem xét, còn \texttt{data\_quality\_quarantine} lưu các bản ghi bị loại do thiếu tọa độ, thiếu tên hợp lệ hoặc vi phạm quy tắc validation.
+
+Khóa định danh xuyên suốt của hệ thống là \texttt{u\_key}. Trong tài liệu dữ liệu, \texttt{u\_key} được xây dựng theo logic kết hợp thành phố, danh mục và định danh nguồn, ví dụ \texttt{hanoi\_restaurant\_123456}. Trường này được index unique ở các collection chính để hỗ trợ upsert, giảm trùng lặp và duy trì khả năng truy vết từ Gold về Silver/Bronze. Ngoài ra, hệ thống còn có \texttt{etl\_jobs} để lưu trạng thái job, \texttt{etl\_schedules} để lưu lịch chạy tự động, \texttt{config\_cities} để quản lý thành phố và \texttt{config\_categories} để chuẩn hóa danh mục POI.
+
+\begin{longtable}{@{}p{0.25\textwidth}p{0.24\textwidth}p{0.41\textwidth}@{}}
+\caption{Mô hình dữ liệu -- Collection, Lớp dữ liệu, Nội dung lưu trữ chính.}\\
+\toprule
+\textbf{Collection} & \textbf{Lớp dữ liệu} & \textbf{Nội dung lưu trữ chính} \\
+\midrule
+\texttt{bronze\_pois} & Bronze & Raw JSON từ OSM/Google, trạng thái nguồn, \texttt{u\_key}, city, category, thời điểm ingest/update. \\
+\texttt{silver\_pois} & Silver & Dữ liệu đã chuẩn hóa, quality score, trường đã làm sạch và metadata promote. \\
+\texttt{gold\_master\_pois} & Gold & Bản ghi POI chính thức phục vụ API, dashboard, analytics và reports. \\
+\texttt{pending\_review\_pois} & Review & POI có điểm trung gian cần Data Steward duyệt trước khi đưa vào Gold. \\
+\texttt{data\_quality\_quarantine} & Quality control & Bản ghi không đạt validation, lý do bị loại và thông tin phục vụ điều tra lỗi. \\
+\texttt{etl\_jobs} & Operational metadata & Trạng thái job, log, thời điểm bắt đầu/kết thúc, số bản ghi xử lý và lỗi. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Quy chuẩn dữ liệu}
+
+Quy chuẩn đặt tên trong hệ thống ưu tiên \texttt{snake\_case} cho collection và field, mã thành phố dạng chữ thường như \texttt{hanoi}, \texttt{hcm}, \texttt{danang}, còn mã danh mục được chuẩn hóa như \texttt{restaurant}, \texttt{cafe}, \texttt{hotel}, \texttt{attraction}, \texttt{park} và \texttt{shopping}. Dữ liệu thời gian dùng định dạng ISO 8601 để tránh mơ hồ múi giờ. Tọa độ được biểu diễn bằng object có \texttt{lat} và \texttt{lon}; rating nằm trong khoảng 0 đến 5; \texttt{quality\_score} nằm trong khoảng 0.0 đến 1.0; số điện thoại và website được chọn theo thứ tự ưu tiên giữa Google và OSM. Các quy chuẩn này giúp dữ liệu từ nhiều nguồn trở nên nhất quán hơn trước khi được đưa vào Silver và Gold.
+
+\subsection{Phân lớp dữ liệu}
+
+Lớp Bronze được thiết kế để bảo toàn nguồn gốc. Nguyên tắc của Bronze là không chỉnh sửa quá mức dữ liệu nguồn, không xóa tùy tiện và luôn lưu raw JSON để có thể tái xử lý khi logic thay đổi. Vì vậy, Bronze phù hợp cho audit, debug và rebuild. Lớp Silver là lớp xử lý, nơi hệ thống trích xuất tên, địa chỉ, điện thoại, website, rating, review count, price level, location và metadata nguồn; đồng thời kiểm tra validation và tính điểm chất lượng. Lớp Gold là lớp phục vụ, đóng vai trò single source of truth cho dashboard và API. Chỉ dữ liệu đạt ngưỡng chất lượng hoặc được duyệt mới đi vào Gold, nhờ đó người dùng cuối không phải tự xử lý dữ liệu thô, dữ liệu nghi ngờ hoặc dữ liệu lỗi.
+
+Vùng \texttt{pending\_review\_pois} và \texttt{data\_quality\_quarantine} làm cho pipeline linh hoạt hơn. Nếu chỉ có promote hoặc reject, hệ thống dễ loại bỏ nhầm các bản ghi có giá trị nhưng thiếu một vài trường. Pending Review cho phép Data Steward kiểm tra bản ghi có điểm trung gian, còn Quarantine giữ lại snapshot dữ liệu lỗi kèm lý do để phân tích sau. Thiết kế này phản ánh quan điểm ``data quality first'' trong tài liệu governance: Gold layer phải đủ tin cậy, nhưng dữ liệu chưa đạt chuẩn vẫn cần được lưu vết để kiểm tra và cải thiện.
+
+\subsection{Siêu dữ liệu và truy vết dữ liệu}
+
+Metadata được chia thành business metadata, technical metadata và operational metadata. Business metadata mô tả ý nghĩa nghiệp vụ của thành phố, danh mục, POI và trạng thái dữ liệu. Technical metadata mô tả collection, field, index, kiểu dữ liệu và mapping từ nguồn sang đích. Operational metadata lưu trạng thái job, thời điểm chạy, số bản ghi xử lý, số bản ghi lỗi, log từng bước và lịch chạy tiếp theo. Lineage cho phép xác định một bản ghi Gold đến từ bản ghi Bronze nào, đã được xử lý bởi job nào, qua rule nào và được promote ở thời điểm nào.
+
+\texttt{config\_cities} và \texttt{config\_categories} đóng vai trò reference data. API \texttt{/api/cities} đọc từ \texttt{config\_cities} và kết hợp thống kê từ \texttt{gold\_master\_pois}, nhờ đó danh sách thành phố không bị hard-code trong frontend hoặc API server. Tài liệu hiện mô tả các thành phố như Hà Nội, Hồ Chí Minh, Đà Nẵng, Cần Thơ, Hải Phòng, Huế, Nha Trang, Đà Lạt, Vũng Tàu và Quy Nhơn, mỗi thành phố có mã, tên tiếng Việt, tên tiếng Anh, tọa độ trung tâm và bán kính thu thập. Cách tổ chức này giúp hệ thống mở rộng sang thành phố mới bằng thay đổi cấu hình thay vì sửa trực tiếp logic ứng dụng.
+
+\section{Quy trình thu thập dữ liệu}
+
+\subsection{Nguồn dữ liệu}
+
+Hệ thống sử dụng OpenStreetMap thông qua Overpass API và Google Places thông qua RapidAPI. OpenStreetMap là nguồn dữ liệu mở, phù hợp để thu thập POI theo city, category và bounding box, đặc biệt với các tags như \texttt{amenity}, \texttt{tourism}, \texttt{leisure} và \texttt{shop}. Google Places được dùng để bổ sung thông tin thương mại như rating, review count, formatted address, website, phone và place details. Hai nguồn này bổ sung cho nhau: OSM giúp mở rộng độ phủ và giữ tính mở, trong khi Google Places giúp tăng độ đầy đủ và độ tin cậy cho các trường người dùng thường quan tâm.
+
+\subsection{Quy trình nạp dữ liệu}
+
+Quy trình ingestion bắt đầu từ việc chọn city code và category code hợp lệ trong cấu hình. ETL Service tạo truy vấn Overpass hoặc request RapidAPI, nhận dữ liệu JSON, chuẩn hóa sơ bộ các trường cần thiết và thực hiện upsert vào \texttt{bronze\_pois} theo \texttt{u\_key}. Với OSM, hệ thống lưu element gốc và tags vào \texttt{osm\_raw}; với Google Places, hệ thống lưu kết quả nearby search hoặc place details vào \texttt{google\_raw}. Mỗi bản ghi được gắn metadata như nguồn dữ liệu, thời điểm ingest, thời điểm cập nhật, trạng thái có dữ liệu OSM/Google và thông tin job tạo ra bản ghi.
+
+Chiến lược upsert giúp pipeline chạy lặp lại mà không nhân đôi dữ liệu. Nếu \texttt{u\_key} chưa tồn tại, hệ thống insert bản ghi mới và ghi \texttt{ingestedAt}; nếu bản ghi đã tồn tại, hệ thống cập nhật phần dữ liệu mới và \texttt{updatedAt}. Cách làm này thay thế CDC đầy đủ ở giai đoạn hiện tại, nhưng vẫn đủ để hỗ trợ incremental update theo thành phố và danh mục. Về phân vùng, hệ thống chưa dùng partition vật lý mà phân vùng logic bằng \texttt{city} và \texttt{category}; các trường này được index để truy vấn dashboard và pipeline hiệu quả hơn.
+
+\subsection{Làm giàu Google}
+
+Sau khi có dữ liệu OSM, job \texttt{enrich\_google} sử dụng Google Nearby Search và Google Place Details để bổ sung thông tin cho các bản ghi còn thiếu. Việc ghép giữa OSM và Google dựa trên tìm kiếm gần vị trí và fuzzy name matching, với ngưỡng tương đồng được mô tả trong tài liệu là khoảng 70\%. Nếu tìm được địa điểm phù hợp, bản ghi Bronze được cập nhật \texttt{google\_raw}, \texttt{google\_place\_id} và \texttt{has\_google\_data=true}. Khi RapidAPI gặp giới hạn quota hoặc lỗi 429, hệ thống có cơ chế xoay vòng key để giảm gián đoạn. Khi Overpass API timeout, hệ thống có thể retry hoặc chuyển endpoint theo logic xử lý lỗi.
+
+\section{Quy trình xử lý dữ liệu}
+
+\subsection{Đường ống xử lý dữ liệu}
+
+Pipeline của hệ thống là batch pipeline theo luồng \texttt{Collect -> Bronze -> Validate/Enrich -> Silver -> Promote/Review -> Gold}. Thiết kế này phù hợp vì dữ liệu du lịch thay đổi theo chu kỳ và không yêu cầu cập nhật từng giây. Batch processing giúp mỗi lần chạy có phạm vi rõ ràng, có trạng thái job, có số bản ghi xử lý, có log và có thể rebuild lại Silver/Gold khi thay đổi rule. Tài liệu data flow cũng xác định stream processing chưa được áp dụng trong phiên bản hiện tại; Kafka hoặc Redis Streams chỉ được xem là hướng mở rộng khi cần real-time enrichment.
+
+Các job chính gồm \texttt{collect\_osm}, \texttt{collect\_google\_places}, \texttt{enrich\_google}, \texttt{retry\_failed\_enrichments}, \texttt{bronze\_to\_silver}, \texttt{silver\_to\_gold}, \texttt{reconcile}, \texttt{rebuild\_layers}, \texttt{full\_pipeline} và \texttt{nightly\_sync}. \texttt{full\_pipeline} thể hiện luồng đầy đủ từ thu thập hai nguồn, làm giàu, validate và promote. \texttt{nightly\_sync} là luồng tối ưu cho chạy định kỳ, trong đó hệ thống enrich theo batch và rebuild nhanh Silver/Gold bằng MongoDB aggregation.
+
+\begin{longtable}{@{}p{0.25\textwidth}p{0.30\textwidth}p{0.35\textwidth}@{}}
+\caption{Đường ống xử lý dữ liệu -- Job, Đầu vào chính, Kết quả đầu ra.}\\
+\toprule
+\textbf{Job} & \textbf{Đầu vào chính} & \textbf{Kết quả đầu ra} \\
+\midrule
+\texttt{collect\_osm} & City, category, bounding box, Overpass query & Bản ghi OSM thô được upsert vào \texttt{bronze\_pois}. \\
+\texttt{collect\_google\_places} & City, category, keyword, RapidAPI key & Bản ghi Google Places được lưu hoặc bổ sung vào Bronze. \\
+\texttt{enrich\_google} & Bronze POI có tọa độ và tên & Trường Google raw, place id, rating, address, phone và website được bổ sung. \\
+\texttt{bronze\_to\_silver} & Bronze records hợp lệ & Dữ liệu đã chuẩn hóa và có \texttt{quality\_score} trong \texttt{silver\_pois}. \\
+\texttt{silver\_to\_gold} & Silver records đã được scoring & Gold POIs, pending review hoặc quarantine theo ngưỡng chất lượng. \\
+\texttt{nightly\_sync} & Cấu hình lịch chạy, Bronze/Silver hiện có & Đồng bộ định kỳ và rebuild nhanh lớp Silver/Gold. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Điều phối luồng công việc}
+
+APScheduler được dùng làm engine điều phối job trong ETL Service. Lịch chạy được lưu trong \texttt{etl\_schedules}, còn trạng thái từng job được lưu trong \texttt{etl\_jobs}. Mỗi job đi qua các trạng thái \texttt{pending}, \texttt{running}, \texttt{completed} hoặc \texttt{failed}; log từng bước được lưu kèm timestamp, level và message. Lịch mặc định quan trọng nhất là \texttt{nightly\_sync} chạy vào 02:00 mỗi ngày, giúp cập nhật dữ liệu định kỳ mà không cần thao tác thủ công.
+
+Hệ thống chưa dùng Airflow vì quy mô hiện tại chưa cần DAG orchestration phức tạp, dependency graph lớn hoặc executor phân tán. APScheduler đủ đáp ứng job định kỳ, chạy nền trong Python thread, ghi trạng thái vào MongoDB và hỗ trợ vận hành gọn nhẹ. Khi logic pipeline phát triển thành nhiều phụ thuộc hơn, Airflow hoặc một orchestrator tương đương có thể được bổ sung, nhưng hiện tại lựa chọn APScheduler giúp giảm chi phí vận hành và dễ giải thích trong phạm vi dự án.
+
+\subsection{Làm sạch và biến đổi dữ liệu}
+
+Quá trình chuyển từ Bronze sang Silver bao gồm trích xuất và chuẩn hóa dữ liệu từ raw JSON. Địa chỉ được chọn theo thứ tự ưu tiên như Google formatted address, Google vicinity, OSM \texttt{addr:full}, hoặc tổ hợp \texttt{addr:housenumber} và \texttt{addr:street}. Điện thoại ưu tiên Google international phone number, Google formatted phone number, OSM \texttt{phone} rồi OSM \texttt{contact:phone}. Website ưu tiên Google website, OSM website rồi OSM contact website. Rating ưu tiên dữ liệu Google Place Details, sau đó đến Google nearby result. Tên POI được trim whitespace, loại bỏ giá trị rỗng hoặc \texttt{unknown}, và có thể fallback sang Google name khi dữ liệu OSM thiếu.
+
+Deduplication được thực hiện ở nhiều mức. Ở Bronze, \texttt{u\_key} và unique index giúp tránh insert trùng khi cùng một city/category/source id được thu thập nhiều lần. Khi ghép OSM với Google, hệ thống dùng fuzzy name matching kết hợp vị trí gần để tránh ghép sai địa điểm khác tên hoặc khác khu vực. Ở Gold, unique index theo \texttt{u\_key} tiếp tục bảo đảm mỗi POI master chỉ có một bản ghi đại diện. Cơ chế này chưa phải entity resolution nâng cao, nhưng phù hợp với phạm vi dự án và có thể mở rộng bằng thuật toán so khớp mạnh hơn trong tương lai.
+
+\subsection{Kiểm tra chất lượng dữ liệu}
+
+Chất lượng dữ liệu được đánh giá theo năm chiều: accuracy, completeness, consistency, timeliness và uniqueness. Accuracy được cải thiện bằng cách bổ sung dữ liệu Google cho các trường như rating và thông tin liên hệ. Completeness được đo bằng công thức \texttt{quality\_score}. Consistency được hỗ trợ bởi fuzzy matching giữa OSM và Google. Timeliness dựa trên \texttt{ingestedAt} và \texttt{updatedAt}. Uniqueness được kiểm soát bằng \texttt{u\_key} và unique index.
+
+Công thức điểm chất lượng trong tài liệu data flow và quality rules cộng điểm theo các thành phần chính: có dữ liệu OSM được cộng 0.30, có dữ liệu Google được cộng 0.30, rating đóng góp tối đa 0.20 theo tỷ lệ rating trên 5, tên hợp lệ đóng góp 0.10 và địa chỉ đóng góp 0.10. Điểm cuối cùng được giới hạn trong khoảng 0 đến 1. Với \texttt{quality\_score >= 0.5}, bản ghi được promote lên Gold; với \texttt{0.3 <= quality\_score < 0.5}, bản ghi được chuyển sang Pending Review; với điểm thấp hơn 0.3, bản ghi giữ ở Silver hoặc không được promote. Nếu thiếu \texttt{location} hoặc thiếu cả tên hợp lệ lẫn dữ liệu Google, bản ghi bị đưa vào Quarantine.
+
+Dashboard theo dõi các chỉ số chất lượng như enrichment percentage, gold ratio, quarantine rate, pending review count và average quality score. Tài liệu quality đặt mục tiêu tham chiếu như enrichment rate trên 60\%, gold ratio trên 40\%, quarantine rate dưới 5\%, pending review dưới 500 bản ghi và điểm chất lượng trung bình Gold trên 0.65. Các chỉ số này giúp phát hiện bất thường, chẳng hạn Gold count giảm mạnh, quarantine tăng đột ngột, enrichment bị chậm hoặc job thất bại nhiều lần liên tiếp.
+
+\section{Quản trị và bảo mật dữ liệu}
+
+\subsection{Quản trị dữ liệu}
+
+Hệ thống áp dụng mô hình governance tập trung, trong đó Data Engineering chịu trách nhiệm pipeline, schema, quality rules và truy cập dữ liệu. Data Owner là nhóm sở hữu pipeline và dữ liệu; Data Steward chịu trách nhiệm review các bản ghi trong pending queue; Data Consumer là analyst hoặc developer sử dụng Gold API; Platform Admin quản lý hạ tầng, secrets và deployment. Mô hình này phù hợp với quy mô dự án vì chưa cần phân quyền phức tạp theo nhiều phòng ban, nhưng vẫn bảo đảm có trách nhiệm rõ ràng cho từng lớp dữ liệu.
+
+Chính sách phân loại dữ liệu chia dữ liệu thành public, internal và confidential. Thông tin POI công khai như tên, địa chỉ và rating có thể được expose qua API. Metadata pipeline, quality score và job logs được xem là dữ liệu nội bộ. Credentials như MongoDB URI và RapidAPI keys là dữ liệu confidential, phải lưu trong secrets và không được chia sẻ qua frontend. Về lưu giữ dữ liệu, Bronze, Silver và Gold được lưu lâu dài để hỗ trợ reprocess và master data; \texttt{etl\_jobs} có thời hạn lưu khoảng 90 ngày phục vụ audit; \texttt{data\_quality\_quarantine} có thể được dọn sau 30 ngày; \texttt{pending\_review\_pois} được giữ đến khi review xong.
+
+\subsection{Quản trị siêu dữ liệu và quản lý thay đổi}
+
+Metadata governance tập trung vào việc lưu nguồn gốc dữ liệu, trạng thái job, lịch chạy, cấu hình thành phố, cấu hình danh mục và thông tin phục vụ giải thích sai lệch. Khi dashboard hiển thị số liệu bất thường, nhóm vận hành có thể truy ngược từ KPI về Gold, từ Gold về Silver/Bronze, và từ bản ghi dữ liệu về job đã tạo ra nó. Điều này làm cho hệ thống có tính auditability, tức mọi thay đổi quan trọng đều có thể kiểm tra lại.
+
+Change management được thiết kế theo nguyên tắc tương thích ngược. Khi thêm field mới vào schema, hệ thống có thể deploy trực tiếp nếu không phá vỡ client hiện có. Khi xóa hoặc đổi tên field, cần migration script và giai đoạn deprecation. Khi thay đổi endpoint API, OpenAPI spec phải được cập nhật và version cần được tăng phù hợp. Khi thay đổi công thức quality score, tài liệu phải ghi lại tác động và hệ thống cần chạy \texttt{rebuild\_layers} để tái tính Silver/Gold. Quy trình này giúp giảm rủi ro tài liệu, backend và frontend lệch nhau.
+
+\subsection{Bảo mật hệ thống}
+
+Thiết kế bảo mật của hệ thống dựa trên phân tách network, quản lý secrets, mã hóa và validation đầu vào. Dashboard gọi API qua same-origin proxy \texttt{/api}; API Server giao tiếp nội bộ với ETL Service qua port 9000; ETL Service và API Server kết nối MongoDB Atlas qua TLS. Replit proxy đảm nhiệm TLS termination cho traffic bên ngoài, còn MongoDB Atlas cung cấp mã hóa at rest bằng AES-256 và mã hóa in transit bằng TLS 1.2 trở lên. RapidAPI keys được lưu trong secrets và có cơ chế round-robin nhiều key để giảm rủi ro quota.
+
+Quy tắc xử lý secrets yêu cầu không commit credentials vào git, không log giá trị secret, không expose secret qua biến \texttt{VITE\_*} vì các biến này có thể đi vào browser, không hard-code credentials trong source code, và chỉ đọc secret qua \texttt{process.env} ở Node.js hoặc \texttt{os.getenv} ở Python. API Server dùng Zod để validation theo schema, ETL Service dùng Pydantic model của FastAPI, còn MongoDB được kiểm soát ở tầng application-level. Về secure SDLC, dự án dùng \texttt{minimumReleaseAge} trong \texttt{pnpm-workspace.yaml} để giảm rủi ro supply-chain package mới phát hành, đồng thời dùng \texttt{uv} và lockfile cho Python packages.
+
+Khi có sự cố bảo mật, quy trình xử lý gồm phát hiện, đánh giá mức độ, cách ly thành phần ảnh hưởng, điều tra log, khắc phục bằng rotate credential hoặc patch code, sau đó post-mortem và cập nhật tài liệu. Mức độ Critical áp dụng cho các sự cố như lộ MongoDB URI và cần phản hồi trong khoảng 1 giờ; High áp dụng cho lộ API key; Medium áp dụng cho truy cập API trái phép; Low áp dụng cho vulnerability phụ thuộc chưa bị khai thác. Cách phân mức này giúp hệ thống có phản ứng rõ ràng thay vì xử lý sự cố theo cảm tính.
+
+\section{Thiết kế triển khai hệ thống}
+
+\subsection{Môi trường triển khai}
+
+Tài liệu triển khai mô tả hai hướng chạy chính: local development bằng Docker Compose và môi trường chạy trên Replit container. Với local development, Docker Compose giúp khởi động đồng thời frontend, API, ETL và MongoDB hoặc cấu hình kết nối MongoDB Atlas. Với Replit, các service chạy trong cùng container NixOS, sử dụng workspace gồm \texttt{artifacts/api-server}, \texttt{artifacts/etl-service}, \texttt{artifacts/travel-dashboard}, \texttt{lib}, \texttt{node\_modules} và môi trường Python qua \texttt{uv}. Cách triển khai này phù hợp với mục tiêu trình diễn và phát triển nhanh, đồng thời vẫn có tài liệu rõ cho production-like deployment bằng Compose.
+
+\subsection{Kiến trúc vùng chứa và kết nối mạng}
+
+Trong kiến trúc container, Dashboard thường chạy ở port 5000, API Server ở port 8080 và ETL Service ở port 9000. Dashboard không gọi trực tiếp ETL Service mà đi qua API Server; API Server proxy một số route \texttt{/api/etl/*} đến ETL Service; ETL Service đọc/ghi MongoDB Atlas và gọi nguồn ngoài như Overpass API hoặc RapidAPI qua HTTPS. Luồng nội bộ có thể diễn giải là \texttt{Dashboard -> API Server -> ETL Service -> MongoDB Atlas}, trong đó API Server cũng có thể đọc trực tiếp Gold layer để phục vụ các endpoint dashboard, POI, analytics và reports.
+
+Storage chính của hệ thống là MongoDB Atlas. Các collection lớn hơn như \texttt{bronze\_pois}, \texttt{silver\_pois} và \texttt{gold\_master\_pois} được index theo \texttt{u\_key}, \texttt{city}, \texttt{category}, \texttt{quality\_score}, \texttt{rating} hoặc trạng thái có Google data tùy nhu cầu truy vấn. Filesystem trong container được xem là ephemeral cho build output, package cache và thư viện cài đặt; dữ liệu nghiệp vụ không phụ thuộc vào filesystem mà nằm trong MongoDB Atlas. Hệ thống hiện chưa dùng object storage như MinIO hoặc S3, nhưng roadmap có thể bổ sung cho export file, lưu trữ raw API response dung lượng lớn hoặc tài sản nhị phân.
+
+\subsection{Tích hợp liên tục, triển khai liên tục và vận hành dữ liệu}
+
+Vận hành hệ thống theo hướng gọn nhẹ, dựa trên Git workflow, build theo service, kiểm tra type, logging có cấu trúc và job state trong MongoDB. API Server có quá trình typecheck và bundle, Dashboard có typecheck và build Vite, còn ETL Service phụ thuộc môi trường Python được quản lý bằng \texttt{uv}. API codegen có thể sinh Zod schema và React Query hooks từ OpenAPI spec, giúp frontend và backend ít lệch hợp đồng hơn.
+
+DataOps được thể hiện ở việc pipeline có monitoring, job state, log, rebuild strategy và rollback plan. Nếu Gold data bị lỗi, hệ thống có thể rebuild nhanh từ Silver hoặc rebuild đầy đủ từ Bronze; nếu MongoDB gặp sự cố, có thể dựa vào MongoDB Atlas backup; nếu RapidAPI key hết quota, có thể rotate key; nếu service down, quy trình runbook hướng dẫn restart workflow hoặc container. Các log quan trọng gồm job started, job completed, job failed, API error, database connection error và validation failure. Những thông tin này hỗ trợ vận hành hàng ngày và xử lý sự cố theo SOP thay vì thao tác thủ công thiếu chuẩn.
+
+\section{Giao diện người dùng và giao diện lập trình ứng dụng}
+
+\subsection{Bảng điều khiển và giám sát}
+
+Dashboard được thiết kế như một công cụ quan sát dữ liệu và vận hành pipeline. Overview tab hiển thị các KPI chính như số lượng Bronze, Silver, Gold, điểm chất lượng trung bình, enrichment rate và trạng thái pipeline. POI Explorer cho phép duyệt Gold POIs theo thành phố, danh mục, phân trang và các thuộc tính như rating hoặc địa chỉ. Analytics hiển thị phân bố POI theo thành phố, danh mục và các chỉ số tổng hợp. Pipeline Monitor tập trung vào lịch sử job, trạng thái sync, funnel dữ liệu và các lỗi gần đây. Reports cung cấp dữ liệu báo cáo định kỳ, còn Settings hỗ trợ cấu hình vận hành như thành phố, danh mục hoặc lịch ETL tùy phạm vi quyền.
+
+Mục tiêu của dashboard là giúp analyst, admin và data steward theo dõi dữ liệu mà không cần truy vấn trực tiếp MongoDB. Analyst có thể đọc KPI cards, pipeline funnel, quality distribution và phân tích theo thành phố hoặc danh mục. Admin có thể quản lý lịch ETL, kiểm tra trạng thái MongoDB, rotate secrets theo hướng dẫn và xử lý runbook khi job thất bại. Data Steward có thể xem pending POIs, approve hoặc reject bản ghi trung gian. Như vậy, dashboard không chỉ là giao diện trình bày dữ liệu mà còn là lớp vận hành dữ liệu.
+
+\subsection{Giao diện lập trình ứng dụng của hệ thống}
+
+REST API là lớp giao tiếp chính của hệ thống với base path \texttt{/api}, format JSON và OpenAPI spec nằm tại \texttt{lib/api-spec/openapi.yaml}. Nhóm health có \texttt{/api/healthz} để kiểm tra trạng thái. Nhóm dashboard cung cấp \texttt{/api/dashboard/overview}, \texttt{/api/dashboard/poi-by-city}, \texttt{/api/dashboard/poi-by-category}, \texttt{/api/dashboard/pipeline-funnel}, \texttt{/api/dashboard/quality-distribution}, \texttt{/api/dashboard/rating-distribution} và \texttt{/api/dashboard/quarantine-reasons}. Nhóm POI phục vụ Gold layer qua \texttt{/api/pois} và \texttt{/api/pois/top-rated}. Nhóm cities đọc cấu hình thành phố qua \texttt{/api/cities}. Nhóm analytics, pipeline, reports và recommendations cung cấp dữ liệu phân tích, trạng thái sync, báo cáo và gợi ý ở mức ứng dụng.
+
+Nhóm ETL được proxy qua API Server đến ETL Service. Các endpoint như \texttt{/api/etl/status}, \texttt{/api/etl/config}, \texttt{/api/etl/jobs}, \texttt{/api/etl/jobs/:jobId}, \texttt{/api/etl/review}, \texttt{/api/etl/review/:uKey/approve}, \texttt{/api/etl/review/:uKey/reject} và \texttt{/api/etl/schedules} cho phép kiểm tra trạng thái ETL, tạo job, theo dõi job, duyệt dữ liệu và quản lý lịch chạy. Việc đặt ETL sau API Server giúp frontend không cần biết chi tiết nội bộ của ETL Service và giúp hệ thống kiểm soát validation, auth, logging, proxy và response format tại một cổng thống nhất.
+
+OpenAPI được dùng như hợp đồng API giữa backend và frontend. Response thành công thường trả về \texttt{data}, \texttt{total}, \texttt{page} và \texttt{limit}; response lỗi trả về \texttt{error} và \texttt{statusCode}; health check trả về \texttt{status} và \texttt{timestamp}. Khi API được mô tả bằng OpenAPI, các công cụ codegen như Orval có thể sinh client, hook hoặc schema tương ứng, từ đó giảm lỗi do frontend gọi sai endpoint hoặc hiểu sai cấu trúc response.
+
+\begin{longtable}{@{}p{0.28\textwidth}p{0.30\textwidth}p{0.32\textwidth}@{}}
+\caption{Giao diện lập trình ứng dụng của hệ thống -- Nhóm API, Endpoint tiêu biểu, Dữ liệu hoặc chức năng cung cấp.}\\
+\toprule
+\textbf{Nhóm API} & \textbf{Endpoint tiêu biểu} & \textbf{Dữ liệu hoặc chức năng cung cấp} \\
+\midrule
+Health & \texttt{/api/healthz} & Kiểm tra trạng thái API và timestamp phản hồi. \\
+Dashboard & \texttt{/api/dashboard/overview} & KPI tổng quan, funnel pipeline, phân bố chất lượng và rating. \\
+POI & \texttt{/api/pois}, \texttt{/api/pois/top-rated} & Danh sách Gold POIs, lọc theo thành phố/danh mục và xếp hạng. \\
+Pipeline & \texttt{/api/pipeline/executions} & Lịch sử chạy job, trạng thái sync và thông tin vận hành pipeline. \\
+ETL proxy & \texttt{/api/etl/jobs}, \texttt{/api/etl/review} & Tạo job, theo dõi job, duyệt hoặc từ chối POI cần review. \\
+Reports & \texttt{/api/reports/*} & Dữ liệu báo cáo định kỳ về chất lượng, coverage và pipeline. \\
+\bottomrule
+\end{longtable}
+
+\section{Tổng kết chương}
+
+Smart Travel Platform được thiết kế theo hướng tách lớp rõ ràng giữa dashboard, API server, ETL service và storage. Dữ liệu được tổ chức theo Bronze, Silver và Gold để bảo toàn dữ liệu nguồn, xử lý có kiểm soát và chỉ phục vụ dữ liệu đủ tin cậy cho người dùng cuối. Pipeline ưu tiên batch processing vì phù hợp với dữ liệu du lịch, dễ vận hành và dễ rebuild khi thay đổi logic. MongoDB document model phù hợp với dữ liệu POI không đồng nhất; REST API và OpenAPI giúp ổn định hợp đồng giữa backend và frontend; dashboard giúp quan sát cả dữ liệu nghiệp vụ lẫn trạng thái pipeline.
+
+Chương này cũng cho thấy hệ thống không chỉ dừng ở việc ``chạy được'', mà còn có các cơ chế hỗ trợ vận hành lâu dài: data quality score, pending review, quarantine, lineage, governance, secret management, TLS, validation, Docker Compose, Replit workflows, logging có cấu trúc và runbook xử lý sự cố. Các lựa chọn này giữ hệ thống ở mức vừa đủ cho hiện tại, đồng thời để lại hướng mở rộng sang Airflow, Kafka, Spark, object storage hoặc lakehouse đầy đủ khi khối lượng dữ liệu và yêu cầu nghiệp vụ tăng lên.
+
+\subsection*{Tài liệu nội bộ tham chiếu}
+
+Nội dung chương này được tổng hợp từ các tài liệu nội bộ: \texttt{docs/01-overview/architecture.md}, \texttt{docs/01-overview/system-design-and-implementation.md}, \texttt{docs/02-data/data-dictionary.md}, \texttt{docs/02-data/metadata.md}, \texttt{docs/02-data/naming-conventions.md}, \texttt{docs/02-data/source-catalog.md}, \texttt{docs/02-data/collection-process.md}, \texttt{docs/02-data/collection-standards.md}, \texttt{docs/03-pipeline/pipeline-architecture.md}, \texttt{docs/03-pipeline/data-flow.md}, \texttt{docs/03-pipeline/etl-procedures.md}, \texttt{docs/04-quality/quality-rules.md}, \texttt{docs/04-quality/sla-slo.md}, \texttt{docs/05-governance/governance-framework.md}, \texttt{docs/06-security/security-architecture.md}, \texttt{docs/06-security/data-protection.md}, \texttt{docs/07-analytics/kpi-definitions.md}, \texttt{docs/08-operations/devops-cicd.md}, \texttt{docs/08-operations/deployment-guide.md}, \texttt{docs/08-operations/disaster-recovery.md}, \texttt{docs/08-operations/docker-deployment.md}, \texttt{docs/09-infrastructure/infrastructure.md}, \texttt{docs/09-infrastructure/networking.md}, \texttt{docs/10-api/api-overview.md}, \texttt{docs/12-user-guide/admin-guide.md}, \texttt{docs/12-user-guide/analyst-guide.md}, \texttt{docs/12-user-guide/runbook.md} và \texttt{docs/13-lakehouse/layer-standards.md}.
+
+\end{document}

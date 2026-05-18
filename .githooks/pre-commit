@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/update-doc-table-lists.ps1
+elif command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/update-doc-table-lists.ps1
+elif command -v powershell >/dev/null 2>&1; then
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-doc-table-lists.ps1
+else
+  echo "PowerShell is required to update document table lists." >&2
+  exit 1
+fi
+
+git add docs/*.md docs/**/*.md docs/*.tex docs/**/*.tex scripts/update-doc-table-lists.ps1 package.json .githooks/pre-commit 2>/dev/null || true

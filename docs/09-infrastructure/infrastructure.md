@@ -1,6 +1,16 @@
 # Infrastructure Documentation
 
+## Danh sách bảng
+
+- [Bảng 1. Server Inventory - Service, Runtime, Container, CPU, Memory, Storage](#server-inventory)
+- [Bảng 2. Port Mapping - Service, Internal Port, External Port, Protocol](#port-mapping)
+- [Bảng 3. MongoDB Atlas - Collection, Estimated Size, Index Strategy](#mongodb-atlas)
+- [Bảng 4. Filesystem (ephemeral) - Path, Nội dung, Persist](#filesystem-ephemeral)
+- [Bảng 5. Data Lifecycle Policy - Data, Lifecycle, Action](#data-lifecycle-policy)
+
 ## Server Inventory
+
+**Bảng 1. Server Inventory - Service, Runtime, Container, CPU, Memory, Storage.**
 
 | Service | Runtime | Container | CPU | Memory | Storage |
 |---------|---------|-----------|-----|--------|---------|
@@ -29,6 +39,8 @@ Replit Container (NixOS)
 ---
 
 ## Port Mapping
+
+**Bảng 2. Port Mapping - Service, Internal Port, External Port, Protocol.**
 
 | Service | Internal Port | External Port | Protocol |
 |---------|--------------|---------------|----------|
@@ -75,6 +87,8 @@ ETL Service (9000) ──▶ RapidAPI/Google Places (HTTPS 443)
 
 ### MongoDB Atlas
 
+**Bảng 3. MongoDB Atlas - Collection, Estimated Size, Index Strategy.**
+
 | Collection | Estimated Size | Index Strategy |
 |-----------|---------------|---------------|
 | `bronze_pois` | ~5–50MB (grows) | u_key, city, category, has_google_data |
@@ -84,6 +98,8 @@ ETL Service (9000) ──▶ RapidAPI/Google Places (HTTPS 443)
 | All others | < 1MB each | Varies |
 
 ### Filesystem (ephemeral)
+
+**Bảng 4. Filesystem (ephemeral) - Path, Nội dung, Persist.**
 
 | Path | Nội dung | Persist |
 |------|---------|---------|
@@ -106,6 +122,8 @@ Hiện tại không sử dụng object storage (MinIO/S3). Tất cả data lưu 
 ---
 
 ## Data Lifecycle Policy
+
+**Bảng 5. Data Lifecycle Policy - Data, Lifecycle, Action.**
 
 | Data | Lifecycle | Action |
 |------|-----------|--------|

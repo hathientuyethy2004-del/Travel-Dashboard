@@ -1,0 +1,217 @@
+% Compile with pdfLaTeX on Overleaf
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2cm}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.2em}
+\renewcommand{\thesection}{1.\arabic{section}}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Chương 1. Mở đầu}
+
+\vspace{0.3em}
+{\large\itshape Giới thiệu đề tài nghiên cứu}
+\end{center}
+
+\section*{Danh sách bảng}
+\addcontentsline{toc}{section}{Danh sách bảng}
+
+\begin{itemize}
+  \item Bảng 1. Mục tiêu cụ thể -- Mục tiêu, Nội dung triển khai, Kết quả kỳ vọng.
+  \item Bảng 2. Phạm vi nghiên cứu -- Hạng mục, Trong phạm vi, Ngoài phạm vi chính.
+  \item Bảng 3. Cấu trúc luận văn -- Chương, Nội dung chính.
+\end{itemize}
+
+
+\setcounter{section}{0}
+
+\section{Bối cảnh và lý do chọn đề tài}
+
+Trong những năm gần đây, dữ liệu đã trở thành nguồn tài nguyên quan trọng trong lĩnh vực du lịch số. Các hệ thống du lịch cần dữ liệu để phân tích điểm đến, xây dựng dashboard quản trị, theo dõi chất lượng dịch vụ và phát triển các chức năng gợi ý. Tuy nhiên, dữ liệu du lịch thường đến từ nhiều nguồn như OpenStreetMap, Google Places hoặc các API bên thứ ba, dẫn đến khác biệt về tên địa điểm, địa chỉ, tọa độ, danh mục, đánh giá và thông tin liên hệ.
+
+Nếu không có một nền tảng dữ liệu phù hợp, dữ liệu đầu ra có thể bị thiếu, trùng lặp hoặc khó truy vết. Vì vậy, đề tài lựa chọn xây dựng Smart Travel Platform, một nền tảng dữ liệu du lịch có pipeline xử lý nhiều lớp, kiểm soát chất lượng, lưu metadata, hỗ trợ lineage và cung cấp dữ liệu đáng tin cậy cho dashboard cũng như REST API.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.90\textwidth}
+\centering
+\textbf{Bối cảnh dữ liệu du lịch số}\\[0.6em]
+\begin{tabular}{c c c}
+Dữ liệu bản đồ mở & Dữ liệu thương mại & Dữ liệu vận hành \\
+OpenStreetMap & Google Places / API & Dashboard / Job logs \\
+\end{tabular}\\[0.8em]
+$\Downarrow$\\[0.4em]
+\textbf{Nhu cầu xây dựng nền tảng dữ liệu có kiểm soát}
+\end{minipage}}
+\caption{Bối cảnh hình thành nhu cầu xây dựng Smart Travel Platform.}
+\end{figure}
+
+\section{Vấn đề nghiên cứu}
+
+Vấn đề nghiên cứu chính là làm thế nào để xây dựng một nền tảng dữ liệu du lịch có khả năng tích hợp dữ liệu đa nguồn, xử lý dữ liệu không đồng nhất và phục vụ dữ liệu đáng tin cậy cho phân tích. Hệ thống cần giải quyết các vấn đề như thiếu tọa độ, thiếu tên, thiếu địa chỉ, trùng lặp bản ghi, pipeline khó kiểm soát và thiếu khả năng truy vết từ dữ liệu phục vụ về dữ liệu nguồn.
+
+Nếu không xử lý các vấn đề này, dashboard và API có thể hiển thị dữ liệu không nhất quán, khó giải thích nguyên nhân sai lệch và khó mở rộng khi bổ sung thành phố, danh mục hoặc nguồn dữ liệu mới.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.90\textwidth}
+\centering
+\textbf{Vấn đề nghiên cứu}\\[0.6em]
+\begin{tabular}{c}
+Dữ liệu đa nguồn, thiếu và không đồng nhất \\
+$\Downarrow$ \\
+Pipeline khó kiểm soát, thiếu metadata và lineage \\
+$\Downarrow$ \\
+Dashboard/API có nguy cơ sử dụng dữ liệu kém tin cậy
+\end{tabular}
+\end{minipage}}
+\caption{Chuỗi vấn đề chính cần giải quyết trong đề tài.}
+\end{figure}
+
+\section{Mục tiêu nghiên cứu}
+
+\subsection{Mục tiêu tổng quát}
+
+Mục tiêu tổng quát của đề tài là xây dựng và đánh giá một nền tảng dữ liệu du lịch phục vụ quản lý, phân tích và khai thác dữ liệu điểm quan tâm. Hệ thống được thiết kế theo hướng nhiều lớp, có khả năng thu thập dữ liệu, chuẩn hóa, làm giàu, chấm điểm chất lượng, lưu metadata, hỗ trợ truy vết và cung cấp dữ liệu qua REST API cũng như dashboard.
+
+\subsection{Mục tiêu cụ thể}
+
+Các mục tiêu cụ thể gồm: (1) khảo sát cơ sở lý thuyết về Data Platform, pipeline dữ liệu, chất lượng dữ liệu, governance và lineage; (2) thiết kế mô hình dữ liệu theo các lớp Bronze, Silver và Gold; (3) xây dựng pipeline thu thập và làm giàu dữ liệu từ OpenStreetMap và Google Places; (4) xây dựng cơ chế chấm điểm chất lượng và phân luồng dữ liệu vào Gold, Pending Review hoặc Quarantine; (5) xây dựng API, dashboard và môi trường triển khai bằng Docker Compose; (6) thực nghiệm và đánh giá hệ thống.
+
+\begin{longtable}{@{}p{0.25\textwidth}p{0.36\textwidth}p{0.29\textwidth}@{}}
+\caption{Mục tiêu cụ thể -- Mục tiêu, Nội dung triển khai, Kết quả kỳ vọng.}\\
+\toprule
+\textbf{Mục tiêu} & \textbf{Nội dung triển khai} & \textbf{Kết quả kỳ vọng} \\
+\midrule
+Khảo sát nền tảng lý thuyết & Tổng hợp Data Platform, ETL, Medallion Architecture, data quality, governance và lineage. & Có cơ sở lựa chọn kiến trúc phù hợp với dữ liệu du lịch. \\
+Thiết kế mô hình dữ liệu & Xác định Bronze, Silver, Gold, metadata, collection, khóa định danh và quy tắc đặt tên. & Dữ liệu có cấu trúc rõ, dễ truy vết và dễ mở rộng. \\
+Xây dựng pipeline & Thu thập OSM, Google Places, enrich, validate, scoring, promote và rebuild. & Có luồng xử lý dữ liệu tự động và có trạng thái vận hành. \\
+Phục vụ dữ liệu & Xây dựng REST API, dashboard, reports và các chỉ số theo dõi. & Người dùng khai thác Gold data qua giao diện và API. \\
+Đánh giá hệ thống & Kiểm thử dữ liệu, API, pipeline, chất lượng và khả năng vận hành. & Có cơ sở nhận xét ưu điểm, hạn chế và hướng phát triển. \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.90\textwidth}
+\centering
+\textbf{Mục tiêu nghiên cứu}\\[0.6em]
+\begin{tabular}{c c c}
+Thu thập dữ liệu & Xử lý nhiều lớp & Phục vụ khai thác \\
+OSM / Google & Bronze / Silver / Gold & API / Dashboard
+\end{tabular}\\[0.8em]
+$\Downarrow$\\[0.4em]
+\textbf{Đánh giá hiệu năng, chất lượng dữ liệu và khả năng vận hành}
+\end{minipage}}
+\caption{Các nhóm mục tiêu chính của đề tài.}
+\end{figure}
+
+\section{Đối tượng và phạm vi nghiên cứu}
+
+\subsection{Đối tượng nghiên cứu}
+
+Đối tượng nghiên cứu của đề tài là nền tảng dữ liệu phục vụ dữ liệu du lịch, tập trung vào dữ liệu điểm quan tâm. Các khía cạnh chính gồm pipeline ETL, kiến trúc dữ liệu nhiều lớp, MongoDB document model, metadata governance, data lineage, data quality scoring, REST API và dashboard phân tích.
+
+\subsection{Phạm vi nghiên cứu}
+
+Phạm vi nghiên cứu được giới hạn trong bài toán xây dựng nền tảng dữ liệu du lịch quy mô nhỏ đến trung bình. Hệ thống tập trung vào batch processing, dữ liệu từ OpenStreetMap và Google Places, triển khai bằng Docker Compose. Các công nghệ như Kubernetes, Spark, Trino, Kafka hoặc lakehouse đầy đủ chưa được triển khai trong luồng chính mà được xem là hướng mở rộng.
+
+\begin{longtable}{@{}p{0.24\textwidth}p{0.32\textwidth}p{0.34\textwidth}@{}}
+\caption{Phạm vi nghiên cứu -- Hạng mục, Trong phạm vi, Ngoài phạm vi chính.}\\
+\toprule
+\textbf{Hạng mục} & \textbf{Trong phạm vi} & \textbf{Ngoài phạm vi chính} \\
+\midrule
+Dữ liệu & POI du lịch theo thành phố và danh mục từ OSM/Google Places. & Dữ liệu giao dịch người dùng, đặt phòng, thanh toán hoặc dữ liệu cá nhân nhạy cảm. \\
+Xử lý & Batch pipeline, enrichment, validation, scoring và rebuild theo lịch. & Streaming thời gian thực, CDC đầy đủ hoặc xử lý phân tán quy mô lớn. \\
+Lưu trữ & MongoDB Atlas và mô hình Bronze--Silver--Gold bằng document collections. & Lakehouse đầy đủ với object storage, table format, Spark hoặc Trino. \\
+Phục vụ & REST API, dashboard, KPI, reports và công cụ theo dõi pipeline. & Mobile app production, hệ gợi ý cá nhân hóa sâu hoặc marketplace dữ liệu. \\
+Triển khai & Docker Compose, Replit/container và hướng dẫn vận hành cơ bản. & Kubernetes multi-cluster, autoscaling nâng cao hoặc DR đa vùng hoàn chỉnh. \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.90\textwidth}
+\centering
+\textbf{Phạm vi nghiên cứu}\\[0.6em]
+\begin{tabular}{p{0.38\textwidth}p{0.38\textwidth}}
+\textbf{Trong phạm vi} & \textbf{Ngoài phạm vi chính} \\
+Batch processing, POI du lịch, Docker Compose, MongoDB, REST API & Streaming realtime, multi-cluster, Spark, Trino, Kafka, Kubernetes
+\end{tabular}
+\end{minipage}}
+\caption{Ranh giới phạm vi nghiên cứu và hướng mở rộng.}
+\end{figure}
+
+\section{Phương pháp nghiên cứu}
+
+Đề tài sử dụng phương pháp nghiên cứu ứng dụng, kết hợp nghiên cứu tài liệu, phân tích thiết kế hệ thống, triển khai thực nghiệm và đánh giá kết quả. Hệ thống được xây dựng theo các thành phần chính gồm ETL Service, MongoDB, API Server và Dashboard. Sau khi triển khai, đề tài đo trạng thái service, độ trễ API, số lượng bản ghi ở từng layer, kết quả ETL và các chỉ số chất lượng dữ liệu để đánh giá ưu điểm, bottleneck và hạn chế của hệ thống.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.90\textwidth}
+\centering
+\textbf{Phương pháp nghiên cứu}\\[0.6em]
+Nghiên cứu tài liệu $\rightarrow$ Phân tích yêu cầu $\rightarrow$ Thiết kế hệ thống $\rightarrow$ Triển khai $\rightarrow$ Thực nghiệm $\rightarrow$ Đánh giá
+\end{minipage}}
+\caption{Quy trình nghiên cứu và triển khai đề tài.}
+\end{figure}
+
+\section{Ý nghĩa khoa học và thực tiễn}
+
+\subsection{Ý nghĩa khoa học}
+
+Về mặt khoa học, đề tài góp phần hệ thống hóa cách áp dụng Data Platform, kiến trúc nhiều lớp, data quality, metadata governance và lineage vào bài toán dữ liệu du lịch. Cách tiếp cận này làm rõ vai trò của pipeline có kiểm soát trong việc nâng cao độ tin cậy của dữ liệu đầu ra.
+
+\subsection{Ý nghĩa thực tiễn}
+
+Về mặt thực tiễn, hệ thống giúp tổ chức dữ liệu du lịch từ nhiều nguồn thành một nền tảng có thể sử dụng cho phân tích và vận hành. Dashboard hỗ trợ theo dõi POI, chất lượng dữ liệu và trạng thái pipeline; API cung cấp dữ liệu Gold cho các ứng dụng khác; Docker Compose giúp hệ thống dễ triển khai và kiểm thử.
+
+\section{Điểm mới và đóng góp của đề tài}
+
+Đóng góp chính của đề tài là xây dựng một nền tảng dữ liệu du lịch có tính ứng dụng, kết hợp pipeline dữ liệu, kiểm soát chất lượng, metadata và dashboard vận hành. Đề tài áp dụng mô hình Bronze, Silver và Gold cho dữ liệu POI, xây dựng cơ chế quality score để phân loại bản ghi, tích hợp job state, schedule, lineage và cung cấp dữ liệu qua REST API. Điểm mới của đề tài nằm ở việc xây dựng nền tảng dữ liệu đầu vào đủ tin cậy cho các chức năng phân tích và gợi ý sau này.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\begin{minipage}{0.90\textwidth}
+\centering
+\textbf{Đóng góp của đề tài}\\[0.6em]
+\begin{tabular}{c c c}
+Pipeline dữ liệu & Kiểm soát chất lượng & Khai thác dữ liệu \\
+Bronze/Silver/Gold & Quality score, review, quarantine & REST API, dashboard
+\end{tabular}
+\end{minipage}}
+\caption{Các đóng góp chính của đề tài trong nền tảng dữ liệu du lịch.}
+\end{figure}
+
+\section{Cấu trúc luận văn}
+
+Luận văn được tổ chức thành năm chương. Chương 1 trình bày phần mở đầu. Chương 2 trình bày cơ sở lý thuyết và công nghệ. Chương 3 trình bày thiết kế và triển khai hệ thống. Chương 4 trình bày thực nghiệm và đánh giá kết quả. Chương 5 trình bày kết luận và hướng phát triển.
+
+\begin{longtable}{@{}p{0.22\textwidth}p{0.68\textwidth}@{}}
+\caption{Cấu trúc luận văn -- Chương, Nội dung chính.}\\
+\toprule
+\textbf{Chương} & \textbf{Nội dung chính} \\
+\midrule
+Chương 1 & Mở đầu: bối cảnh, vấn đề, mục tiêu, phạm vi, phương pháp và đóng góp. \\
+Chương 2 & Cơ sở lý thuyết và công nghệ của nền tảng dữ liệu du lịch. \\
+Chương 3 & Thiết kế và triển khai hệ thống Smart Travel Platform. \\
+Chương 4 & Thực nghiệm và đánh giá kết quả hệ thống. \\
+Chương 5 & Kết luận và hướng phát triển. \\
+\bottomrule
+\end{longtable}
+
+\end{document}

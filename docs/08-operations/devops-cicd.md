@@ -1,5 +1,12 @@
 # DevOps / DataOps — CI/CD Pipeline
 
+## Danh sách bảng
+
+- [Bảng 1. Rollback Plan - Tình huống, Rollback](#rollback-plan)
+- [Bảng 2. Logging Strategy - Service, Logger, Format](#logging-strategy)
+- [Bảng 3. Key Log Events - Event, Level, Ghi chú](#key-log-events)
+- [Bảng 4. Alerting Rules - Condition, Alert, Action](#alerting-rules)
+
 ## Git Workflow
 
 ### Branch Strategy
@@ -116,6 +123,8 @@ Output:
 
 ### Rollback Plan
 
+**Bảng 1. Rollback Plan - Tình huống, Rollback.**
+
 | Tình huống | Rollback |
 |-----------|---------|
 | Bad code deploy | Replit checkpoint rollback |
@@ -129,6 +138,8 @@ Output:
 
 ### Logging Strategy
 
+**Bảng 2. Logging Strategy - Service, Logger, Format.**
+
 | Service | Logger | Format |
 |---------|--------|--------|
 | API Server | Pino (structured JSON) | `{time, level, req, res, responseTime}` |
@@ -136,6 +147,8 @@ Output:
 | Dashboard | Browser console (Vite) | DevTools |
 
 ### Key Log Events
+
+**Bảng 3. Key Log Events - Event, Level, Ghi chú.**
 
 | Event | Level | Ghi chú |
 |-------|-------|---------|
@@ -148,6 +161,8 @@ Output:
 | Validation fail | WARN | Ghi u_key, failed rules |
 
 ### Alerting Rules
+
+**Bảng 4. Alerting Rules - Condition, Alert, Action.**
 
 | Condition | Alert | Action |
 |-----------|-------|--------|

@@ -1,5 +1,18 @@
 # Data Dictionary — Smart Travel Platform
 
+## Danh sách bảng
+
+- [Bảng 1. `bronze_pois` — Lớp Bronze (Raw Data) - Field, Type, Mô tả, Ví dụ](#bronzepois-lớp-bronze-raw-data)
+- [Bảng 2. `silver_pois` — Lớp Silver (Enriched & Scored) - Field, Type, Mô tả, Ví dụ](#silverpois-lớp-silver-enriched-scored)
+- [Bảng 3. `gold_master_pois` — Lớp Gold (Master POIs) - Field, Type, Mô tả, Ví dụ](#goldmasterpois-lớp-gold-master-pois)
+- [Bảng 4. `pending_review_pois` — Hàng đợi Review - Field, Type, Mô tả](#pendingreviewpois-hàng-đợi-review)
+- [Bảng 5. `data_quality_quarantine` — Quarantine - Field, Type, Mô tả](#dataqualityquarantine-quarantine)
+- [Bảng 6. `etl_jobs` — ETL Job Registry - Field, Type, Mô tả](#etljobs-etl-job-registry)
+- [Bảng 7. `etl_schedules` — Lịch tự động - Field, Type, Mô tả](#etlschedules-lịch-tự-động)
+- [Bảng 8. `config_cities` — Reference: Thành phố - Field, Type, Mô tả](#configcities-reference-thành-phố)
+- [Bảng 9. `config_cities` — Reference: Thành phố - Code, Tên, Bán kính](#configcities-reference-thành-phố)
+- [Bảng 10. `config_categories` — Reference: Danh mục - Code, OSM Tags](#configcategories-reference-danh-mục)
+
 ## MongoDB Collections
 
 ---
@@ -7,6 +20,8 @@
 ### `bronze_pois` — Lớp Bronze (Raw Data)
 
 Collection lưu dữ liệu thô từ các nguồn OSM và Google Places chưa qua xử lý.
+
+**Bảng 1. `bronze_pois` — Lớp Bronze (Raw Data) - Field, Type, Mô tả, Ví dụ.**
 
 | Field | Type | Mô tả | Ví dụ |
 |-------|------|-------|-------|
@@ -38,6 +53,8 @@ Collection lưu dữ liệu thô từ các nguồn OSM và Google Places chưa q
 
 Collection lưu dữ liệu đã được làm sạch, làm giàu và tính điểm chất lượng.
 
+**Bảng 2. `silver_pois` — Lớp Silver (Enriched & Scored) - Field, Type, Mô tả, Ví dụ.**
+
 | Field | Type | Mô tả | Ví dụ |
 |-------|------|-------|-------|
 | `_id` | ObjectId | MongoDB internal ID | — |
@@ -67,6 +84,8 @@ Collection lưu dữ liệu đã được làm sạch, làm giàu và tính đi�
 
 Collection là nguồn dữ liệu chính thức (Single Source of Truth) phục vụ API và ứng dụng.
 
+**Bảng 3. `gold_master_pois` — Lớp Gold (Master POIs) - Field, Type, Mô tả, Ví dụ.**
+
 | Field | Type | Mô tả | Ví dụ |
 |-------|------|-------|-------|
 | `_id` | ObjectId | MongoDB internal ID | — |
@@ -95,6 +114,8 @@ Collection là nguồn dữ liệu chính thức (Single Source of Truth) phục
 
 POIs có `quality_score` trong khoảng [0.3, 0.5) chờ Data Steward duyệt.
 
+**Bảng 4. `pending_review_pois` — Hàng đợi Review - Field, Type, Mô tả.**
+
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `u_key` | string | Khóa POI |
@@ -111,6 +132,8 @@ POIs có `quality_score` trong khoảng [0.3, 0.5) chờ Data Steward duyệt.
 
 Records bị loại do không qua validation.
 
+**Bảng 5. `data_quality_quarantine` — Quarantine - Field, Type, Mô tả.**
+
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `u_key` | string | Khóa POI gốc |
@@ -125,6 +148,8 @@ Records bị loại do không qua validation.
 ---
 
 ### `etl_jobs` — ETL Job Registry
+
+**Bảng 6. `etl_jobs` — ETL Job Registry - Field, Type, Mô tả.**
 
 | Field | Type | Mô tả |
 |-------|------|-------|
@@ -147,6 +172,8 @@ Records bị loại do không qua validation.
 
 ### `etl_schedules` — Lịch tự động
 
+**Bảng 7. `etl_schedules` — Lịch tự động - Field, Type, Mô tả.**
+
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `scheduleId` | string | ID lịch |
@@ -162,6 +189,8 @@ Records bị loại do không qua validation.
 
 ### `config_cities` — Reference: Thành phố
 
+**Bảng 8. `config_cities` — Reference: Thành phố - Field, Type, Mô tả.**
+
 | Field | Type | Mô tả |
 |-------|------|-------|
 | `code` | string | Mã thành phố | `hanoi` |
@@ -172,6 +201,8 @@ Records bị loại do không qua validation.
 | `radius_km` | integer | Bán kính thu thập (km) | `25` |
 
 **Danh sách thành phố hỗ trợ:**
+
+**Bảng 9. `config_cities` — Reference: Thành phố - Code, Tên, Bán kính.**
 
 | Code | Tên | Bán kính |
 |------|-----|---------|
@@ -189,6 +220,8 @@ Records bị loại do không qua validation.
 ---
 
 ### `config_categories` — Reference: Danh mục
+
+**Bảng 10. `config_categories` — Reference: Danh mục - Code, OSM Tags.**
 
 | Code | OSM Tags |
 |------|----------|

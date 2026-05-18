@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../middlewares/auth";
 
 const router = Router();
-const ETL_BASE = "http://localhost:9000";
+const ETL_BASE = process.env["ETL_BASE_URL"] ?? "http://localhost:9000";
 
 async function proxyToEtl(path: string, method: string, body?: unknown, query?: string) {
   const url = `${ETL_BASE}${path}${query ? `?${query}` : ""}`;

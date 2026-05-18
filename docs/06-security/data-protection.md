@@ -1,8 +1,20 @@
 # Data Protection
 
+## Danh sách bảng
+
+- [Bảng 1. Data at Rest - Storage, Encryption, Standard](#data-at-rest)
+- [Bảng 2. Data in Transit - Connection, Encryption, Certificate](#data-in-transit)
+- [Bảng 3. MongoDB Credentials - Item, Giá trị, Storage, Rotation](#mongodb-credentials)
+- [Bảng 4. RapidAPI Keys - Item, Mô tả, Storage, Rotation](#rapidapi-keys)
+- [Bảng 5. MongoDB Atlas Backup - Backup Type, Schedule, Retention, How to access](#mongodb-atlas-backup)
+- [Bảng 6. Source Code Backup - Backup, Method, Frequency](#source-code-backup)
+- [Bảng 7. Input Validation - Layer, Tool, Rules](#input-validation)
+
 ## Encryption Standards
 
 ### Data at Rest
+
+**Bảng 1. Data at Rest - Storage, Encryption, Standard.**
 
 | Storage | Encryption | Standard |
 |---------|-----------|----------|
@@ -12,6 +24,8 @@
 | Container filesystem | N/A | Ephemeral, no sensitive data |
 
 ### Data in Transit
+
+**Bảng 2. Data in Transit - Connection, Encryption, Certificate.**
 
 | Connection | Encryption | Certificate |
 |-----------|-----------|-------------|
@@ -28,6 +42,8 @@
 
 ### MongoDB Credentials
 
+**Bảng 3. MongoDB Credentials - Item, Giá trị, Storage, Rotation.**
+
 | Item | Giá trị | Storage | Rotation |
 |------|---------|---------|---------|
 | MongoDB URI | `mongodb+srv://...` | Replit Secrets | Khi cần thiết |
@@ -42,6 +58,8 @@
 5. Xóa user cũ
 
 ### RapidAPI Keys
+
+**Bảng 4. RapidAPI Keys - Item, Mô tả, Storage, Rotation.**
 
 | Item | Mô tả | Storage | Rotation |
 |------|-------|---------|---------|
@@ -59,12 +77,16 @@
 
 ### MongoDB Atlas Backup
 
+**Bảng 5. MongoDB Atlas Backup - Backup Type, Schedule, Retention, How to access.**
+
 | Backup Type | Schedule | Retention | How to access |
 |-------------|---------|-----------|--------------|
 | Continuous backup | Real-time | 7 ngày | Atlas Console → Backup |
 | Daily snapshot | 00:00 UTC | 7 ngày | Atlas Console → Backup |
 
 ### Source Code Backup
+
+**Bảng 6. Source Code Backup - Backup, Method, Frequency.**
 
 | Backup | Method | Frequency |
 |--------|--------|-----------|
@@ -101,6 +123,8 @@ MONGODB_URI = "mongodb+srv://user:pass@cluster..."
 ```
 
 ### Input Validation
+
+**Bảng 7. Input Validation - Layer, Tool, Rules.**
 
 | Layer | Tool | Rules |
 |-------|------|-------|

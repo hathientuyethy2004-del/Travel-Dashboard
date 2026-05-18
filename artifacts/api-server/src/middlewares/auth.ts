@@ -5,14 +5,14 @@ import { type Request, type Response, type NextFunction } from "express";
  * Checks for the X-Replit-User-Id header injected by Replit's proxy
  * when authentication is enabled on the deployment.
  *
- * In development (NODE_ENV !== "production"), auth is bypassed unless
- * REQUIRE_AUTH=true is explicitly set.
+ * Auth is disabled unless REQUIRE_AUTH=true is explicitly set.
+ * This keeps local Docker deployments usable while allowing hosted
+ * deployments to opt into Replit header-based write protection.
  */
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const isDev = process.env["NODE_ENV"] !== "production";
-  const forceAuth = process.env["REQUIRE_AUTH"] === "true";
+  const authRequired = process.env["REQUIRE_AUTH"] === "true";
 
-  if (isDev && !forceAuth) {
+  if (!authRequired) {
     return next();
   }
 

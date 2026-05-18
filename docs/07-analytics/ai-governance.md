@@ -1,5 +1,12 @@
 # AI/ML Governance
 
+## Danh sách bảng
+
+- [Bảng 1. Mô tả - Feature, Weight, Rationale](#mô-tả)
+- [Bảng 2. Model Governance - Aspect, Trạng thái](#model-governance)
+- [Bảng 3. Recommendation Rules (hiện tại) - Rule, Logic](#recommendation-rules-hiện-tại)
+- [Bảng 4. Roadmap AI/ML - Priority, Feature, Mô tả](#roadmap-aiml)
+
 ## Trạng thái hiện tại
 
 Smart Travel Platform chưa triển khai ML model chính thức. Tuy nhiên, hệ thống sử dụng **heuristic scoring** (quality score) và **fuzzy matching** như một dạng "light ML".
@@ -16,6 +23,8 @@ Quality score là một linear weighted model để đánh giá chất lượng 
 score = w1 * has_osm + w2 * has_google + w3 * rating_normalized + w4 * has_name + w5 * has_address
 ```
 
+**Bảng 1. Mô tả - Feature, Weight, Rationale.**
+
 | Feature | Weight | Rationale |
 |---------|--------|-----------|
 | has_osm_data | 0.30 | Xác nhận tồn tại trong OSM |
@@ -25,6 +34,8 @@ score = w1 * has_osm + w2 * has_google + w3 * rating_normalized + w4 * has_name 
 | has_address | 0.10 | Có thể navigate đến |
 
 ### Model Governance
+
+**Bảng 2. Model Governance - Aspect, Trạng thái.**
 
 | Aspect | Trạng thái |
 |--------|-----------|
@@ -62,6 +73,8 @@ Dashboard có tab Recommendations. Đây là tính năng:
 
 ### Recommendation Rules (hiện tại)
 
+**Bảng 3. Recommendation Rules (hiện tại) - Rule, Logic.**
+
 | Rule | Logic |
 |------|-------|
 | Top-rated by city | Gold POIs, `ORDER BY rating DESC, review_count DESC` |
@@ -71,6 +84,8 @@ Dashboard có tab Recommendations. Đây là tính năng:
 ---
 
 ## Roadmap AI/ML
+
+**Bảng 4. Roadmap AI/ML - Priority, Feature, Mô tả.**
 
 | Priority | Feature | Mô tả |
 |----------|---------|-------|

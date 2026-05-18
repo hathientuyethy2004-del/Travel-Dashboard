@@ -1,8 +1,17 @@
 # Analyst Guide — Hướng dẫn Data Analyst
 
+## Danh sách bảng
+
+- [Bảng 1. Tổng quan Dashboard - Section, Mô tả](#tổng-quan-dashboard)
+- [Bảng 2. KPI Cards - Card, Ý nghĩa](#kpi-cards)
+- [Bảng 3. Phân tích theo danh mục - Category, Loại POI](#phân-tích-theo-danh-mục)
+- [Bảng 4. Quality Score - Range, Ý nghĩa](#quality-score)
+
 ## Tổng quan Dashboard
 
 Smart Travel Platform Dashboard có 6 section chính:
+
+**Bảng 1. Tổng quan Dashboard - Section, Mô tả.**
 
 | Section | Mô tả |
 |---------|-------|
@@ -18,6 +27,8 @@ Smart Travel Platform Dashboard có 6 section chính:
 ## Đọc Dashboard
 
 ### KPI Cards
+
+**Bảng 2. KPI Cards - Card, Ý nghĩa.**
 
 | Card | Ý nghĩa |
 |------|---------|
@@ -61,6 +72,8 @@ Câu hỏi gợi ý:
 
 **Đi đến:** Dashboard → POI by Category
 
+**Bảng 3. Phân tích theo danh mục - Category, Loại POI.**
+
 | Category | Loại POI |
 |---------|---------|
 | restaurant | Nhà hàng, quán ăn |
@@ -98,6 +111,8 @@ curl "http://localhost:8080/api/pois/top-rated?city=danang&limit=50" > danang_to
 ## Giải thích các chỉ số
 
 ### Quality Score
+
+**Bảng 4. Quality Score - Range, Ý nghĩa.**
 
 | Range | Ý nghĩa |
 |-------|---------|

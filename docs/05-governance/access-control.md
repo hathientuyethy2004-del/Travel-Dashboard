@@ -1,8 +1,18 @@
 # Access Control — Phân quyền dữ liệu
 
+## Danh sách bảng
+
+- [Bảng 1. Roles - Role, Mô tả](#roles)
+- [Bảng 2. Access Control Matrix - Resource, admin, data_engineer, data_steward, analyst, api_consumer](#access-control-matrix)
+- [Bảng 3. Secrets Management - Secret, Scope, Người có quyền](#secrets-management)
+- [Bảng 4. MongoDB Access Control - Người dùng MongoDB, Quyền, Collection](#mongodb-access-control)
+- [Bảng 5. Data Encryption - Data, Encryption](#data-encryption)
+
 ## RBAC (Role-Based Access Control)
 
 ### Roles
+
+**Bảng 1. Roles - Role, Mô tả.**
 
 | Role | Mô tả |
 |------|-------|
@@ -13,6 +23,8 @@
 | `api_consumer` | Đọc Gold API `/api/pois`, `/api/cities` |
 
 ### Access Control Matrix
+
+**Bảng 2. Access Control Matrix - Resource, admin, data_engineer, data_steward, analyst, api_consumer.**
 
 | Resource | admin | data_engineer | data_steward | analyst | api_consumer |
 |----------|-------|--------------|--------------|---------|--------------|
@@ -33,6 +45,8 @@
 
 ## Secrets Management
 
+**Bảng 3. Secrets Management - Secret, Scope, Người có quyền.**
+
 | Secret | Scope | Người có quyền |
 |--------|-------|---------------|
 | `MONGODB_URI` | Replit Secrets (shared) | Admin only |
@@ -49,6 +63,8 @@
 
 ## MongoDB Access Control
 
+**Bảng 4. MongoDB Access Control - Người dùng MongoDB, Quyền, Collection.**
+
 | Người dùng MongoDB | Quyền | Collection |
 |--------------------|-------|-----------|
 | `nguyenanhilu9785_db_user` | readWrite | `smart_travel_platform.*` |
@@ -61,6 +77,8 @@
 ---
 
 ## Data Encryption
+
+**Bảng 5. Data Encryption - Data, Encryption.**
 
 | Data | Encryption |
 |------|-----------|

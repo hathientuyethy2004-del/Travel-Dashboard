@@ -139,21 +139,15 @@ def _rebuild_silver_gold_fast(job_id: str, run_id: str) -> dict:
         {"$project": {
             "silver_id": 1, "u_key": 1,
             "name": 1, "city": 1,
-            "city_name": {"$switch": {
-                "branches": [
-                    {"case": {"$eq": ["$city", "hanoi"]},    "then": "Hà Nội"},
-                    {"case": {"$eq": ["$city", "hcm"]},      "then": "TP. Hồ Chí Minh"},
-                    {"case": {"$eq": ["$city", "danang"]},   "then": "Đà Nẵng"},
-                    {"case": {"$eq": ["$city", "cantho"]},   "then": "Cần Thơ"},
-                    {"case": {"$eq": ["$city", "haiphong"]}, "then": "Hải Phòng"},
-                    {"case": {"$eq": ["$city", "hue"]},      "then": "Huế"},
-                    {"case": {"$eq": ["$city", "nhatrang"]}, "then": "Nha Trang"},
-                    {"case": {"$eq": ["$city", "dalat"]},    "then": "Đà Lạt"},
-                    {"case": {"$eq": ["$city", "vungtau"]},  "then": "Vũng Tàu"},
-                    {"case": {"$eq": ["$city", "quynhon"]},  "then": "Quy Nhơn"},
-                ],
-                "default": "$city_name",
-            }},
+            "city_name": {"$cond": [
+                {"$and": [
+                    {"$ne": [{"$type": "$city_name"}, "missing"]},
+                    {"$ne": ["$city_name", None]},
+                    {"$ne": ["$city_name", ""]},
+                ]},
+                "$city_name",
+                "$city",
+            ]},
             "country": 1,
             "category": 1, "subcategory": 1,
             "location": 1,

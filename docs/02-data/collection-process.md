@@ -1,5 +1,10 @@
 # Quy trình thu thập dữ liệu
 
+## Danh sách bảng
+
+- [Bảng 1. Naming Convention - Loại, Format, Ví dụ](#naming-convention)
+- [Bảng 2. Data Format Standards - Field, Format, Ví dụ](#data-format-standards)
+
 ## Tổng quan
 
 Dữ liệu POI được thu thập qua 2 bước chính:
@@ -116,6 +121,8 @@ Bước 2: _rebuild_silver_gold_fast()
 
 ## Naming Convention
 
+**Bảng 1. Naming Convention - Loại, Format, Ví dụ.**
+
 | Loại | Format | Ví dụ |
 |------|--------|-------|
 | u_key | `{city}_{category}_{osm_id}` | `hanoi_restaurant_1234567` |
@@ -126,6 +133,8 @@ Bước 2: _rebuild_silver_gold_fast()
 ---
 
 ## Data Format Standards
+
+**Bảng 2. Data Format Standards - Field, Format, Ví dụ.**
 
 | Field | Format | Ví dụ |
 |-------|--------|-------|

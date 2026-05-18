@@ -1,10 +1,13 @@
 # Smart Travel Platform — Bộ tài liệu
 
-Hệ thống tài liệu đầy đủ cho Smart Travel Platform — nền tảng thu thập, xử lý và phục vụ dữ liệu điểm tham quan (POI) du lịch Việt Nam theo kiến trúc Medallion (Bronze → Silver → Gold).
+## Danh sách bảng
 
----
+- [Bảng 1. Cấu trúc tài liệu - Nhóm, Thư mục, Nội dung](#cấu-trúc-tài-liệu)
+- [Bảng 2. Ưu tiên tài liệu - Mức, Tài liệu, File](#ưu-tiên-tài-liệu)
 
 ## Cấu trúc tài liệu
+
+**Bảng 1. Cấu trúc tài liệu - Nhóm, Thư mục, Nội dung.**
 
 | Nhóm | Thư mục | Nội dung |
 |------|---------|---------|
@@ -26,6 +29,8 @@ Hệ thống tài liệu đầy đủ cho Smart Travel Platform — nền tảng
 
 ## Ưu tiên tài liệu
 
+**Bảng 2. Ưu tiên tài liệu - Mức, Tài liệu, File.**
+
 | Mức | Tài liệu | File |
 |-----|---------|------|
 | Cao | Kiến trúc tổng thể | [01-overview/architecture.md](./01-overview/architecture.md) |
@@ -36,6 +41,7 @@ Hệ thống tài liệu đầy đủ cho Smart Travel Platform — nền tảng
 | Cao | Security & Access Control | [06-security/security-architecture.md](./06-security/security-architecture.md) |
 | Cao | Data Quality Rules | [04-quality/quality-rules.md](./04-quality/quality-rules.md) |
 | Cao | SOP Vận hành | [12-user-guide/runbook.md](./12-user-guide/runbook.md) |
+| Cao | Docker Deployment | [08-operations/docker-deployment.md](./08-operations/docker-deployment.md) |
 | Trung bình | Governance Framework | [05-governance/governance-framework.md](./05-governance/governance-framework.md) |
 | Trung bình | SLA/SLO | [04-quality/sla-slo.md](./04-quality/sla-slo.md) |
 | Trung bình | Metadata & Lineage | [13-lakehouse/lineage.md](./13-lakehouse/lineage.md) |
@@ -50,3 +56,5 @@ Hệ thống tài liệu đầy đủ cho Smart Travel Platform — nền tảng
 - **ETL Service:** [artifacts/etl-service/](../artifacts/etl-service/)
 - **API Server:** [artifacts/api-server/](../artifacts/api-server/)
 - **Dashboard:** [artifacts/travel-dashboard/](../artifacts/travel-dashboard/)
+- **Docker Compose:** [../docker-compose.yml](../docker-compose.yml)
+- **Docker Deployment Guide:** [08-operations/docker-deployment.md](./08-operations/docker-deployment.md)

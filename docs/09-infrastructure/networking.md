@@ -1,5 +1,11 @@
 # Networking Documentation
 
+## Danh sách bảng
+
+- [Bảng 1. Port Configuration - Port, Service, External, Purpose](#port-configuration)
+- [Bảng 2. Firewall Rules - Direction, From, To, Port, Protocol, Action](#firewall-rules)
+- [Bảng 3. DNS & Routing - Domain, Target, Notes](#dns-routing)
+
 ## Network Topology
 
 ```
@@ -86,6 +92,8 @@ mongodb+srv://user:pass@cluster0.olqzq.mongodb.net/smart_travel_platform
 
 ## Port Configuration
 
+**Bảng 1. Port Configuration - Port, Service, External, Purpose.**
+
 | Port | Service | External | Purpose |
 |------|---------|----------|---------|
 | 5000 | Dashboard | 80 (webview) | Primary user-facing |
@@ -98,6 +106,8 @@ mongodb+srv://user:pass@cluster0.olqzq.mongodb.net/smart_travel_platform
 ---
 
 ## Firewall Rules
+
+**Bảng 2. Firewall Rules - Direction, From, To, Port, Protocol, Action.**
 
 | Direction | From | To | Port | Protocol | Action |
 |-----------|------|-----|------|----------|--------|
@@ -112,6 +122,8 @@ mongodb+srv://user:pass@cluster0.olqzq.mongodb.net/smart_travel_platform
 ---
 
 ## DNS & Routing
+
+**Bảng 3. DNS & Routing - Domain, Target, Notes.**
 
 | Domain | Target | Notes |
 |--------|--------|-------|

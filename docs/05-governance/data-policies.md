@@ -1,6 +1,18 @@
 # Data Policies
 
+## Danh sách bảng
+
+- [Bảng 1. Data Classification Policy - Class, Mô tả, Ví dụ, Handling](#data-classification-policy)
+- [Bảng 2. Data Retention Policy - Collection, TTL, Lý do](#data-retention-policy)
+- [Bảng 3. Internal Sharing - Team, Quyền truy cập, Phương thức](#internal-sharing)
+- [Bảng 4. External Sharing - Đối tượng, Data được phép, Điều kiện](#external-sharing)
+- [Bảng 5. PII Assessment - Field, PII?, Ghi chú](#pii-assessment)
+- [Bảng 6. Compliance - Quy định, Áp dụng, Trạng thái](#compliance)
+- [Bảng 7. Reference Data - Reference, Collection, Update frequency](#reference-data)
+
 ## Data Classification Policy
+
+**Bảng 1. Data Classification Policy - Class, Mô tả, Ví dụ, Handling.**
 
 | Class | Mô tả | Ví dụ | Handling |
 |-------|-------|-------|---------|
@@ -11,6 +23,8 @@
 ---
 
 ## Data Retention Policy
+
+**Bảng 2. Data Retention Policy - Collection, TTL, Lý do.**
 
 | Collection | TTL | Lý do |
 |-----------|-----|-------|
@@ -39,6 +53,8 @@ db.etl_jobs.createIndex(
 
 ### Internal Sharing
 
+**Bảng 3. Internal Sharing - Team, Quyền truy cập, Phương thức.**
+
 | Team | Quyền truy cập | Phương thức |
 |------|---------------|-------------|
 | Data Engineering | Full access | MongoDB direct + API |
@@ -46,6 +62,8 @@ db.etl_jobs.createIndex(
 | Data Steward | Pending review | Dashboard review UI |
 
 ### External Sharing
+
+**Bảng 4. External Sharing - Đối tượng, Data được phép, Điều kiện.**
 
 | Đối tượng | Data được phép | Điều kiện |
 |----------|---------------|----------|
@@ -61,6 +79,8 @@ db.etl_jobs.createIndex(
 
 Smart Travel Platform **không thu thập PII** (Personally Identifiable Information):
 
+**Bảng 5. PII Assessment - Field, PII?, Ghi chú.**
+
 | Field | PII? | Ghi chú |
 |-------|------|---------|
 | POI name | Không | Tên doanh nghiệp, không phải cá nhân |
@@ -70,6 +90,8 @@ Smart Travel Platform **không thu thập PII** (Personally Identifiable Informa
 | User credentials | N/A | Không có user auth hiện tại |
 
 ### Compliance
+
+**Bảng 6. Compliance - Quy định, Áp dụng, Trạng thái.**
 
 | Quy định | Áp dụng | Trạng thái |
 |---------|---------|-----------|
@@ -106,6 +128,8 @@ Hiện tại dùng u_key (OSM element ID) làm entity key:
 - Nếu không có OSM: Google record có u_key riêng (`google_{place_id}`)
 
 ### Reference Data
+
+**Bảng 7. Reference Data - Reference, Collection, Update frequency.**
 
 | Reference | Collection | Update frequency |
 |-----------|-----------|-----------------|

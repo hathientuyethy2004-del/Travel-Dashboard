@@ -1,5 +1,14 @@
 # Data Governance Framework
 
+## Danh sách bảng
+
+- [Bảng 1. Stewardship Model - Vai trò, Trách nhiệm](#stewardship-model)
+- [Bảng 2. Ownership Matrix - Dataset, Owner, Steward, Consumer](#ownership-matrix)
+- [Bảng 3. Data Classification Policy - Loại, Mô tả, Ví dụ, Xử lý](#data-classification-policy)
+- [Bảng 4. Data Retention Policy - Collection, Retention, Lý do](#data-retention-policy)
+- [Bảng 5. Data Sharing Policy - Đối tượng, Phương thức, Dữ liệu được phép](#data-sharing-policy)
+- [Bảng 6. Versioning Strategy - Loại thay đổi, Quy trình](#versioning-strategy)
+
 ## Governance Model
 
 Smart Travel Platform áp dụng mô hình governance **Centralized** — một team Data Engineering chịu trách nhiệm toàn bộ pipeline, chất lượng và truy cập dữ liệu.
@@ -15,6 +24,8 @@ Smart Travel Platform áp dụng mô hình governance **Centralized** — một 
 
 ## Stewardship Model
 
+**Bảng 1. Stewardship Model - Vai trò, Trách nhiệm.**
+
 | Vai trò | Trách nhiệm |
 |---------|-------------|
 | **Data Owner** | Data Engineering team — sở hữu pipeline, schema, quality rules |
@@ -25,6 +36,8 @@ Smart Travel Platform áp dụng mô hình governance **Centralized** — một 
 ---
 
 ## Ownership Matrix
+
+**Bảng 2. Ownership Matrix - Dataset, Owner, Steward, Consumer.**
 
 | Dataset | Owner | Steward | Consumer |
 |---------|-------|---------|---------|
@@ -39,6 +52,8 @@ Smart Travel Platform áp dụng mô hình governance **Centralized** — một 
 
 ## Data Classification Policy
 
+**Bảng 3. Data Classification Policy - Loại, Mô tả, Ví dụ, Xử lý.**
+
 | Loại | Mô tả | Ví dụ | Xử lý |
 |------|-------|-------|-------|
 | **Public** | Thông tin POI công khai | Tên, địa chỉ, rating | Có thể expose qua API |
@@ -48,6 +63,8 @@ Smart Travel Platform áp dụng mô hình governance **Centralized** — một 
 ---
 
 ## Data Retention Policy
+
+**Bảng 4. Data Retention Policy - Collection, Retention, Lý do.**
 
 | Collection | Retention | Lý do |
 |-----------|-----------|-------|
@@ -73,6 +90,8 @@ Dữ liệu POI là thông tin công cộng về địa điểm kinh doanh. **Kh
 
 ## Data Sharing Policy
 
+**Bảng 5. Data Sharing Policy - Đối tượng, Phương thức, Dữ liệu được phép.**
+
 | Đối tượng | Phương thức | Dữ liệu được phép |
 |----------|-------------|------------------|
 | Internal teams | Gold API `/api/pois` | Gold POIs |
@@ -91,6 +110,8 @@ Dữ liệu POI là thông tin công cộng về địa điểm kinh doanh. **Kh
 ## Change Management
 
 ### Versioning Strategy
+
+**Bảng 6. Versioning Strategy - Loại thay đổi, Quy trình.**
 
 | Loại thay đổi | Quy trình |
 |--------------|----------|

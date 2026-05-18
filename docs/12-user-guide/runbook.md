@@ -1,5 +1,9 @@
 # Runbook & SOP — Smart Travel Platform
 
+## Danh sách bảng
+
+Tài liệu này không có bảng.
+
 ## Daily Operations Checklist
 
 ```
@@ -14,6 +18,31 @@
 ## SOP-001: Khởi động hệ thống
 
 **Khi nào dùng:** Sau khi container restart hoặc deployment mới
+
+### Docker Compose
+
+```
+Bước 1: Kiểm tra .env ở repo root
+  → MONGODB_URI, DB_NAME, RAPIDAPI_KEYS, REQUIRE_AUTH, LOG_LEVEL
+  → Local Docker write actions cần REQUIRE_AUTH=false
+
+Bước 2: Build và start
+  → docker compose up -d --build
+
+Bước 3: Kiểm tra container
+  → docker compose ps
+  → api, etl, frontend phải Up
+  → mongodb phải Up (healthy)
+
+Bước 4: Verify endpoint
+  → http://localhost:5173/api/healthz → {"status":"ok"}
+  → http://localhost:5173/api/etl/status → {"status":"running"}
+
+Bước 5: Mở dashboard
+  → http://localhost:5173
+```
+
+### Replit Workflows
 
 ```
 Bước 1: Kiểm tra secrets
@@ -74,6 +103,30 @@ curl -X POST http://localhost:8080/api/etl/jobs \
 curl -X POST http://localhost:8080/api/etl/jobs \
   -H "Content-Type: application/json" \
   -d '{"jobType": "rebuild_layers"}'
+```
+
+### Xóa ETL job
+
+Qua Dashboard:
+
+```
+1. Mở Pipeline Management → Jobs
+2. Bấm icon thùng rác ở dòng job cần xóa
+3. Bấm Refresh nếu danh sách chưa cập nhật ngay
+```
+
+Qua API:
+
+```bash
+curl -X DELETE http://localhost:5173/api/etl/jobs/{jobId}
+```
+
+Nếu trả `401` trong Docker local:
+
+```
+1. Kiểm tra .env: REQUIRE_AUTH=false
+2. Restart API:
+   docker compose up -d --force-recreate api
 ```
 
 ---
@@ -169,6 +222,18 @@ Bước 4: Verify
   GET /api/etl/status → apiKeys.total tăng
 ```
 
+### Docker Compose
+
+```
+Bước 1: Cập nhật RAPIDAPI_KEYS trong .env
+
+Bước 2: Restart ETL service
+  docker compose up -d --force-recreate etl
+
+Bước 3: Verify
+  http://localhost:5173/api/etl/status → apiKeys.total tăng
+```
+
 ---
 
 ## Troubleshooting Guide
@@ -212,6 +277,23 @@ Bước 4: Verify
    - Port 9000 in use → Kill process, restart
 
 3. Restart workflow
+```
+
+### Docker services không start
+
+```
+1. Kiểm tra trạng thái:
+   docker compose ps
+
+2. Xem logs:
+   docker compose logs --tail=100 api
+   docker compose logs --tail=100 etl
+   docker compose logs --tail=100 frontend
+   docker compose logs --tail=100 mongodb
+
+3. Rebuild service lỗi:
+   docker compose build api
+   docker compose up -d --force-recreate api
 ```
 
 ### MongoDB connection timeout

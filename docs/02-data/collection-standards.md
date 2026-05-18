@@ -1,5 +1,25 @@
 # Quy chuẩn thu thập dữ liệu — Data Collection Standards
 
+## Danh sách bảng
+
+- [Bảng 1. 1 Nguyên tắc thu thập - Nguyên tắc, Mô tả](#1-nguyên-tắc-thu-thập)
+- [Bảng 2. 2 Tiêu chuẩn bắt buộc cho một record Bronze hợp lệ - Field, Bắt buộc, Ghi chú](#2-tiêu-chuẩn-bắt-buộc-cho-một-record-bronze-hợp-lệ)
+- [Bảng 3. 1 u_key (Unique Key) - Trường hợp, Format, Ví dụ](#1-ukey-unique-key)
+- [Bảng 4. 2 City Codes - Code, Tên tiếng Việt, Tên tiếng Anh](#2-city-codes)
+- [Bảng 5. 3 Category Codes - Code, OSM Tags tương ứng](#3-category-codes)
+- [Bảng 6. 4 Job ID & Run ID - Loại, Format, Ví dụ](#4-job-id-run-id)
+- [Bảng 7. 1 Tọa độ địa lý - Thuộc tính, Tiêu chuẩn](#1-tọa-độ-địa-lý)
+- [Bảng 8. 2 Tên địa điểm - Quy tắc, Mô tả](#2-tên-địa-điểm)
+- [Bảng 9. 3 Địa chỉ - Quy tắc, Mô tả](#3-địa-chỉ)
+- [Bảng 10. 4 Số điện thoại - Quy tắc, Mô tả](#4-số-điện-thoại)
+- [Bảng 11. 5 Rating & Review Count - Field, Type, Range, Nguồn](#5-rating-review-count)
+- [Bảng 12. 6 Price Level - Giá trị, Ý nghĩa](#6-price-level)
+- [Bảng 13. Encoding Standards - Loại, Tiêu chuẩn](#encoding-standards)
+- [Bảng 14. Timestamp Standards - Quy tắc, Tiêu chuẩn](#timestamp-standards)
+- [Bảng 15. Timestamp Standards - Field, Nghĩa, Set khi nào](#timestamp-standards)
+- [Bảng 16. OSM → Bronze Mapping - OSM Field, Bronze Field, Transform](#osm-bronze-mapping)
+- [Bảng 17. Google Places → Bronze Mapping - Google Field, Bronze Field, Transform](#google-places-bronze-mapping)
+
 ## Mục đích
 
 Tài liệu này định nghĩa các quy chuẩn bắt buộc áp dụng cho **toàn bộ quá trình thu thập dữ liệu POI** vào hệ thống Smart Travel Platform. Mọi collector, job, hay tích hợp nguồn mới đều phải tuân thủ các quy chuẩn này.
@@ -9,6 +29,8 @@ Tài liệu này định nghĩa các quy chuẩn bắt buộc áp dụng cho **t
 ## 1. Data Collection Standards
 
 ### 1.1 Nguyên tắc thu thập
+
+**Bảng 1. 1 Nguyên tắc thu thập - Nguyên tắc, Mô tả.**
 
 | Nguyên tắc | Mô tả |
 |-----------|-------|
@@ -22,6 +44,8 @@ Tài liệu này định nghĩa các quy chuẩn bắt buộc áp dụng cho **t
 ### 1.2 Tiêu chuẩn bắt buộc cho một record Bronze hợp lệ
 
 Một record được chấp nhận vào Bronze phải có **tối thiểu** các field sau:
+
+**Bảng 2. 2 Tiêu chuẩn bắt buộc cho một record Bronze hợp lệ - Field, Bắt buộc, Ghi chú.**
 
 | Field | Bắt buộc | Ghi chú |
 |-------|----------|---------|
@@ -43,6 +67,8 @@ Một record được chấp nhận vào Bronze phải có **tối thiểu** cá
 
 Format: `{city_code}_{category_code}_{source_id}`
 
+**Bảng 3. 1 u_key (Unique Key) - Trường hợp, Format, Ví dụ.**
+
 | Trường hợp | Format | Ví dụ |
 |-----------|--------|-------|
 | OSM record | `{city}_{category}_{osm_element_id}` | `hanoi_restaurant_1234567` |
@@ -55,6 +81,8 @@ Format: `{city_code}_{category_code}_{source_id}`
 - Độ dài tối đa: 200 ký tự
 
 ### 2.2 City Codes
+
+**Bảng 4. 2 City Codes - Code, Tên tiếng Việt, Tên tiếng Anh.**
 
 | Code | Tên tiếng Việt | Tên tiếng Anh |
 |------|---------------|--------------|
@@ -76,6 +104,8 @@ Format: `{city_code}_{category_code}_{source_id}`
 
 ### 2.3 Category Codes
 
+**Bảng 5. 3 Category Codes - Code, OSM Tags tương ứng.**
+
 | Code | OSM Tags tương ứng |
 |------|-------------------|
 | `restaurant` | `amenity=restaurant`, `amenity=fast_food` |
@@ -93,6 +123,8 @@ Format: `{city_code}_{category_code}_{source_id}`
 
 ### 2.4 Job ID & Run ID
 
+**Bảng 6. 4 Job ID & Run ID - Loại, Format, Ví dụ.**
+
 | Loại | Format | Ví dụ |
 |------|--------|-------|
 | Job ID | 8 ký tự uppercase hex (UUID[:8].upper()) | `A3F9BC12` |
@@ -104,6 +136,8 @@ Format: `{city_code}_{category_code}_{source_id}`
 ## 3. Data Format Standards
 
 ### 3.1 Tọa độ địa lý
+
+**Bảng 7. 1 Tọa độ địa lý - Thuộc tính, Tiêu chuẩn.**
 
 | Thuộc tính | Tiêu chuẩn |
 |-----------|-----------|
@@ -126,6 +160,8 @@ location = {"lat": 21.027760, "lng": 105.834160}
 
 ### 3.2 Tên địa điểm
 
+**Bảng 8. 2 Tên địa điểm - Quy tắc, Mô tả.**
+
 | Quy tắc | Mô tả |
 |---------|-------|
 | Encoding | UTF-8, dấu đầy đủ |
@@ -137,6 +173,8 @@ location = {"lat": 21.027760, "lng": 105.834160}
 
 ### 3.3 Địa chỉ
 
+**Bảng 9. 3 Địa chỉ - Quy tắc, Mô tả.**
+
 | Quy tắc | Mô tả |
 |---------|-------|
 | Format ưu tiên | Google `formatted_address` (chuẩn nhất) |
@@ -147,6 +185,8 @@ location = {"lat": 21.027760, "lng": 105.834160}
 
 ### 3.4 Số điện thoại
 
+**Bảng 10. 4 Số điện thoại - Quy tắc, Mô tả.**
+
 | Quy tắc | Mô tả |
 |---------|-------|
 | Format ưu tiên | International format: `+84 24 3826 1234` |
@@ -155,6 +195,8 @@ location = {"lat": 21.027760, "lng": 105.834160}
 | Không chuẩn hóa | Giữ nguyên format từ nguồn |
 
 ### 3.5 Rating & Review Count
+
+**Bảng 11. 5 Rating & Review Count - Field, Type, Range, Nguồn.**
 
 | Field | Type | Range | Nguồn |
 |-------|------|-------|-------|
@@ -175,6 +217,8 @@ rating = 5.5
 
 ### 3.6 Price Level
 
+**Bảng 12. 6 Price Level - Giá trị, Ý nghĩa.**
+
 | Giá trị | Ý nghĩa |
 |---------|---------|
 | `1` | Rẻ (< 100k/người) |
@@ -186,6 +230,8 @@ rating = 5.5
 ---
 
 ## 4. Encoding Standards
+
+**Bảng 13. Encoding Standards - Loại, Tiêu chuẩn.**
 
 | Loại | Tiêu chuẩn |
 |------|-----------|
@@ -200,6 +246,8 @@ rating = 5.5
 ---
 
 ## 5. Timestamp Standards
+
+**Bảng 14. Timestamp Standards - Quy tắc, Tiêu chuẩn.**
 
 | Quy tắc | Tiêu chuẩn |
 |---------|-----------|
@@ -226,6 +274,8 @@ const now = new Date().toISOString();
 ```
 
 **Các timestamp bắt buộc:**
+
+**Bảng 15. Timestamp Standards - Field, Nghĩa, Set khi nào.**
 
 | Field | Nghĩa | Set khi nào |
 |-------|-------|-------------|
@@ -307,6 +357,8 @@ bbox = f"{lat_min},{lon_min},{lat_max},{lon_max}"
 
 ### OSM → Bronze Mapping
 
+**Bảng 16. OSM → Bronze Mapping - OSM Field, Bronze Field, Transform.**
+
 | OSM Field | Bronze Field | Transform |
 |-----------|-------------|-----------|
 | `element.id` | Phần của `u_key` | `f"{city}_{category}_{element['id']}"` |
@@ -319,6 +371,8 @@ bbox = f"{lat_min},{lon_min},{lat_max},{lon_max}"
 | (derived) | `category` | category code input |
 
 ### Google Places → Bronze Mapping
+
+**Bảng 17. Google Places → Bronze Mapping - Google Field, Bronze Field, Transform.**
 
 | Google Field | Bronze Field | Transform |
 |-------------|-------------|-----------|

@@ -1,0 +1,64 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  etl:
+    build:
+      context: .
+      dockerfile: Dockerfile.etl
+    restart: unless-stopped
+    environment:
+      PORT: "9000"
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      DB_NAME: ${DB_NAME:-smart_travel_platform}
+      RAPIDAPI_KEYS: ${RAPIDAPI_KEYS:-}
+    ports:
+      - "9000:9000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      DB_NAME: ${DB_NAME:-smart_travel_platform}
+      ETL_BASE_URL: http://etl:9000
+      REQUIRE_AUTH: ${REQUIRE_AUTH:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      etl:
+        condition: service_started
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  mongodb_data:

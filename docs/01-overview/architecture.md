@@ -1,5 +1,11 @@
 # Kiến trúc tổng thể — Smart Travel Platform
 
+## Danh sách bảng
+
+- [Bảng 1. Use Cases - Use Case, Actor, Mô tả](#use-cases)
+- [Bảng 2. Stakeholders - Vai trò, Trách nhiệm](#stakeholders)
+- [Bảng 3. Physical Architecture - Component, Tech, Port, Host](#physical-architecture)
+
 ## Vision & Scope
 
 **Vision:** Xây dựng nền tảng dữ liệu du lịch tin cậy, cung cấp thông tin điểm tham quan (POI) chất lượng cao trên toàn Việt Nam, phục vụ cả phân tích nội bộ và tích hợp ứng dụng bên ngoài.
@@ -28,6 +34,8 @@
 
 ## Use Cases
 
+**Bảng 1. Use Cases - Use Case, Actor, Mô tả.**
+
 | Use Case | Actor | Mô tả |
 |----------|-------|-------|
 | Browse POIs | Data Analyst | Tìm kiếm, lọc điểm tham quan theo thành phố / danh mục |
@@ -40,6 +48,8 @@
 ---
 
 ## Stakeholders
+
+**Bảng 2. Stakeholders - Vai trò, Trách nhiệm.**
 
 | Vai trò | Trách nhiệm |
 |---------|-------------|
@@ -128,6 +138,8 @@ Dashboard (React)
 ---
 
 ## Physical Architecture
+
+**Bảng 3. Physical Architecture - Component, Tech, Port, Host.**
 
 | Component | Tech | Port | Host |
 |-----------|------|------|------|
