@@ -16,7 +16,7 @@ import {
   Star, AlertTriangle, TrendingUp, Database,
   Activity, CheckCircle2, XCircle, Clock,
 } from "lucide-react";
-import { CHART_COLORS, CHART_COLOR_LIST } from "@/lib/constants";
+import { CHART_COLORS, CHART_COLOR_LIST, formatCityName, formatPipelineName } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 const PERIODS = [
@@ -140,7 +140,7 @@ export default function Reports() {
     { section: "Quality",  avgQualityScore: avgQuality, avgRating: report.quality.avgRating },
     ...(report.cityStats ?? []).map((c) => ({
       section: "City",
-      city: c.cityName, pois: c.total, addrPct: c.addrPct, phonePct: c.phonePct, avgQuality: c.avgQuality,
+      city: formatCityName(c.cityName, c.city), pois: c.total, addrPct: c.addrPct, phonePct: c.phonePct, avgQuality: c.avgQuality,
     })),
   ] : [];
 
@@ -345,8 +345,8 @@ export default function Reports() {
           <Activity className="w-3.5 h-3.5 text-white" />
         </div>
         <div>
-          <h2 className="font-semibold text-base">Phân tích theo thời gian</h2>
-          <p className="text-xs text-muted-foreground">Hoạt động pipeline và dữ liệu được thu thập theo kỳ đã chọn</p>
+          <h2 className="font-semibold text-base">Time-Series Analysis</h2>
+          <p className="text-xs text-muted-foreground">Pipeline activity and collected data for the selected period</p>
         </div>
       </div>
 
@@ -354,14 +354,14 @@ export default function Reports() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {[
           {
-            label: "Tổng jobs",
+            label: "Total Jobs",
             value: tsLoading ? null : totalJobsTs,
             icon: Activity,
             color: CHART_COLORS.blue,
-            sub: "trong kỳ",
+            sub: "in period",
           },
           {
-            label: "Tỷ lệ thành công",
+            label: "Success Rate",
             value: tsLoading ? null : `${successRate}%`,
             icon: CheckCircle2,
             color: CHART_COLORS.green,
@@ -369,18 +369,18 @@ export default function Reports() {
             raw: true,
           },
           {
-            label: "Jobs thất bại",
+            label: "Failed Jobs",
             value: tsLoading ? null : (statusMap["failed"] ?? 0),
             icon: XCircle,
             color: CHART_COLORS.red,
-            sub: "cần kiểm tra",
+            sub: "needs review",
           },
           {
-            label: "Records đã xử lý",
+            label: "Records Processed",
             value: tsLoading ? null : totalRecordsTs,
             icon: Database,
             color: CHART_COLORS.purple,
-            sub: "trong kỳ",
+            sub: "in period",
           },
         ].map(({ label, value, icon: Icon, color, sub, raw }) => (
           <Card key={label}>
@@ -407,15 +407,15 @@ export default function Reports() {
       {/* ── Records Processed Over Time (Area Chart) ─────────────────────── */}
       <Card className="mb-4">
         <CardHeader className="px-4 pt-4 pb-2">
-          <CardTitle className="text-sm">Records thu thập theo thời gian</CardTitle>
+          <CardTitle className="text-sm">Records Processed Over Time</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Số records được xử lý mỗi {period === "yearly" ? "tháng" : "ngày"} — tổng {totalRecordsTs.toLocaleString()} records
+            Records processed per {period === "yearly" ? "month" : "day"} · {totalRecordsTs.toLocaleString()} records total
           </p>
         </CardHeader>
         <CardContent className="px-4 pb-4">
           {tsLoading ? <Skeleton className="h-[220px] w-full" /> : dailyData.length === 0 ? (
             <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-              Chưa có dữ liệu trong kỳ này
+              No data for this period
             </div>
           ) : (
             <div className="h-[220px]">
@@ -455,13 +455,13 @@ export default function Reports() {
         {/* Jobs per day: completed vs failed stacked */}
         <Card>
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-sm">Hoạt động Pipeline theo ngày</CardTitle>
-            <p className="text-xs text-muted-foreground">Số ETL jobs hoàn thành / thất bại mỗi {period === "yearly" ? "tháng" : "ngày"}</p>
+            <CardTitle className="text-sm">Pipeline Activity by Day</CardTitle>
+            <p className="text-xs text-muted-foreground">Completed and failed ETL jobs per {period === "yearly" ? "month" : "day"}</p>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {tsLoading ? <Skeleton className="h-[220px] w-full" /> : dailyData.length === 0 ? (
               <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-                Chưa có dữ liệu trong kỳ này
+                No data for this period
               </div>
             ) : (
               <div className="h-[220px]">
@@ -487,13 +487,13 @@ export default function Reports() {
         {/* Job type breakdown horizontal bar */}
         <Card>
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-sm">Breakdown theo loại Job</CardTitle>
-            <p className="text-xs text-muted-foreground">Số lần chạy mỗi loại job trong kỳ</p>
+            <CardTitle className="text-sm">Job Type Breakdown</CardTitle>
+            <p className="text-xs text-muted-foreground">Run count by job type for the selected period</p>
           </CardHeader>
           <CardContent className="px-4 pb-3">
             {tsLoading ? <Skeleton className="h-[220px] w-full" /> : jobTypeData.length === 0 ? (
               <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
-                Chưa có dữ liệu trong kỳ này
+                No data for this period
               </div>
             ) : (
               <div className="h-[220px]">
@@ -502,7 +502,7 @@ export default function Reports() {
                     <XAxis type="number" tick={{ fontSize: 10, fill: tickColor }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <YAxis type="category" dataKey="jobType" tick={{ fontSize: 10, fill: tickColor }} tickLine={false} axisLine={false} width={120} />
                     <Tooltip
-                      formatter={(v: number, name: string) => [v.toLocaleString(), name === "count" ? "Tổng jobs" : name]}
+                      formatter={(v: number, name: string) => [v.toLocaleString(), name === "count" ? "Total Jobs" : name]}
                       contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid var(--border)", background: isDark ? "#1e1e2e" : "#fff" }}
                     />
                     <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={14}>
@@ -520,8 +520,8 @@ export default function Reports() {
       {dailyData.length > 1 && (
         <Card className="mb-4">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-sm">Tỷ lệ thành công Pipeline theo thời gian</CardTitle>
-            <p className="text-xs text-muted-foreground">% jobs hoàn thành mỗi {period === "yearly" ? "tháng" : "ngày"}</p>
+            <CardTitle className="text-sm">Pipeline Success Rate Over Time</CardTitle>
+            <p className="text-xs text-muted-foreground">% completed jobs per {period === "yearly" ? "month" : "day"}</p>
           </CardHeader>
           <CardContent className="px-4 pb-4">
             {tsLoading ? <Skeleton className="h-[180px] w-full" /> : (
@@ -566,15 +566,15 @@ export default function Reports() {
       {!tsLoading && jobTypeData.length > 0 && (
         <Card className="mb-4">
           <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-sm">Hiệu suất theo loại Job</CardTitle>
-            <p className="text-xs text-muted-foreground">Thống kê chi tiết từng loại ETL job trong kỳ</p>
+            <CardTitle className="text-sm">Job Type Performance</CardTitle>
+            <p className="text-xs text-muted-foreground">Detailed ETL job type statistics for the selected period</p>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    {["Job Type", "Tổng lần chạy", "Thành công", "Tỷ lệ", "Records xử lý", "Thời gian TB"].map((h) => (
+                    {["Job Type", "Total Runs", "Completed", "Rate", "Records Processed", "Avg Duration"].map((h) => (
                       <th key={h} className="text-left text-xs font-medium text-muted-foreground px-4 py-2.5">{h}</th>
                     ))}
                   </tr>
@@ -653,7 +653,7 @@ export default function Reports() {
                               style={{ backgroundColor: CHART_COLOR_LIST[i % CHART_COLOR_LIST.length] }}>
                               {i + 1}
                             </div>
-                            <span className="text-xs font-medium">{city.cityName || city.city}</span>
+                            <span className="text-xs font-medium">{formatCityName(city.cityName, city.city)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-bold tabular-nums">{city.total.toLocaleString()}</td>
@@ -713,7 +713,7 @@ export default function Reports() {
                 <tbody>
                   {(report?.recentExecutions ?? []).map((e, i) => (
                     <tr key={i} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-2 text-xs font-medium">{e.pipelineName}</td>
+                      <td className="px-4 py-2 text-xs font-medium">{formatPipelineName(e.pipelineName)}</td>
                       <td className="px-4 py-2">
                         <span className={`text-xs px-2 py-0.5 rounded ${
                           e.status === "completed"
@@ -727,7 +727,7 @@ export default function Reports() {
                         {(e.recordsProcessed ?? 0).toLocaleString()}
                       </td>
                       <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {e.startedAt ? new Date(e.startedAt).toLocaleString("vi-VN") : "—"}
+                        {e.startedAt ? new Date(e.startedAt).toLocaleString("en-GB") : "—"}
                       </td>
                     </tr>
                   ))}

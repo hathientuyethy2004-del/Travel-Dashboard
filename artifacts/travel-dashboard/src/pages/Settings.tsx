@@ -9,7 +9,7 @@ import {
   useGetPoiByCity,
   useGetPoiByCategory,
 } from "@workspace/api-client-react";
-import { CHART_COLORS, CHART_COLOR_LIST } from "@/lib/constants";
+import { CHART_COLORS, CHART_COLOR_LIST, formatCityName } from "@/lib/constants";
 
 const API = "/api";
 
@@ -246,7 +246,7 @@ export default function Settings() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between text-xs mb-0.5">
-                            <span className="font-medium truncate">{c.cityName || c.city}</span>
+                            <span className="font-medium truncate">{formatCityName(c.cityName, c.city)}</span>
                             <span className="text-muted-foreground tabular-nums shrink-0 ml-2">
                               {c.count.toLocaleString()} POIs
                             </span>
@@ -315,9 +315,9 @@ export default function Settings() {
                         placeholder="hue" className="w-full h-8 rounded border border-input bg-background px-2 text-sm" />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground block mb-1">Vietnamese Name</label>
+                      <label className="text-xs text-muted-foreground block mb-1">Local Name</label>
                       <input value={newCity.name} onChange={(e) => setNewCity((p) => ({ ...p, name: e.target.value }))}
-                        placeholder="Huế" className="w-full h-8 rounded border border-input bg-background px-2 text-sm" />
+                        placeholder="Hue" className="w-full h-8 rounded border border-input bg-background px-2 text-sm" />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground block mb-1">English Name</label>
@@ -369,8 +369,10 @@ export default function Settings() {
                         <tr key={c.code} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                           <td className="px-3 py-2 font-mono text-xs font-medium">{c.code}</td>
                           <td className="px-3 py-2">
-                            <div className="text-xs font-medium">{c.name}</div>
-                            <div className="text-xs text-muted-foreground">{c.nameEn}</div>
+                            <div className="text-xs font-medium">{formatCityName(c.nameEn || c.name, c.code)}</div>
+                            {c.name && c.name !== c.nameEn && (
+                              <div className="text-xs text-muted-foreground">{formatCityName(c.name, c.code)}</div>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-xs text-muted-foreground font-mono">
                             {c.lat}, {c.lon}

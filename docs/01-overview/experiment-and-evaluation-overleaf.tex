@@ -1,409 +1,90 @@
-% Compile with pdfLaTeX on Overleaf
-\documentclass[12pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[T5]{fontenc}
-\usepackage[vietnamese]{babel}
-\usepackage{geometry}
-\geometry{top=2.5cm,bottom=2.5cm,left=3cm,right=2cm}
-\usepackage{setspace}
-\onehalfspacing
-\usepackage{hyperref}
-\usepackage{xurl}
-\usepackage{array}
-\usepackage{longtable}
-\usepackage{booktabs}
-\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
-\setlength{\parindent}{1.25cm}
-\setlength{\parskip}{0.2em}
-\renewcommand{\thesection}{4.\arabic{section}}
-\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
-
-\begin{document}
-
-\begin{center}
-{\Large\bfseries Chương 4. Thực nghiệm và Đánh giá kết quả}
-
-\vspace{0.3em}
-{\large\itshape (Thực nghiệm và đánh giá)}
-\end{center}
-
-\section*{Danh sách bảng}
-\addcontentsline{toc}{section}{Danh sách bảng}
-
-\begin{itemize}
-  \item Bảng 1. Môi trường phần cứng -- Thành phần, Cấu hình ghi nhận trong thực nghiệm.
-  \item Bảng 2. Môi trường phần mềm -- Thành phần, Phiên bản hoặc cấu hình.
-  \item Bảng 3. Nguồn dữ liệu -- Nguồn, Phạm vi dữ liệu, Trường chính, Vai trò trong thực nghiệm.
-  \item Bảng 4. Hiệu năng -- Tiêu chí, Cách đo, Mục tiêu tham chiếu.
-  \item Bảng 5. Kết quả nạp dữ liệu -- Nguồn, Thành phố, Danh mục, Số bản ghi, Thời gian.
-  \item Bảng 6. Kết quả xử lý dữ liệu -- Bước xử lý, Đầu vào, Đầu ra, Thời gian chạy.
-  \item Bảng 7. Kết quả truy vấn và phân tích -- Endpoint, p50, p95, Tỷ lệ lỗi.
-  \item Bảng 8. So sánh với phương pháp khác -- Phương án, Độ trễ, Thông lượng, Nhận xét.
-\end{itemize}
-
-
-\setcounter{section}{0}
-
-\section{Tổng quan chương}
-
-Chương này trình bày quá trình thực nghiệm và đánh giá hệ thống Smart Travel Platform sau khi đã thiết kế và triển khai các thành phần chính. Mục tiêu của chương là kiểm tra hệ thống ở nhiều góc độ: khả năng thu thập dữ liệu, khả năng xử lý pipeline, hiệu năng truy vấn, độ ổn định khi vận hành, chất lượng dữ liệu đầu ra, khả năng giám sát và mức độ đáp ứng các yêu cầu quản trị dữ liệu. Khác với phần thiết kế hệ thống, chương này tập trung vào cách hệ thống hoạt động trong môi trường chạy thực tế và cách các kết quả thu được được diễn giải để đánh giá mức độ phù hợp của nền tảng dữ liệu.
-
-Phạm vi thực nghiệm được xây dựng dựa trên kiến trúc hiện tại của dự án. Hệ thống triển khai bằng Docker Compose gồm bốn thành phần chính: frontend phục vụ dashboard bằng Nginx, API Server Node.js/Express, ETL Service Python/FastAPI và MongoDB. MongoDB có thể chạy cục bộ trong Compose hoặc kết nối đến MongoDB Atlas tùy cấu hình \texttt{MONGODB\_URI}. Vì phiên bản hiện tại chưa triển khai Airflow, Spark, Trino, Kafka hoặc Kubernetes trong luồng chính, các công nghệ này không được xem là đối tượng thực nghiệm trực tiếp mà được đặt trong phần so sánh và định hướng mở rộng.
-
-Các kết quả trong chương nên được hiểu theo hai lớp. Lớp thứ nhất là quy trình và tiêu chí đánh giá, có thể áp dụng lặp lại cho các lần chạy khác nhau. Lớp thứ hai là số đo thực tế, cần được điền sau khi chạy các kịch bản kiểm thử trên môi trường cụ thể. Cách trình bày này giúp tránh phụ thuộc vào một lần chạy đơn lẻ, đồng thời tạo khung đánh giá nhất quán cho các giai đoạn phát triển sau.
-
-\section{Môi trường thực nghiệm}
-
-\subsection{Môi trường phần cứng}
-
-Môi trường phần cứng thực nghiệm cần được ghi nhận rõ vì kết quả hiệu năng phụ thuộc trực tiếp vào CPU, RAM, loại ổ đĩa, tốc độ mạng và nơi chạy cơ sở dữ liệu. Trong lần thực nghiệm này, hệ thống được chạy trên máy Windows local tại thư mục \texttt{D:\textbackslash Travel-Dashboard}. Hệ điều hành ghi nhận phiên bản Windows 10.0.26200, build 26200. Docker Compose được dùng để chạy frontend, API Server, ETL Service và MongoDB local.
-
-\begin{longtable}{@{}p{0.28\textwidth}p{0.62\textwidth}@{}}
-\caption{Môi trường phần cứng -- Thành phần, Cấu hình ghi nhận trong thực nghiệm.}\\
-\toprule
-\textbf{Thành phần} & \textbf{Cấu hình ghi nhận trong thực nghiệm} \\
-\midrule
-CPU & 12th Gen Intel(R) Core(TM) i5-12500H, MaxClockSpeed 2500 MHz. \\
-RAM & 16GB, gồm 2 thanh 8GB: Micron Technology 3200 MHz và SK Hynix 3200 MHz. \\
-Lưu trữ & NVMe SAMSUNG MZVL4512HBLU-00BTW, dung lượng khoảng 512GB; Docker volume \texttt{mongodb\_data} dùng cho MongoDB local. \\
-Mạng & Localhost cho frontend/API/ETL/MongoDB; Internet dùng khi ETL gọi Overpass API và RapidAPI/Google Places. \\
-\bottomrule
-\end{longtable}
-
-Trong quá trình đánh giá, cần phân biệt giữa tài nguyên của ứng dụng và tài nguyên của cơ sở dữ liệu. Nếu MongoDB chạy cục bộ bằng service \texttt{mongodb} trong Docker Compose, kết quả chịu ảnh hưởng bởi máy local. Nếu dùng MongoDB Atlas, độ trễ mạng và cấu hình cluster Atlas ảnh hưởng đến thời gian truy vấn, thời gian ghi dữ liệu và thời gian khởi động ETL.
-
-\subsection{Môi trường phần mềm}
-
-Môi trường phần mềm của dự án được xác định từ Dockerfile, Docker Compose và cấu hình package trong repository. Frontend được build bằng Node.js 22 và phục vụ bằng Nginx 1.27 Alpine. API Server được build bằng Node.js 22, sử dụng Express, MongoDB driver, Pino và các thư viện nội bộ sinh từ OpenAPI/Zod. ETL Service chạy trên Python 3.12 slim, sử dụng FastAPI, Uvicorn, PyMongo, APScheduler, Requests, HTTPX và dotenv. MongoDB local trong Docker Compose dùng image \texttt{mongo:7}.
-
-\begin{longtable}{@{}p{0.28\textwidth}p{0.62\textwidth}@{}}
-\caption{Môi trường phần mềm -- Thành phần, Phiên bản hoặc cấu hình.}\\
-\toprule
-\textbf{Thành phần} & \textbf{Phiên bản hoặc cấu hình} \\
-\midrule
-Docker Compose & Dùng file \texttt{docker-compose.yml} tại repository root; Docker client ghi nhận phiên bản 29.2.0. \\
-Frontend & Node.js 22 để build, Nginx 1.27 Alpine để phục vụ static dashboard. \\
-API Server & Node.js 22, Express 5.x, MongoDB driver 7.x, Pino 9.x. \\
-ETL Service & Python 3.12, FastAPI, Uvicorn, PyMongo, APScheduler, HTTPX. \\
-Database & MongoDB 7 local trong Compose; có thể chuyển sang MongoDB Atlas qua \texttt{MONGODB\_URI}. \\
-Orchestration & APScheduler cho job định kỳ; chưa dùng Airflow trong triển khai chính. \\
-Xử lý phân tán & Chưa dùng Spark/Trino/Kafka trong triển khai chính; chỉ xem là hướng mở rộng. \\
-\bottomrule
-\end{longtable}
+\section{Cơ sở lý thuyết}
 
-Việc xác định rõ phiên bản phần mềm giúp kết quả thực nghiệm có khả năng tái lập. Khi thay đổi phiên bản Node.js, Python, MongoDB hoặc các dependency chính, cần chạy lại các kịch bản kiểm thử vì hiệu năng build, thời gian khởi động service, thời gian truy vấn và behavior của driver có thể thay đổi.
+Cơ sở lý thuyết của dự án tập trung vào dữ liệu điểm quan tâm (POI) trong du lịch số, quy trình xử lý dữ liệu nhiều nguồn và các nguyên tắc bảo đảm dữ liệu đủ tin cậy để phục vụ dashboard, API và các chức năng phân tích \cite{zhang2023}. Điểm chung của các nội dung này là dữ liệu POI không chỉ cần được thu thập, mà còn phải được chuẩn hóa, kiểm tra chất lượng, truy vết nguồn gốc và duy trì nhất quán trong suốt vòng đời xử lý \cite{ibmDataQuality}.\par
 
-\subsection{Kiến trúc triển khai thực nghiệm}
+Phạm vi của dự án tập trung vào xây dựng nền tảng dữ liệu POI phục vụ dashboard vận hành và API dữ liệu, chưa đặt mục tiêu tối ưu thuật toán gợi ý điểm đến trong phiên bản hiện tại \cite{zhang2023}. Cách giới hạn phạm vi này giúp dự án ưu tiên chất lượng dữ liệu đầu vào, tính truy vết và khả năng phục vụ dữ liệu ổn định trước khi mở rộng sang các mô hình cá nhân hóa hoặc đề xuất nâng cao \cite{ibmDataQuality}.\par
 
-Kiến trúc triển khai thực nghiệm sử dụng Docker Compose làm phương thức chạy chính. Stack bao gồm \texttt{frontend}, \texttt{api}, \texttt{etl} và \texttt{mongodb}. Tại thời điểm kiểm thử, cả bốn container đều ở trạng thái \texttt{Up}, trong đó MongoDB ở trạng thái \texttt{healthy}. Frontend expose cổng 5173 và proxy các request \texttt{/api} đến API Server. API Server chạy ở cổng 8080, đọc dữ liệu Gold từ MongoDB và proxy một số endpoint ETL đến ETL Service. ETL Service chạy ở cổng 9000, thực hiện thu thập dữ liệu, làm giàu, validation, scoring, promote và rebuild layer. MongoDB local chạy ở cổng 27017 và có healthcheck trước khi ETL/API khởi động.
+\subsection{Dữ liệu điểm quan tâm và vấn đề tích hợp}
 
-\begin{verbatim}
-User -> Frontend/Nginx -> API Server -> MongoDB
-                              |
-                              v
-                          ETL Service -> External APIs
-\end{verbatim}
+Dữ liệu điểm quan tâm mô tả các địa điểm có giá trị trong hành trình du lịch như nhà hàng, khách sạn, quán cà phê, điểm tham quan, công viên hoặc khu mua sắm \cite{zhang2023}. Trong hệ thống du lịch số, dữ liệu này là nền tảng cho tìm kiếm địa điểm, phân tích phân bố dịch vụ, dashboard quản trị và các chức năng gợi ý điểm đến \cite{zhang2023}.\par
 
-Trong phạm vi thực nghiệm hiện tại, Kubernetes và multi-cluster setup chưa được triển khai. Nếu cần đánh giá Kubernetes, cần bổ sung manifest hoặc Helm chart, cấu hình service discovery, ingress, secret management, persistent volume và horizontal scaling. Do đó, phần đánh giá Kubernetes trong chương này chỉ được xem là tiêu chí mở rộng, không phải kết quả đã đo của hệ thống hiện tại.
+Thách thức chính của dữ liệu POI là tính không đồng nhất giữa các nguồn \cite{yeboah2021}. Cùng một địa điểm có thể xuất hiện ở OpenStreetMap, dịch vụ thương mại hoặc nguồn nội bộ với tên gọi, tọa độ, địa chỉ, danh mục và thông tin liên hệ khác nhau \cite{yeboah2021}. Vì vậy, nền tảng dữ liệu du lịch cần xử lý các bước tích hợp, chuẩn hóa, loại bỏ trùng lặp, bổ sung thông tin thiếu và đánh giá độ tin cậy trước khi đưa dữ liệu vào lớp phục vụ \cite{ibmDataQuality}.\par
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Môi trường thực nghiệm Docker Compose}\\[0.6em]
-\begin{tabular}{c c c c}
-Frontend & API Server & ETL Service & MongoDB \\
-Nginx / React & Node.js / Express & Python / FastAPI & MongoDB 7 \\
-Port 5173 & Port 8080 & Port 9000 & Port 27017
-\end{tabular}
-\end{minipage}}
-\caption{Các thành phần chính trong môi trường thực nghiệm.}
-\end{figure}
+Trong bối cảnh dữ liệu du lịch Việt Nam, tên địa điểm có thể tồn tại ở dạng có dấu, không dấu, viết tắt hoặc pha trộn tiếng Việt và tiếng Anh \cite{yeboah2021}. Địa chỉ thường không hoàn toàn chuẩn hóa theo cùng một cấu trúc, đặc biệt khi dữ liệu đến từ cộng đồng, bản đồ mở hoặc nhiều nhà cung cấp khác nhau \cite{yeboah2021}. Danh mục địa điểm cũng có thể không đồng nhất, ví dụ cùng một điểm được gắn là quán cà phê, nhà hàng, điểm tham quan hoặc dịch vụ du lịch tùy nguồn dữ liệu \cite{zhang2023}. Ngoài ra, dữ liệu mở thường có mức độ đầy đủ khác nhau theo vùng, nên hệ thống cần lưu nguồn gốc và đánh giá chất lượng theo từng bản ghi thay vì giả định mọi khu vực đều có dữ liệu đồng đều \cite{yeboah2021}.\par
 
-\section{Dữ liệu thực nghiệm}
+\subsection{Quy trình xử lý và kiến trúc nhiều lớp}
 
-\subsection{Nguồn dữ liệu}
+Quy trình trích xuất, biến đổi và nạp dữ liệu (ETL) được dùng làm khung xử lý chính cho dự án \cite{ibmETL}. Bước trích xuất lấy dữ liệu từ nguồn bản đồ, API hoặc dữ liệu nội bộ; bước biến đổi làm sạch, chuẩn hóa, kiểm tra và hợp nhất dữ liệu; bước nạp đưa dữ liệu đã xử lý vào hệ thống lưu trữ hoặc lớp phục vụ \cite{ibmETL}. Dự án ưu tiên xử lý theo lô vì dữ liệu địa điểm du lịch thường không yêu cầu cập nhật tức thời như dữ liệu giao dịch hoặc cảm biến \cite{awsStreaming}.\par
 
-Dữ liệu thực nghiệm của hệ thống đến từ OpenStreetMap thông qua Overpass API và Google Places thông qua RapidAPI. OpenStreetMap cung cấp nguồn dữ liệu mở cho các điểm quan tâm theo thành phố, danh mục và vùng địa lý. Google Places được dùng để làm giàu dữ liệu với các trường như rating, review count, formatted address, phone, website và place details. Ngoài dữ liệu API, hệ thống còn sử dụng dữ liệu cấu hình trong MongoDB như \texttt{config\_cities}, \texttt{config\_categories}, \texttt{etl\_schedules} và các metadata job.
+Kiến trúc nhiều lớp giúp tách dữ liệu theo mức độ tin cậy: dữ liệu thô, dữ liệu đã chuẩn hóa và dữ liệu sẵn sàng phục vụ \cite{databricksMedallion}. Cách tổ chức này bảo toàn dữ liệu nguồn, hỗ trợ tái xử lý, giảm rủi ro đưa dữ liệu lỗi lên giao diện và giúp truy ngược khi dữ liệu đầu ra có vấn đề \cite{ibmLineage}.\par
 
-Trong phiên bản hiện tại, hệ thống chưa dùng file batch lớn, streaming data, sensor data hoặc satellite data làm nguồn chính. Các loại dữ liệu này có thể được đưa vào roadmap nếu nền tảng mở rộng sang bài toán phân tích hành vi thời gian thực, dữ liệu giao thông, dữ liệu thời tiết, dữ liệu vệ tinh hoặc tích hợp dữ liệu IoT. Vì vậy, các kịch bản thực nghiệm trong chương này tập trung vào dữ liệu API và dữ liệu document trong MongoDB.
+\subsection{Chất lượng, quản trị và quan sát dữ liệu}
 
-\begin{longtable}{@{}p{0.20\textwidth}p{0.22\textwidth}p{0.22\textwidth}p{0.26\textwidth}@{}}
-\caption{Nguồn dữ liệu -- Nguồn, Phạm vi dữ liệu, Trường chính, Vai trò trong thực nghiệm.}\\
-\toprule
-\textbf{Nguồn} & \textbf{Phạm vi dữ liệu} & \textbf{Trường chính} & \textbf{Vai trò trong thực nghiệm} \\
-\midrule
-OpenStreetMap & POI theo city, category và bounding box & ID phần tử, tên, tọa độ, tags, loại đối tượng & Đánh giá khả năng thu thập dữ liệu mở và tạo lớp Bronze ban đầu. \\
-Overpass API & Query dữ liệu OSM theo điều kiện không gian và tag & Query response, node/way/relation, center point & Kiểm thử độ ổn định, retry và timeout của bước collect OSM. \\
-Google Places/RapidAPI & Nearby search và place details cho POI & Rating, review count, address, phone, website, place id & Đánh giá enrichment và mức cải thiện completeness của bản ghi. \\
-MongoDB Atlas/local & Dữ liệu Bronze, Silver, Gold và job state & Collections, index, aggregation, job logs & Đo kết quả xử lý, truy vấn API và khả năng rebuild dữ liệu. \\
-Dashboard/API & Dữ liệu Gold và dữ liệu vận hành & KPI, endpoint response, pipeline status & Đánh giá dữ liệu phục vụ người dùng và độ trễ truy vấn. \\
-\bottomrule
-\end{longtable}
+Chất lượng dữ liệu quyết định khả năng sử dụng dữ liệu trong phân tích và ra quyết định \cite{ibmDataQuality}. Với dữ liệu POI, các lỗi thường gặp gồm thiếu tọa độ, thiếu tên, sai danh mục, trùng lặp, thiếu thông tin liên hệ hoặc khác biệt mô tả giữa các nguồn \cite{yeboah2021}. Do đó, dự án sử dụng cơ chế chấm điểm chất lượng và vùng chờ xem xét để kết hợp tự động hóa với kiểm soát thủ công khi cần \cite{ibmDataQuality}.\par
 
-\subsection{Đặc điểm dữ liệu}
+Truy vết dữ liệu giúp hệ thống biết một bản ghi đến từ nguồn nào, được thu thập khi nào, đã đi qua quy tắc xử lý nào và có liên hệ với bản ghi ở các lớp trước ra sao \cite{ibmLineage}. Quản trị dữ liệu bổ sung các nguyên tắc về trách nhiệm, chính sách sử dụng, metadata, bảo mật và khả năng duy trì dữ liệu trong toàn bộ vòng đời hệ thống \cite{damaDmbok}. Quan sát dữ liệu mở rộng giám sát kỹ thuật sang các chỉ số như độ tươi mới, tỷ lệ bản ghi đạt chất lượng, lỗi theo nguồn và trạng thái pipeline \cite{opentelemetrySignals}.\par
 
-Dữ liệu POI có đặc điểm bán cấu trúc và không đồng nhất. Bản ghi OSM thường có \texttt{osm\_raw}, tags, tọa độ và một số thông tin địa chỉ; bản ghi Google có thể có \texttt{google\_raw}, \texttt{place\_id}, rating, review count, phone, website và formatted address. Không phải bản ghi nào cũng có đầy đủ cùng một tập trường, vì vậy MongoDB document model phù hợp hơn schema quan hệ cứng trong giai đoạn này. Dữ liệu được chia theo \texttt{city} và \texttt{category}, đồng thời được định danh bằng \texttt{u\_key}.
 
-Khi chạy thực nghiệm ngày 18/05/2026, hệ thống ghi nhận 22.871 bản ghi Bronze, 22.871 bản ghi Silver, 15.271 bản ghi Gold và 2.137 bản ghi Quarantine. Số thành phố được cấu hình là 10, số lịch ETL là 3 và số RapidAPI keys khả dụng trong ETL status là 21/21. Tỷ lệ làm giàu Google hiện còn thấp, với 61/22.871 bản ghi có dữ liệu Google, tương đương khoảng 0,3\%. Các chỉ số này vừa phục vụ đánh giá hiệu năng vừa phục vụ đánh giá chất lượng dữ liệu.
+\section{Cơ sở công nghệ}
 
-\subsection{Quy trình chuẩn bị dữ liệu}
+Cơ sở công nghệ của dự án được lựa chọn theo nguyên tắc vừa đủ: đáp ứng yêu cầu tích hợp và phục vụ dữ liệu POI trong phạm vi hiện tại, nhưng vẫn giữ khả năng mở rộng khi quy mô dữ liệu hoặc yêu cầu vận hành tăng lên \cite{ibmWarehouseLake}. Nhóm công nghệ chính gồm MongoDB cho lưu trữ document, Python/FastAPI cho xử lý dữ liệu, Node.js/Express cho API trung gian, React cho dashboard và Docker Compose cho đóng gói môi trường \cite{dockerCompose}.\par
 
-Quy trình chuẩn bị dữ liệu bắt đầu từ cấu hình thành phố và danh mục trong \texttt{config\_cities} và \texttt{config\_categories}. ETL Service thu thập dữ liệu từ nguồn ngoài và lưu raw JSON vào \texttt{bronze\_pois}. Sau đó, pipeline thực hiện validation, chuẩn hóa tên, địa chỉ, điện thoại, website, rating và location. Các bản ghi hợp lệ được đưa vào \texttt{silver\_pois} cùng \texttt{quality\_score}; các bản ghi thiếu tọa độ hoặc thiếu cả tên hợp lệ lẫn dữ liệu Google bị đưa vào \texttt{data\_quality\_quarantine}. Cuối cùng, các bản ghi Silver đạt ngưỡng chất lượng được promote lên \texttt{gold\_master\_pois}, còn bản ghi trung gian được chuyển sang \texttt{pending\_review\_pois}.
+\subsection{Lưu trữ và xử lý dữ liệu phía máy chủ}
 
-Partitioning trong phiên bản hiện tại là phân vùng logic theo thành phố và danh mục, chưa phải phân vùng vật lý trên storage. Cách làm này đủ cho dashboard và API ở quy mô hiện tại vì các truy vấn chính đều lọc hoặc nhóm theo \texttt{city}, \texttt{category}, \texttt{quality\_score} và \texttt{rating}. Khi dữ liệu tăng mạnh, có thể cân nhắc sharding, partition vật lý, object storage hoặc lakehouse table format.
+MongoDB phù hợp với dữ liệu POI vì mô hình document hỗ trợ dữ liệu bán cấu trúc, nhiều trường tùy chọn và dữ liệu JSON từ các API bên ngoài \cite{mongodbDataModel}. Cách lưu trữ này giúp dự án tiếp nhận dữ liệu thô linh hoạt ở giai đoạn đầu, sau đó chuẩn hóa dần qua các lớp xử lý trước khi phục vụ dashboard hoặc API \cite{mongodbDataModel}. Aggregation pipeline của MongoDB đáp ứng các nhu cầu thống kê hiện tại như đếm theo thành phố, danh mục, nguồn dữ liệu hoặc mức chất lượng \cite{mongodbAggregation}.\par
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Luồng dữ liệu thực nghiệm}\\[0.6em]
-OpenStreetMap / Google Places $\rightarrow$ Bronze $\rightarrow$ Silver $\rightarrow$ Gold $\rightarrow$ API / Dashboard\\[0.6em]
-\begin{tabular}{c c c}
-22.871 Bronze & 22.871 Silver & 15.271 Gold
-\end{tabular}
-\end{minipage}}
-\caption{Dữ liệu thực nghiệm được xử lý qua ba lớp Bronze, Silver và Gold.}
-\end{figure}
+Python được dùng cho các tác vụ xử lý dữ liệu, tích hợp API và xây dựng pipeline \cite{pythonApps}. FastAPI hỗ trợ xây dựng service gọn, có tài liệu API tự động và phù hợp với type hint của Python \cite{fastapiFeatures}. Pydantic giúp kiểm tra dữ liệu đầu vào, cấu hình và dữ liệu trả về ở ranh giới dịch vụ \cite{pydanticModels}.\par
 
-\section{Kịch bản thực nghiệm}
+\subsection{API, giao diện và hợp đồng dữ liệu}
 
-\subsection{Kiểm thử nạp dữ liệu}
+Node.js, Express và TypeScript được dùng cho lớp API trung gian để tách frontend khỏi dữ liệu thô và gom các logic phục vụ dashboard \cite{nodeAbout}. OpenAPI được dùng để mô tả hợp đồng API, bao gồm endpoint, tham số, request, response và schema dữ liệu trao đổi giữa backend và frontend \cite{openapiSpec}. Zod hỗ trợ kiểm tra dữ liệu runtime ở phía TypeScript, giúp phát hiện dữ liệu không đúng cấu trúc trước khi đi sâu vào logic giao diện hoặc API \cite{zodDocs}. Orval hỗ trợ sinh mã client từ đặc tả OpenAPI, qua đó giảm thao tác viết tay và giảm nguy cơ lệch kiểu dữ liệu giữa backend và frontend \cite{orvalDocs}.\par
 
-Kịch bản kiểm thử nạp dữ liệu đánh giá khả năng ETL Service gọi nguồn ngoài, nhận dữ liệu JSON, chuẩn hóa sơ bộ và upsert vào \texttt{bronze\_pois}. Các phép đo chính gồm số bản ghi thu thập được theo từng thành phố và danh mục, thời gian hoàn thành job \texttt{collect\_osm}, thời gian hoàn thành job \texttt{collect\_google\_places}, tỷ lệ request lỗi, số lần retry và số bản ghi được ghi mới hoặc cập nhật. Với Google Places, cần ghi nhận thêm tác động của quota và cơ chế xoay vòng RapidAPI keys.
+React, Vite, TanStack Query, Tailwind CSS, Radix UI và Recharts tạo thành nhóm công nghệ phù hợp cho dashboard dạng ứng dụng một trang \cite{reactDocs}. Nhóm này hỗ trợ xây dựng giao diện theo thành phần, quản lý trạng thái dữ liệu server, tạo bảng/bộ lọc/biểu đồ và trình bày các KPI vận hành dữ liệu \cite{tableauKpi}.\par
 
-Vì hệ thống hiện tại ưu tiên batch processing, kiểm thử realtime không được đánh giá như một năng lực chính. Thay vào đó, cần đo batch performance: thời gian xử lý một lần thu thập, khả năng chạy lại job mà không tạo trùng dữ liệu, và độ ổn định khi nguồn ngoài trả về chậm hoặc timeout.
+\subsection{Đóng gói và hướng mở rộng}
 
-\subsection{Kiểm thử đường ống xử lý dữ liệu}
+Docker Compose được dùng để chạy nhiều thành phần như frontend, API server, service ETL và cơ sở dữ liệu trong cùng một môi trường thống nhất \cite{dockerCompose}. Cách này giảm khác biệt giữa môi trường phát triển, trình diễn và tài liệu hướng dẫn \cite{dockerMultiContainer}.\par
 
-Kịch bản kiểm thử pipeline tập trung vào các job \texttt{enrich\_google}, \texttt{bronze\_to\_silver}, \texttt{silver\_to\_gold}, \texttt{rebuild\_layers}, \texttt{full\_pipeline} và \texttt{nightly\_sync}. Các chỉ số cần đo gồm tổng thời gian ETL, thời gian từng bước, số bản ghi xử lý, số bản ghi lỗi, số bản ghi vào quarantine, số bản ghi vào pending review và số bản ghi được promote lên Gold. Với rebuild nhanh, cần đo thời gian MongoDB aggregation và so sánh với cách xử lý record-by-record nếu có.
+Các công nghệ như Spark, Airflow, Kafka, Iceberg, Trino hoặc Kubernetes chưa được đưa vào triển khai chính vì phạm vi hiện tại chưa cần hạ tầng phân tán phức tạp \cite{sparkDocs}. Khi dữ liệu tăng mạnh hoặc hệ thống cần xử lý gần thời gian thực, các công nghệ này có thể được bổ sung để xử lý dữ liệu lớn, điều phối DAG phức tạp hoặc mở rộng kiến trúc lakehouse \cite{airflowDocs}.\par
 
-Retry mechanism được đánh giá bằng cách tạo hoặc quan sát các tình huống lỗi có kiểm soát, ví dụ nguồn ngoài timeout, RapidAPI trả lỗi quota, MongoDB tạm thời không kết nối được hoặc job bị gián đoạn. Kết quả mong muốn là job ghi nhận lỗi rõ ràng trong \texttt{etl\_jobs}, không làm hỏng dữ liệu đã có, và cho phép chạy lại sau khi nguyên nhân được xử lý.
+\section{Lý do lựa chọn và định hướng áp dụng}
 
-\subsection{Kiểm thử truy vấn và phân tích}
+Các nghiên cứu về hệ thống gợi ý du lịch thường nhấn mạnh thuật toán đề xuất hơn là nền tảng dữ liệu đầu vào \cite{zhang2023}. Trong thực tế, thuật toán hoặc dashboard khó tạo ra kết quả đáng tin nếu POI bị trùng, thiếu tọa độ, sai danh mục hoặc không rõ nguồn gốc \cite{ibmDataQuality}. Vì vậy, dự án đặt nền tảng dữ liệu POI có kiểm soát chất lượng, truy vết và tích hợp nhiều nguồn làm trọng tâm trước khi phát triển các chức năng phân tích hoặc gợi ý nâng cao \cite{zhang2023}.\par
 
-Kịch bản kiểm thử truy vấn đánh giá API Server và MongoDB khi phục vụ dashboard, POI Explorer, analytics và reports. Các endpoint cần kiểm tra gồm \texttt{/api/healthz}, \texttt{/api/dashboard/overview}, \texttt{/api/dashboard/poi-by-city}, \texttt{/api/dashboard/poi-by-category}, \texttt{/api/dashboard/pipeline-funnel}, \texttt{/api/dashboard/quality-distribution}, \texttt{/api/pois}, \texttt{/api/pois/top-rated}, \texttt{/api/cities}, \texttt{/api/pipeline/executions} và \texttt{/api/etl/status}. Với từng endpoint, cần đo latency trung bình, p50, p95, tỷ lệ lỗi và kích thước response.
 
-Aggregation performance được đánh giá qua các truy vấn nhóm theo thành phố, danh mục, rating distribution, quality distribution và quarantine reasons. Concurrent query được đánh giá bằng cách mô phỏng nhiều người dùng hoặc nhiều request đồng thời đến API Server. Trong bối cảnh dashboard, mục tiêu không chỉ là truy vấn nhanh mà còn là response ổn định, dữ liệu nhất quán và không gây quá tải ETL Service hoặc MongoDB.
+Cách làm đơn giản nhất đối với dữ liệu POI là thu thập dữ liệu, lưu vào một bảng hoặc một file trung gian, sau đó cho dashboard đọc trực tiếp \cite{ibmETL}. Ưu điểm của cách này là dễ triển khai, ít thành phần kỹ thuật, phù hợp với kiểm thử nhanh hoặc trình diễn ban đầu \cite{ibmETL}. Tuy nhiên, khi dữ liệu đến từ nhiều nguồn, cách lưu trực tiếp làm tăng nguy cơ trộn lẫn dữ liệu thô với dữ liệu đã xử lý, khiến hệ thống khó biết bản ghi nào đã được kiểm tra và bản ghi nào còn thiếu thông tin \cite{ibmDataQuality}. Nếu không có lớp trung gian để chuẩn hóa và kiểm tra, các lỗi như trùng địa điểm, sai danh mục, thiếu tọa độ hoặc sai nguồn có thể đi thẳng lên dashboard \cite{yeboah2021}.\par
 
-\subsection{Kiểm thử siêu dữ liệu và quản trị dữ liệu}
+Một phương án cũ khác là xử lý thủ công bằng file bảng tính hoặc script rời rạc \cite{ibmETL}. Ưu điểm của hướng này là linh hoạt, dễ sửa nhanh và không cần thiết kế hạ tầng phức tạp \cite{ibmETL}. Nhược điểm là khó tái lập kết quả, khó kiểm soát phiên bản dữ liệu, khó xác định quy tắc nào đã thay đổi bản ghi và khó mở rộng khi số nguồn hoặc số thành phố tăng lên \cite{ibmLineage}. Vì vậy, dự án không chọn cách xử lý thủ công làm hướng chính, mà chuyển các bước thu thập, chuẩn hóa, chấm điểm và phục vụ dữ liệu thành pipeline có cấu trúc \cite{ibmETL}.\par
 
-Kịch bản kiểm thử metadata và governance đánh giá khả năng hệ thống lưu và sử dụng thông tin nguồn gốc dữ liệu, job history, schedule, quality score, pending review và quarantine reason. Một bản ghi Gold cần có khả năng truy ngược về \texttt{u\_key}, nguồn OSM/Google, thời điểm cập nhật, job sinh dữ liệu và các trường chất lượng liên quan. Khi dashboard hoặc API hiển thị số liệu bất thường, metadata phải đủ để nhóm vận hành xác định nguyên nhân thuộc về nguồn dữ liệu, logic transformation, validation rule hay bước promote.
 
-Catalog synchronization trong hệ thống hiện tại được hiểu là sự đồng bộ giữa \texttt{config\_cities}, \texttt{config\_categories}, API \texttt{/api/cities}, dashboard và pipeline. Khi thêm thành phố hoặc danh mục mới, cần kiểm tra rằng dữ liệu cấu hình được đọc đúng, job có thể chạy đúng phạm vi, API trả về thành phố mới và dashboard hiển thị thống kê tương ứng.
+Cơ sở dữ liệu quan hệ là lựa chọn quen thuộc vì hỗ trợ ràng buộc dữ liệu, truy vấn có cấu trúc và mô hình bảng rõ ràng \cite{ibmWarehouseLake}. Với dữ liệu nghiệp vụ ổn định, schema quan hệ giúp kiểm soát kiểu dữ liệu và quan hệ giữa các bảng tốt \cite{ibmWarehouseLake}. Tuy nhiên, dữ liệu POI thường có nhiều trường tùy chọn như giờ mở cửa, ảnh, số điện thoại, website, đánh giá, loại hình dịch vụ hoặc metadata theo nguồn \cite{mongodbDataModel}. Nếu ép dữ liệu này vào schema quan hệ chặt ngay từ đầu, dự án phải tạo nhiều bảng phụ, nhiều quan hệ và nhiều lần migration khi nguồn dữ liệu thay đổi \cite{mongodbDataModel}.\par
 
-\subsection{Kiểm thử khả năng chịu lỗi}
+MongoDB được chọn vì phù hợp hơn với giai đoạn tích hợp dữ liệu bán cấu trúc \cite{mongodbDataModel}. Dữ liệu thô từ API có thể được lưu gần với dạng ban đầu, sau đó chuẩn hóa dần qua các bước xử lý và đưa bản ghi đủ chất lượng vào lớp phục vụ \cite{mongodbDataModel}. Lựa chọn này không phủ nhận giá trị của cơ sở dữ liệu quan hệ, mà phản ánh đặc điểm hiện tại của bài toán: schema POI còn thay đổi, dữ liệu đến từ nhiều nguồn và cần ưu tiên khả năng tiếp nhận linh hoạt \cite{yeboah2021}.\par
 
-Kiểm thử fault tolerance tập trung vào các tình huống dịch vụ restart, job thất bại, MongoDB mất kết nối, nguồn ngoài timeout và Gold data bị sai. Với Docker Compose, có thể kiểm tra bằng cách restart service \texttt{api}, \texttt{etl}, \texttt{frontend} hoặc \texttt{mongodb}, sau đó quan sát health endpoint, log và khả năng phục hồi. Với ETL job, cần xác định job chuyển trạng thái \texttt{failed} khi gặp lỗi nghiêm trọng, đồng thời không để dữ liệu Gold ở trạng thái nửa vời.
+Data warehouse truyền thống mạnh trong phân tích dữ liệu có cấu trúc, báo cáo định kỳ và các mô hình dữ liệu đã ổn định \cite{ibmWarehouseLake}. Ưu điểm của hướng này là khả năng tổ chức dữ liệu phục vụ phân tích tốt, phù hợp với doanh nghiệp có quy trình dữ liệu trưởng thành và yêu cầu báo cáo rõ ràng \cite{ibmWarehouseLake}. Tuy nhiên, với dự án quy mô nhỏ đến trung bình, triển khai warehouse đầy đủ có thể làm tăng chi phí thiết kế mô hình, vận hành và nạp dữ liệu trước khi chứng minh được giá trị của pipeline POI \cite{ibmWarehouseLake}. Vì vậy, dự án chỉ kế thừa tư duy phân lớp dữ liệu và chất lượng dữ liệu, chưa triển khai một data warehouse hoàn chỉnh \cite{databricksMedallion}.\par
 
-Recovery testing dựa trên runbook và disaster recovery plan. Nếu API down, mục tiêu khôi phục là restart service trong thời gian ngắn. Nếu ETL down, cần restart ETL và kiểm tra lại \texttt{/api/etl/status}. Nếu Gold data bị lỗi, có thể rebuild từ Silver hoặc Bronze. Nếu MongoDB connection fail, cần kiểm tra credentials, trạng thái Atlas hoặc health của MongoDB local. Các tình huống này giúp đánh giá độ ổn định vận hành thay vì chỉ đánh giá chức năng bình thường.
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Nhóm kịch bản kiểm thử}\\[0.6em]
-\begin{tabular}{c c c}
-Ingestion & Pipeline & Query / Analytics \\
-Metadata / Governance & Monitoring & Fault tolerance
-\end{tabular}
-\end{minipage}}
-\caption{Các nhóm kịch bản được dùng để đánh giá hệ thống.}
-\end{figure}
+Streaming phù hợp với hệ thống cần phản ứng gần thời gian thực, ví dụ sự kiện người dùng, log liên tục, cảm biến hoặc dữ liệu giao dịch tốc độ cao \cite{awsStreaming}. Ưu điểm của streaming là giảm độ trễ và cho phép hệ thống xử lý sự kiện ngay khi phát sinh \cite{awsStreaming}. Tuy nhiên, streaming cũng kéo theo độ phức tạp về message broker, checkpoint, retry, xử lý thứ tự sự kiện, giám sát độ trễ và cơ chế phục hồi khi lỗi \cite{awsStreaming}. Với dữ liệu POI du lịch, nhiều thông tin như tên địa điểm, danh mục, địa chỉ hoặc website thường không thay đổi từng giây, nên batch processing hợp lý hơn cho phạm vi hiện tại \cite{ibmETL}.\par
 
-\section{Tiêu chí đánh giá hệ thống}
+Lakehouse là hướng hiện đại để kết hợp ưu điểm của data lake và data warehouse trên quy mô lớn \cite{armbrust2021}. Ưu điểm của lakehouse là hỗ trợ dữ liệu lớn, nhiều định dạng, phân tích nâng cao và khả năng mở rộng tốt \cite{armbrust2021}. Tuy nhiên, nếu áp dụng đầy đủ lakehouse ngay từ đầu, dự án phải xử lý thêm nhiều vấn đề về object storage, định dạng bảng, engine truy vấn, orchestration và vận hành hạ tầng \cite{armbrust2021}. Với mục tiêu hiện tại là chứng minh pipeline POI có kiểm soát chất lượng và dashboard vận hành, kiến trúc gọn nhẹ bằng MongoDB, FastAPI, Express, React và Docker Compose phù hợp hơn \cite{dockerCompose}.\par
 
-\subsection{Hiệu năng}
+Các công nghệ như Spark, Airflow, Kafka, Iceberg, Trino hoặc Kubernetes vẫn có giá trị cho giai đoạn mở rộng \cite{sparkDocs}. Spark phù hợp khi khối lượng dữ liệu lớn hơn khả năng xử lý của một service thông thường \cite{sparkDocs}. Airflow phù hợp khi pipeline có nhiều DAG, nhiều phụ thuộc và cần lịch chạy phức tạp \cite{airflowDocs}. Kafka phù hợp khi hệ thống cần event streaming hoặc tích hợp nhiều producer và consumer thời gian thực \cite{awsStreaming}. Tuy nhiên, đưa toàn bộ các công nghệ này vào phiên bản hiện tại sẽ làm tăng độ khó cài đặt, giải thích, kiểm thử và bảo trì mà chưa tạo ra lợi ích tương xứng với quy mô dữ liệu \cite{dockerCompose}.\par
 
-Hiệu năng được đánh giá qua throughput, latency, query time và ETL runtime. Throughput của ingestion có thể đo bằng số bản ghi thu thập hoặc xử lý mỗi phút. Latency của API đo qua p50, p95 và tỷ lệ lỗi 5xx. Query time đo riêng cho các endpoint dashboard, POI list, top-rated và aggregation. ETL runtime đo cho từng job như \texttt{collect\_osm}, \texttt{enrich\_google}, \texttt{rebuild\_layers} và \texttt{nightly\_sync}.
 
-\begin{longtable}{@{}p{0.25\textwidth}p{0.30\textwidth}p{0.35\textwidth}@{}}
-\caption{Hiệu năng -- Tiêu chí, Cách đo, Mục tiêu tham chiếu.}\\
-\toprule
-\textbf{Tiêu chí} & \textbf{Cách đo} & \textbf{Mục tiêu tham chiếu} \\
-\midrule
-API latency p50 & Thời gian phản hồi endpoint & Dưới 200ms theo SLO API. \\
-API latency p95 & Thời gian phản hồi endpoint & Dưới 1000ms theo SLO API. \\
-ETL runtime & Thời gian hoàn thành job & Full pipeline dưới 60 phút. \\
-Nightly sync success & Tỷ lệ job hoàn thành & Tối thiểu 95\% mỗi tháng. \\
-Query time & Thời gian truy vấn dashboard & Ổn định khi lọc theo thành phố và danh mục. \\
-\bottomrule
-\end{longtable}
+Dự án chọn hướng tiếp cận vừa đủ thay vì triển khai ngay một nền tảng dữ liệu lớn hoàn chỉnh \cite{armbrust2021}. Lựa chọn này phù hợp với mục tiêu xây dựng được pipeline dữ liệu du lịch có kiểm soát, có dashboard vận hành, có API phục vụ và có khả năng giải thích trong phạm vi dự án \cite{ibmETL}. Hướng này giữ lại các nguyên tắc quan trọng của hệ thống dữ liệu hiện đại như phân lớp dữ liệu, kiểm soát chất lượng, truy vết, hợp đồng API và quan sát vận hành, nhưng triển khai bằng các công nghệ nhẹ hơn để giảm chi phí vận hành \cite{damaDmbok}.\par
 
-\subsection{Khả năng mở rộng}
+Ưu điểm lớn nhất của hướng vừa đủ là cân bằng giữa tính học thuật, tính kỹ thuật và tính khả thi \cite{ibmWarehouseLake}. Về học thuật, hệ thống vẫn bám vào các khái niệm nền tảng như ETL, chất lượng dữ liệu, lineage, governance và API contract \cite{damaDmbok}. Về kỹ thuật, hệ thống có đủ thành phần để thu thập, xử lý, lưu trữ, phục vụ và quan sát dữ liệu POI \cite{ibmETL}. Về tính khả thi, nhóm phát triển có thể triển khai, kiểm thử và trình diễn hệ thống mà không phải vận hành một cụm dữ liệu phân tán phức tạp \cite{dockerCompose}.\par
 
-Khả năng mở rộng được đánh giá qua khả năng tăng số lượng bản ghi, tăng số lượng thành phố, tăng số lượng danh mục, tăng số request dashboard và tăng số job ETL theo lịch. Với kiến trúc hiện tại, API và frontend có thể scale theo service container, trong khi MongoDB có thể mở rộng qua Atlas hoặc cơ chế sharding ở giai đoạn sau. ETL Service hiện chạy job trong Python thread và APScheduler, phù hợp quy mô nhỏ đến trung bình nhưng chưa phải worker queue phân tán.
+So với các phương pháp cũ, hướng này giảm rủi ro xử lý dữ liệu cảm tính và giảm phụ thuộc vào thao tác thủ công \cite{ibmDataQuality}. So với nền tảng dữ liệu lớn, hướng này tránh được việc triển khai quá mức trong khi vẫn giữ đường mở rộng rõ ràng \cite{armbrust2021}. Khi dữ liệu tăng hoặc yêu cầu vận hành thay đổi, hệ thống có thể bổ sung Airflow để điều phối pipeline, Kafka để xử lý sự kiện, Spark để xử lý dữ liệu lớn hoặc lakehouse để lưu trữ phân tích quy mô lớn \cite{airflowDocs}.\par
 
-\subsection{Độ ổn định}
 
-Độ ổn định được đánh giá qua availability, fault tolerance và recovery time. Theo tài liệu SLO, API Server hướng tới availability 99.5\% mỗi tháng, ETL Service 99\%, dashboard 99.5\%, còn MongoDB Atlas phụ thuộc SLA của nhà cung cấp. RTO tham chiếu là 15 phút cho API Server down, 30 phút cho ETL Service down, 1 giờ cho MongoDB connection fail, 4 giờ cho data corruption và 2 giờ cho full service outage. Các giá trị này là mục tiêu vận hành để so sánh với kết quả thực nghiệm.
+Định hướng áp dụng của dự án là xây dựng một nền tảng dữ liệu POI có thể vận hành được trong bối cảnh dữ liệu du lịch Việt Nam, bao gồm tên địa điểm có dấu/không dấu, danh mục đa dạng, địa chỉ không đồng nhất và khác biệt chất lượng giữa các nguồn \cite{yeboah2021}. Pipeline cần ưu tiên khả năng tiếp nhận nhiều nguồn, lưu nguồn gốc bản ghi, chuẩn hóa từng trường quan trọng, đánh giá chất lượng và chỉ đưa dữ liệu đủ tin cậy vào lớp phục vụ \cite{ibmDataQuality}. Dashboard không chỉ hiển thị số lượng POI mà còn cần thể hiện trạng thái pipeline, tỷ lệ bản ghi đạt chất lượng, nguồn dữ liệu và các bất thường cần kiểm tra \cite{tableauKpi}.\par
 
-\subsection{Chất lượng dữ liệu}
 
-Chất lượng dữ liệu được đánh giá qua accuracy, completeness, consistency và freshness. Trong hệ thống, accuracy được cải thiện nhờ đối chiếu và làm giàu từ Google Places; completeness được đo qua tỷ lệ bản ghi có address, rating, phone, website; consistency được hỗ trợ bởi \texttt{u\_key}, fuzzy matching và validation rule; freshness được đo qua \texttt{ingestedAt}, \texttt{updatedAt} và lịch nightly sync. Các mục tiêu tham chiếu gồm enrichment rate trên 60\%, gold/bronze ratio trên 40\%, quarantine rate dưới 5\%, pending review dưới 500 bản ghi và average quality score của Gold trên 0.65. Trong lần đo hiện tại, gold/bronze ratio đạt khoảng 66,77\% và pending review bằng 0, nhưng enrichment rate chỉ khoảng 0,3\%, quarantine rate khoảng 9,34\% và average quality score khoảng 0,3380, cho thấy chất lượng dữ liệu còn phụ thuộc mạnh vào khả năng làm giàu Google.
+Bản ghi được đưa vào Gold khi có đủ các trường cốt lõi như tên địa điểm, tọa độ hợp lệ, khu vực hoặc thành phố, danh mục đã chuẩn hóa và nguồn dữ liệu rõ ràng \cite{ibmDataQuality}. Bản ghi Gold cũng cần không trùng lặp hoặc đã được hợp nhất với các bản ghi tương ứng từ nguồn khác, để dashboard và API có thể dùng như dữ liệu phục vụ chính \cite{ibmLineage}. Trạng thái Gold phù hợp với các POI đạt ngưỡng chất lượng đã định và đủ tin cậy để xuất hiện trong thống kê, bộ lọc, bản đồ hoặc endpoint công khai của hệ thống \cite{tableauKpi}.\par
 
-\subsection{Quản trị và bảo mật}
+Bản ghi được đưa vào Pending Review khi có giá trị sử dụng nhưng còn thiếu hoặc chưa chắc chắn ở một số trường quan trọng, chẳng hạn thiếu địa chỉ chi tiết, thiếu thông tin liên hệ, danh mục chưa rõ hoặc tọa độ cần kiểm tra thêm \cite{ibmDataQuality}. Nhóm Pending Review giúp hệ thống không loại bỏ quá sớm các bản ghi có tiềm năng, đồng thời tạo vùng kiểm soát cho việc bổ sung dữ liệu, kiểm tra thủ công hoặc xử lý lại ở lần chạy sau \cite{ibmLineage}.\par
 
-Governance và security được đánh giá qua access control, metadata accuracy, audit logging, secret handling và khả năng truy vết. Hệ thống cần bảo đảm Gold layer là nguồn dữ liệu chính thức cho API và dashboard, Bronze/Silver là dữ liệu nội bộ, secrets không nằm trong source code, request đầu vào được validation bằng Zod hoặc Pydantic, và ETL job logs đủ để kiểm tra lại quá trình xử lý. Auditability được xem là đạt yêu cầu khi một số liệu bất thường trên dashboard có thể truy ngược về collection, job và nguồn dữ liệu liên quan.
+Bản ghi được đưa vào Quarantine khi có lỗi nghiêm trọng như thiếu tên, thiếu tọa độ, tọa độ nằm ngoài phạm vi hợp lý, nguồn dữ liệu không xác định hoặc xung đột trùng lặp chưa thể hợp nhất \cite{ibmDataQuality}. Dữ liệu trong Quarantine không được dùng trực tiếp cho dashboard hoặc API phục vụ người dùng cho đến khi được sửa lỗi, bổ sung nguồn gốc hoặc xử lý lại bằng quy tắc phù hợp \cite{openapiSpec}.\par
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Tiêu chí đánh giá tổng hợp}\\[0.6em]
-\begin{tabular}{c c c c c}
-Hiệu năng & Mở rộng & Ổn định & Chất lượng & Quản trị / bảo mật
-\end{tabular}
-\end{minipage}}
-\caption{Năm nhóm tiêu chí dùng để đánh giá Smart Travel Platform.}
-\end{figure}
-
-\section{Kết quả thực nghiệm}
-
-\subsection{Kết quả nạp dữ liệu}
-
-Kết quả ingestion được lấy từ các job ETL gần nhất và trạng thái tổng hợp của hệ thống. Job \texttt{collect\_osm} cho Quy Nhơn chạy từ 12:01:59 đến 12:05:05 ngày 17/05/2026, xử lý các danh mục nhà hàng, quán cà phê, bar, khách sạn, điểm tham quan, công viên và mua sắm; job ghi nhận 23 bản ghi mới được thêm vào Bronze và không có bản ghi lỗi. Job \texttt{enrich\_google} chạy từ 09:43:31 đến 10:11:07 cùng ngày, xử lý 800 bản ghi, sau đó dừng do toàn bộ RapidAPI keys bị exhausted trong lần chạy đó. Job \texttt{nightly\_sync} chạy từ 17:27:00 đến 17:30:25, làm giàu thêm 49 bản ghi, rebuild Silver và Gold thành công.
-
-\begin{longtable}{@{}p{0.20\textwidth}p{0.18\textwidth}p{0.18\textwidth}p{0.18\textwidth}p{0.16\textwidth}@{}}
-\caption{Kết quả nạp dữ liệu -- Nguồn, Thành phố, Danh mục, Số bản ghi, Thời gian.}\\
-\toprule
-\textbf{Nguồn} & \textbf{Thành phố} & \textbf{Danh mục} & \textbf{Số bản ghi} & \textbf{Thời gian} \\
-\midrule
-OSM/Overpass & Quy Nhơn & Tất cả danh mục cấu hình & 23 bản ghi mới & 186,2 giây \\
-Google Places & Toàn bộ dữ liệu còn thiếu enrich & Tất cả danh mục & 800 bản ghi xử lý trong job enrich; nightly enrich thêm 49 bản ghi & 1.655,5 giây cho job enrich; 205,2 giây cho nightly sync \\
-\bottomrule
-\end{longtable}
-
-\subsection{Kết quả xử lý dữ liệu}
-
-Kết quả xử lý dữ liệu cho thấy pipeline hiện có 22.871 bản ghi Bronze, 22.871 bản ghi Silver và 15.271 bản ghi Gold. Tỷ lệ chuyển đổi Gold/Bronze đạt khoảng 66,77\%, trong khi Quarantine có 2.137 bản ghi, tương đương khoảng 9,34\% so với Bronze. Pending Review hiện bằng 0 theo ETL status. Trong job \texttt{nightly\_sync}, bước rebuild Silver tạo lại 22.871 bản ghi và bước rebuild Gold tạo lại 15.271 bản ghi; toàn bộ nightly sync hoàn tất trong khoảng 205,2 giây. Một job \texttt{bronze\_to\_silver} nhỏ cho Vũng Tàu/restaurant xử lý 18 bản ghi, promote 14, quarantine 4 và hoàn tất trong khoảng 8,6 giây.
-
-\begin{longtable}{@{}p{0.25\textwidth}p{0.20\textwidth}p{0.20\textwidth}p{0.25\textwidth}@{}}
-\caption{Kết quả xử lý dữ liệu -- Bước xử lý, Đầu vào, Đầu ra, Thời gian chạy.}\\
-\toprule
-\textbf{Bước xử lý} & \textbf{Đầu vào} & \textbf{Đầu ra} & \textbf{Thời gian chạy} \\
-\midrule
-Bronze sang Silver & 18 bản ghi trong job nhỏ & 14 promoted, 4 quarantine & 8,6 giây \\
-Rebuild Silver & 22.871 Bronze & 22.871 Silver & Khoảng 4,4 giây trong nightly sync \\
-Rebuild Gold & 22.871 Silver & 15.271 Gold & Khoảng 13,1 giây trong nightly sync \\
-Nightly sync & 999 bản ghi dự kiến enrich; 22.871 bản ghi rebuild & 49 enriched, 22.871 Silver, 15.271 Gold & 205,2 giây \\
-\bottomrule
-\end{longtable}
-
-\subsection{Kết quả truy vấn và phân tích}
-
-Kết quả query và analytics được đo bằng 20 request tuần tự cho mỗi endpoint qua địa chỉ \texttt{http://localhost:5173}. Các endpoint health và ETL status có p50 thấp, trong khi endpoint dashboard overview chậm hơn rõ rệt do tổng hợp nhiều collection và chỉ số. Trong phép đo này, toàn bộ endpoint được kiểm tra đều có tỷ lệ lỗi 0/20. Tuy nhiên, API log cũng ghi nhận một số request dashboard bị abort khi dashboard gửi nhiều request đồng thời trước thời điểm benchmark tuần tự; đây là dấu hiệu cần kiểm tra thêm khi đánh giá tải đồng thời thực sự.
-
-\begin{longtable}{@{}p{0.36\textwidth}p{0.18\textwidth}p{0.18\textwidth}p{0.18\textwidth}@{}}
-\caption{Kết quả truy vấn và phân tích -- Endpoint, p50, p95, Tỷ lệ lỗi.}\\
-\toprule
-\textbf{Endpoint} & \textbf{p50} & \textbf{p95} & \textbf{Tỷ lệ lỗi} \\
-\midrule
-\texttt{/api/healthz} & 13,1ms & 15,8ms & 0/20 \\
-\texttt{/api/dashboard/overview} & 774,6ms & 1.927,9ms & 0/20 \\
-\texttt{/api/pois?limit=20} & 283,5ms & 315,4ms & 0/20 \\
-\texttt{/api/cities} & 295,5ms & 343,5ms & 0/20 \\
-\bottomrule
-\end{longtable}
-
-\subsection{Kết quả quản trị dữ liệu}
-
-Kết quả governance cho thấy hệ thống theo dõi được 14 pipeline runs ở dashboard overview, 15.055 lineage edges, 3 lịch ETL active và 2.137 bản ghi quarantine. ETL status ghi nhận 4 job trong registry hiện tại đều ở trạng thái completed, không có job running và không có job failed. API \texttt{/api/cities} trả về 10 thành phố có thống kê Gold đi kèm, trong đó Thành phố Hồ Chí Minh có 5.944 POI, Đà Nẵng có 2.889 POI, Hà Nội có 2.020 POI, Nha Trang có 1.201 POI và Đà Lạt có 1.010 POI. Điều này cho thấy reference data và dữ liệu Gold đã được kết hợp đúng trong lớp API.
-
-\subsection{Kết quả giám sát}
-
-Kết quả monitoring cho thấy API Server ghi log có cấu trúc bằng Pino, bao gồm method, URL, status code và response time. ETL Service ghi log job chi tiết, ví dụ nightly sync có các bước enrich, rebuild silver, rebuild gold, tính enrichment progress và job completed. Dashboard overview hiển thị 22.871 Bronze, 22.871 Silver, 15.271 Gold, 2.137 Quarantine, average quality score 0,3380 và average rating 4,45. Hệ thống chưa ghi nhận cơ chế alerting tự động trong lần kiểm thử này, vì vậy alerting cho job failure, freshness quá hạn và quarantine rate tăng vẫn là hướng cần hoàn thiện.
-
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Kết quả thực nghiệm chính}\\[0.6em]
-\begin{tabular}{c c c c}
-Bronze & Silver & Gold & Quarantine \\
-22.871 & 22.871 & 15.271 & 2.137
-\end{tabular}\\[0.8em]
-\begin{tabular}{c c}
-API health p50: 13,1ms & Overview p95: 1.927,9ms
-\end{tabular}
-\end{minipage}}
-\caption{Tóm tắt một số kết quả đo được trong quá trình thực nghiệm.}
-\end{figure}
-
-\section{Phân tích và đánh giá kết quả}
-
-\subsection{Phân tích hiệu năng}
-
-Hiệu năng của hệ thống chịu ảnh hưởng bởi ba nhóm yếu tố chính. Thứ nhất là nguồn dữ liệu bên ngoài, vì Overpass API và RapidAPI có thể timeout, giới hạn quota hoặc thay đổi tốc độ phản hồi. Thứ hai là MongoDB, vì các truy vấn dashboard và aggregation phụ thuộc vào index, kích thước collection và vị trí MongoDB local hay Atlas. Thứ ba là cách ETL xử lý dữ liệu, vì record-by-record Python chậm hơn aggregation khi rebuild toàn bộ layer, nhưng lại linh hoạt hơn với logic phức tạp. Kết quả đo cho thấy các endpoint aggregation đơn như \texttt{/api/dashboard/poi-by-city}, \texttt{/api/dashboard/poi-by-category}, \texttt{/api/dashboard/pipeline-funnel} và \texttt{/api/dashboard/quality-distribution} có p50 khoảng 243--258ms, trong khi \texttt{/api/dashboard/overview} có p50 774,6ms và p95 1.927,9ms. Điều này cho thấy overview là điểm cần tối ưu trước nếu muốn cải thiện tốc độ tải dashboard.
-
-Ưu điểm của kiến trúc hiện tại là đơn giản, dễ triển khai và đủ nhanh cho dữ liệu POI quy mô nhỏ đến trung bình. Bottleneck đã quan sát được nằm ở bước enrich Google do phụ thuộc API ngoài và quota, thể hiện qua log ``All RapidAPI keys exhausted'' trong cả job enrich và nightly sync. Bottleneck thứ hai là endpoint overview vì phải tổng hợp nhiều chỉ số cùng lúc. Vì vậy, kết quả thực nghiệm cần được phân tích theo từng bước thay vì chỉ nhìn tổng thời gian pipeline.
-
-\subsection{So sánh với phương pháp khác}
-
-So với streaming, batch processing có độ trễ cập nhật cao hơn nhưng dễ vận hành, dễ rebuild và phù hợp với dữ liệu du lịch không thay đổi liên tục. So với data warehouse truyền thống, mô hình document và nhiều lớp linh hoạt hơn khi tiếp nhận raw JSON từ nguồn ngoài, nhưng cần kiểm soát governance và data contract tốt để tránh dữ liệu thiếu cấu trúc. So với lakehouse đầy đủ, triển khai hiện tại nhẹ hơn và phù hợp với phạm vi dự án, nhưng chưa tận dụng được object storage, table format, distributed query engine hoặc metadata catalog chuyên dụng. So với Spark ETL, MongoDB aggregation và Python ETL đơn giản hơn, nhưng không tối ưu cho dữ liệu rất lớn hoặc xử lý phân tán.
-
-\begin{longtable}{@{}p{0.24\textwidth}p{0.22\textwidth}p{0.22\textwidth}p{0.22\textwidth}@{}}
-\caption{So sánh với phương pháp khác -- Phương án, Độ trễ, Thông lượng, Nhận xét.}\\
-\toprule
-\textbf{Phương án} & \textbf{Độ trễ} & \textbf{Thông lượng} & \textbf{Nhận xét} \\
-\midrule
-Batch hiện tại & Theo chu kỳ job & Phù hợp quy mô hiện tại & Dễ vận hành và dễ kiểm soát chất lượng. \\
-Streaming & Thấp hơn & Tốt cho realtime & Cần Kafka/queue, checkpoint và vận hành phức tạp hơn. \\
-Spark ETL & Phụ thuộc cluster & Tốt cho dữ liệu lớn & Chưa cần thiết với khối lượng hiện tại. \\
-Lakehouse đầy đủ & Phụ thuộc engine & Tốt khi mở rộng & Cần thêm object storage, table format và catalog. \\
-\bottomrule
-\end{longtable}
-
-\subsection{Đánh giá khả năng mở rộng}
-
-Về service, frontend và API có thể scale theo container nếu triển khai trên nền tảng hỗ trợ nhiều replica. ETL Service hiện phù hợp job định kỳ và xử lý batch đơn giản, nhưng nếu số lượng thành phố, danh mục và nguồn dữ liệu tăng mạnh, cần cân nhắc worker queue, Celery/Redis, Airflow hoặc Kubernetes CronJob. Về storage, MongoDB Atlas có thể mở rộng dung lượng, index và cấu hình cluster; nếu dữ liệu raw lớn hơn nhiều, object storage hoặc lakehouse table format sẽ phù hợp hơn. Về query engine, MongoDB aggregation đủ cho dashboard hiện tại, nhưng Trino hoặc Spark SQL có thể hữu ích khi cần federated analytics hoặc phân tích dữ liệu lớn.
-
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Hướng mở rộng sau đánh giá}\\[0.6em]
-\begin{tabular}{c c c}
-Scale service & Scale storage & Scale analytics \\
-Replica / worker queue & MongoDB Atlas / object storage & Spark / Trino / Lakehouse
-\end{tabular}
-\end{minipage}}
-\caption{Các hướng mở rộng được rút ra từ kết quả đánh giá.}
-\end{figure}
-
-\subsection{Đánh giá quản trị và bảo mật}
-
-Governance của hệ thống đạt mức phù hợp với dự án ứng dụng vì đã có phân lớp dữ liệu, quality score, pending review, quarantine, metadata job và cấu hình tham chiếu. Access control hiện ở mức đơn giản và phù hợp local/demo; khi đưa vào môi trường nhiều người dùng, cần hoàn thiện RBAC, auth, audit trail và phân quyền theo vai trò Admin, Data Engineer, Data Steward và API Consumer. Về bảo mật, việc lưu secrets ngoài source code, dùng TLS cho MongoDB Atlas và validation đầu vào là các điểm mạnh. Tuy nhiên, cần bổ sung kiểm thử bảo mật định kỳ, dependency audit và cơ chế alerting rõ hơn cho production.
-
-\section{Hạn chế của hệ thống}
-
-Hệ thống hiện chưa tối ưu cho realtime vì pipeline chính vẫn là batch processing. Điều này phù hợp với dữ liệu POI ở giai đoạn hiện tại, nhưng chưa đáp ứng các bài toán cần cập nhật sự kiện tức thời. Hệ thống cũng chưa triển khai multi-cluster, Kubernetes orchestration, distributed worker queue hoặc autoscaling theo tải. ETL Service còn phụ thuộc vào API ngoài nên tốc độ enrich có thể bị ảnh hưởng bởi quota, timeout và chất lượng kết quả từ Google Places hoặc Overpass API. Trong lần đo hiện tại, enrichment rate chỉ đạt khoảng 0,3\%, thấp hơn nhiều so với mục tiêu tham chiếu 60\%; đây là hạn chế quan trọng nhất cần xử lý nếu muốn cải thiện chất lượng Gold layer.
-
-Về phân tích dữ liệu lớn, hệ thống chưa dùng Spark, Trino, Iceberg hoặc object storage nên chưa phù hợp cho khối lượng dữ liệu rất lớn hoặc truy vấn liên kho dữ liệu. Metadata synchronization hiện dựa vào collection cấu hình và job logs, chưa có data catalog chuyên dụng hoặc lineage visualization đầy đủ. Alerting cũng cần được hoàn thiện để tự động cảnh báo khi freshness quá hạn, job thất bại liên tiếp, quarantine rate tăng hoặc Gold count giảm bất thường.
-
-\section{Định hướng cải tiến}
-
-Từ các hạn chế trên, hệ thống có thể được cải tiến theo nhiều hướng. Về pipeline, có thể bổ sung worker queue hoặc Airflow để điều phối job phức tạp hơn. Về realtime, có thể thử nghiệm Kafka hoặc Redis Streams cho các sự kiện cần xử lý gần thời gian thực. Về storage, có thể bổ sung object storage để lưu raw API response, export file hoặc dữ liệu lịch sử dung lượng lớn. Về analytics, có thể đánh giá Spark hoặc Trino khi số lượng bản ghi vượt quá khả năng xử lý thuận tiện của MongoDB aggregation. Về governance, có thể tích hợp metadata catalog, lineage visualization và audit trail chi tiết hơn.
-
-Ở mức vận hành, cần bổ sung benchmark tự động cho API và ETL, dashboard theo dõi SLO, alerting khi vi phạm freshness hoặc error rate, và kiểm thử phục hồi định kỳ. Những cải tiến này giúp hệ thống tiến gần hơn đến nền tảng dữ liệu có khả năng vận hành lâu dài trong môi trường production.
-
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Từ hạn chế đến cải tiến}\\[0.6em]
-Realtime thấp $\rightarrow$ Thử nghiệm streaming \quad
-Enrichment thấp $\rightarrow$ Tối ưu API keys \quad
-Alerting thiếu $\rightarrow$ Bổ sung cảnh báo\\[0.4em]
-Metadata cơ bản $\rightarrow$ Tích hợp catalog và lineage visualization
-\end{minipage}}
-\caption{Các cải tiến đề xuất dựa trên hạn chế quan sát được.}
-\end{figure}
-
-\section{Tổng kết chương}
-
-Chương này đã trình bày khung thực nghiệm và đánh giá kết quả cho Smart Travel Platform. Môi trường thực nghiệm dựa trên Docker Compose, gồm frontend, API Server, ETL Service và MongoDB. Dữ liệu thực nghiệm tập trung vào POI từ OpenStreetMap và Google Places, được xử lý qua Bronze, Silver và Gold. Trong lần đo ngày 18/05/2026, hệ thống có 22.871 Bronze, 22.871 Silver, 15.271 Gold, 2.137 Quarantine, 10 thành phố, 3 lịch ETL active và 21 RapidAPI keys được cấu hình. Các kịch bản kiểm thử bao gồm ingestion, pipeline processing, query/analytics, metadata/governance, monitoring và fault tolerance. Các tiêu chí đánh giá gồm hiệu năng, khả năng mở rộng, độ ổn định, chất lượng dữ liệu, governance và security.
-
-Kết quả thực nghiệm cho thấy hệ thống hiện tại phù hợp với mục tiêu xây dựng một data platform du lịch quy mô nhỏ đến trung bình: dễ triển khai, có kiểm soát chất lượng, có truy vết, có dashboard vận hành và có đường mở rộng rõ ràng. API health rất nhanh với p50 13,1ms; các endpoint dashboard phổ biến có p50 khoảng 243--295ms; riêng dashboard overview cần tối ưu thêm vì p95 gần 1,93 giây. Các hạn chế như enrichment rate thấp, quarantine rate cao hơn mục tiêu, chưa tối ưu realtime, chưa có multi-cluster, chưa có metadata catalog chuyên dụng và chưa dùng engine phân tán là các hướng phát triển tiếp theo thay vì điểm mâu thuẫn với mục tiêu hiện tại.
-
-\end{document}
+Trong giai đoạn hiện tại, hệ thống tập trung vào quy trình batch có kiểm soát, lưu trữ document linh hoạt, API rõ hợp đồng và dashboard vận hành \cite{ibmETL}. Trong giai đoạn tiếp theo, hệ thống có thể mở rộng theo ba hướng: thêm nguồn dữ liệu mới, mở rộng địa bàn thu thập và bổ sung năng lực phân tích nâng cao \cite{zhang2023}. Khi các hướng này phát triển, nền tảng hiện tại vẫn giữ vai trò định hướng: dữ liệu cần được thu thập có kiểm soát, xử lý có truy vết, đánh giá có tiêu chí và phục vụ qua hợp đồng rõ ràng \cite{openapiSpec}.\par

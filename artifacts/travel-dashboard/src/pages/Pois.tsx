@@ -14,7 +14,7 @@ import {
   ArrowLeft, Download, Search, Star, MapPin, ExternalLink,
   Phone, Globe, ArrowUpDown, X,
 } from "lucide-react";
-import { CHART_COLORS } from "@/lib/constants";
+import { CHART_COLORS, formatCityName } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 const PAGE_SIZE = 20;
@@ -109,7 +109,7 @@ export default function Pois() {
     setSearchQuery(""); setDebouncedSearch(""); setPage(0);
   }
 
-  const activeCity = cities.find((c) => c.cityCode === selectedCity)?.name;
+  const activeCity = formatCityName(cities.find((c) => c.cityCode === selectedCity)?.name, selectedCity);
 
   return (
     <div className="min-h-screen bg-background px-6 pt-8 pb-8">
@@ -148,7 +148,7 @@ export default function Pois() {
                 <select value={selectedCity} onChange={(e) => { setSelectedCity(e.target.value); setPage(0); }}
                   className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                   <option value="">All Cities</option>
-                  {cities.map((c) => <option key={c.cityCode} value={c.cityCode}>{c.name}</option>)}
+                  {cities.map((c) => <option key={c.cityCode} value={c.cityCode}>{formatCityName(c.name, c.cityCode)}</option>)}
                 </select>
               </div>
               <div className="w-[160px]">
@@ -240,7 +240,7 @@ export default function Pois() {
                             <span className="text-xs text-muted-foreground">Q: {(p.qualityScore * 100).toFixed(0)}%</span>
                           ) : null}
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{p.cityName}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{formatCityName(p.cityName, p.city)}</p>
                         {p.address && (
                           <p className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-start gap-0.5">
                             <MapPin className="w-2.5 h-2.5 mt-0.5 text-teal-500 shrink-0" />
@@ -352,7 +352,7 @@ export default function Pois() {
                                 </a>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{p.cityName}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatCityName(p.cityName, p.city)}</td>
                             <td className="px-4 py-3">
                               <Badge variant="secondary" className="text-xs capitalize whitespace-nowrap">{p.category}</Badge>
                             </td>

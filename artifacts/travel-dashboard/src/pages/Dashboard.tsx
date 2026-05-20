@@ -27,7 +27,7 @@ import {
   ExternalLink, Filter, Activity, TrendingUp, Award,
   Phone, Globe, CheckCircle2,
 } from "lucide-react";
-import { CHART_COLORS, CHART_COLOR_LIST, formatNumber } from "@/lib/constants";
+import { CHART_COLORS, CHART_COLOR_LIST, formatCityName, formatNumber, formatPipelineName } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 const INTERVAL_OPTIONS = [
@@ -125,15 +125,20 @@ export default function Dashboard() {
   const loading = ovLoading || ovFetching;
 
   // Derived filter options
-  const allCities = (poiByCity ?? []).map((c) => ({ value: c.city, label: c.cityName ?? c.city }));
+  const allCities = (poiByCity ?? []).map((c) => ({ value: c.city, label: formatCityName(c.cityName, c.city) }));
   const allCategories = (poiByCategory ?? []).map((c) => ({ value: c.category, label: c.category }));
 
   // City chart: when category filter active → show per-city counts for that category using matrix
   const cityChartData = (() => {
-    if (filterCategory === "all" || !matrix?.length) return poiByCity ?? [];
+    if (filterCategory === "all" || !matrix?.length) {
+      return (poiByCity ?? []).map((c) => ({
+        ...c,
+        cityName: formatCityName(c.cityName, c.city),
+      }));
+    }
     const map: Record<string, { city: string; cityName: string; count: number }> = {};
     matrix.filter((r) => r.category === filterCategory).forEach((r) => {
-      if (!map[r.city]) map[r.city] = { city: r.city, cityName: r.cityName ?? r.city, count: 0 };
+      if (!map[r.city]) map[r.city] = { city: r.city, cityName: formatCityName(r.cityName, r.city), count: 0 };
       map[r.city].count += r.count;
     });
     return Object.values(map).sort((a, b) => b.count - a.count);
@@ -193,7 +198,7 @@ export default function Dashboard() {
             </div>
             <p className="text-muted-foreground text-[14px] ml-12">
               {!loading && overview
-                ? `${overview.goldPois.toLocaleString()} verified destinations across ${overview.cities} Vietnamese cities`
+                ? `${overview.goldPois.toLocaleString()} verified destinations across ${overview.cities} cities in Vietnam`
                 : "Discover & analyze verified tourist destinations across Vietnam"}
             </p>
             {lastRefreshed && <p className="text-[12px] text-muted-foreground mt-1 ml-12">Last refresh: {lastRefreshed}</p>}
@@ -725,7 +730,7 @@ export default function Dashboard() {
                       <tbody>
                         {execData.map((e) => (
                           <tr key={e.executionId} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                            <td className="py-2 pr-4 font-medium text-xs max-w-[180px] truncate" title={e.pipelineName}>{e.pipelineName}</td>
+                            <td className="py-2 pr-4 font-medium text-xs max-w-[180px] truncate" title={formatPipelineName(e.pipelineName)}>{formatPipelineName(e.pipelineName)}</td>
                             <td className="py-2 pr-4"><StatusBadge status={e.status} /></td>
                             <td className="py-2 pr-4 text-xs text-muted-foreground">{e.cities.join(", ") || "—"}</td>
                             <td className="py-2 pr-4 text-xs text-muted-foreground">{e.categories.join(", ") || "all"}</td>

@@ -183,7 +183,7 @@ router.get("/reports/timeseries", async (req, res) => {
     } else if (period === "yearly") {
       since    = new Date(now.getFullYear() - 1, now.getMonth(), 1);
       groupFmt = { year: { $year: "$createdAt_dt" }, month: { $month: "$createdAt_dt" } };
-      labelFmt = (d) => `T${d.month}/${d.year}`;
+      labelFmt = (d) => `M${d.month}/${d.year}`;
     } else {
       // monthly → last 30 days by day
       since    = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);

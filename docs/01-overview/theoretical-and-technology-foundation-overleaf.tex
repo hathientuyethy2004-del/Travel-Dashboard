@@ -9,9 +9,6 @@
 \onehalfspacing
 \usepackage{hyperref}
 \usepackage{xurl}
-\usepackage{enumitem}
-\usepackage{array}
-\usepackage{longtable}
 \hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue,citecolor=black}
 \setlength{\parindent}{1.25cm}
 \setlength{\parskip}{0.2em}
@@ -20,417 +17,136 @@
 {\Large\bfseries Cơ sở lý thuyết và công nghệ}
 \end{center}
 
-\section*{Danh sách bảng}
-\addcontentsline{toc}{section}{Danh sách bảng}
-
-\begin{itemize}
-  \item Bảng 1. Chất lượng, truy vết và quản trị dữ liệu -- Cơ sở lý thuyết, Ý nghĩa chính, Cách áp dụng trong dự án.
-  \item Bảng 2. Giao diện lập trình ứng dụng và giao diện người dùng -- Nhóm công nghệ, Công nghệ sử dụng, Lý do lựa chọn.
-  \item Bảng 3. So sánh và định hướng áp dụng -- Hạng mục, Phương án A, Phương án B, Nhận xét.
-\end{itemize}
-
-
 \section{Cơ sở lý thuyết}
 
-Phần cơ sở lý thuyết của dự án tập trung vào bài toán xây dựng nền tảng dữ liệu điểm quan tâm phục vụ du lịch. Dữ liệu điểm quan tâm có đặc điểm không đồng nhất, thường đến từ nhiều nguồn như bản đồ mở, dịch vụ thương mại và dữ liệu nội bộ. Vì vậy, hệ thống cần có cơ chế thu thập, chuẩn hóa, đánh giá chất lượng, làm giàu và cung cấp dữ liệu đáng tin cậy cho dashboard hoặc các dịch vụ phía sau (Borràs et al., 2014; Zhang et al., 2023; W3C, 2017).\par
+Cơ sở lý thuyết của dự án tập trung vào dữ liệu điểm quan tâm (POI) trong du lịch số, quy trình xử lý dữ liệu nhiều nguồn và các nguyên tắc bảo đảm dữ liệu đủ tin cậy để phục vụ dashboard, API và các chức năng phân tích \cite{zhang2023}. Điểm chung của các nội dung này là dữ liệu POI không chỉ cần được thu thập, mà còn phải được chuẩn hóa, kiểm tra chất lượng, truy vết nguồn gốc và duy trì nhất quán trong suốt vòng đời xử lý \cite{ibmDataQuality}.\par
 
-\subsection{Dữ liệu điểm quan tâm trong hệ thống du lịch}
+Phạm vi của dự án tập trung vào xây dựng nền tảng dữ liệu POI phục vụ dashboard vận hành và API dữ liệu, chưa đặt mục tiêu tối ưu thuật toán gợi ý điểm đến trong phiên bản hiện tại \cite{zhang2023}. Cách giới hạn phạm vi này giúp dự án ưu tiên chất lượng dữ liệu đầu vào, tính truy vết và khả năng phục vụ dữ liệu ổn định trước khi mở rộng sang các mô hình cá nhân hóa hoặc đề xuất nâng cao \cite{ibmDataQuality}.\par
 
-Dữ liệu điểm quan tâm là loại dữ liệu mô tả các địa điểm có giá trị đối với hành trình du lịch, chẳng hạn như nhà hàng, khách sạn, quán cà phê, điểm tham quan, công viên hoặc khu mua sắm. Trong các hệ thống du lịch số, loại dữ liệu này là nền tảng cho nhiều chức năng như tìm kiếm địa điểm, phân tích phân bố dịch vụ, xây dựng dashboard quản trị và phát triển các chức năng gợi ý điểm đến. Chất lượng của dữ liệu điểm quan tâm ảnh hưởng trực tiếp đến chất lượng phân tích và trải nghiệm người dùng (Borràs et al., 2014; Zhang et al., 2023).\par
+\subsection{Dữ liệu điểm quan tâm và vấn đề tích hợp}
 
-Khó khăn chính của dữ liệu điểm quan tâm nằm ở tính không đồng nhất. Cùng một địa điểm có thể xuất hiện ở nhiều nguồn khác nhau với tên gọi, tọa độ, địa chỉ, danh mục hoặc thông tin liên hệ không hoàn toàn giống nhau. Do đó, bài toán của dự án không chỉ là thu thập dữ liệu, mà còn là tích hợp, chuẩn hóa, loại bỏ trùng lặp, bổ sung thông tin thiếu và đánh giá độ tin cậy trước khi đưa dữ liệu vào lớp phục vụ (W3C, 2017; Barron et al., 2014; Yeboah et al., 2021).\par
+Dữ liệu điểm quan tâm mô tả các địa điểm có giá trị trong hành trình du lịch như nhà hàng, khách sạn, quán cà phê, điểm tham quan, công viên hoặc khu mua sắm \cite{zhang2023}. Trong hệ thống du lịch số, dữ liệu này là nền tảng cho tìm kiếm địa điểm, phân tích phân bố dịch vụ, dashboard quản trị và các chức năng gợi ý điểm đến \cite{zhang2023}.\par
 
-\subsection{Quy trình xử lý dữ liệu}
+Thách thức chính của dữ liệu POI là tính không đồng nhất giữa các nguồn \cite{yeboah2021}. Cùng một địa điểm có thể xuất hiện ở OpenStreetMap, dịch vụ thương mại hoặc nguồn nội bộ với tên gọi, tọa độ, địa chỉ, danh mục và thông tin liên hệ khác nhau \cite{yeboah2021}. Vì vậy, nền tảng dữ liệu du lịch cần xử lý các bước tích hợp, chuẩn hóa, loại bỏ trùng lặp, bổ sung thông tin thiếu và đánh giá độ tin cậy trước khi đưa dữ liệu vào lớp phục vụ \cite{ibmDataQuality}.\par
 
-Về mô hình xử lý, dự án dựa trên quy trình trích xuất, biến đổi và nạp dữ liệu. Mô hình này phù hợp vì dữ liệu địa điểm du lịch không yêu cầu cập nhật tức thời như dữ liệu giao dịch hoặc cảm biến. Việc xử lý theo lô giúp hệ thống đơn giản hơn, dễ kiểm soát hơn và phù hợp với quy mô triển khai hiện tại (IBM, n.d.-g; Google Cloud, n.d.-a; Amazon Web Services, n.d.).\par
+Trong bối cảnh dữ liệu du lịch Việt Nam, tên địa điểm có thể tồn tại ở dạng có dấu, không dấu, viết tắt hoặc pha trộn tiếng Việt và tiếng Anh \cite{yeboah2021}. Địa chỉ thường không hoàn toàn chuẩn hóa theo cùng một cấu trúc, đặc biệt khi dữ liệu đến từ cộng đồng, bản đồ mở hoặc nhiều nhà cung cấp khác nhau \cite{yeboah2021}. Danh mục địa điểm cũng có thể không đồng nhất, ví dụ cùng một điểm được gắn là quán cà phê, nhà hàng, điểm tham quan hoặc dịch vụ du lịch tùy nguồn dữ liệu \cite{zhang2023}. Ngoài ra, dữ liệu mở thường có mức độ đầy đủ khác nhau theo vùng, nên hệ thống cần lưu nguồn gốc và đánh giá chất lượng theo từng bản ghi thay vì giả định mọi khu vực đều có dữ liệu đồng đều \cite{yeboah2021}.\par
 
-Quy trình trích xuất, biến đổi và nạp dữ liệu thường gồm ba bước chính. Bước trích xuất lấy dữ liệu từ các nguồn khác nhau; bước biến đổi thực hiện làm sạch, chuẩn hóa, kiểm tra và kết hợp dữ liệu; bước nạp đưa dữ liệu đã xử lý vào hệ thống lưu trữ hoặc lớp phục vụ. Ưu điểm của mô hình này là rõ ràng, dễ theo dõi và phù hợp với dữ liệu được cập nhật theo chu kỳ. Nhược điểm là dữ liệu không phản ánh thay đổi ngay tức thời, nhưng điều này có thể chấp nhận được trong bài toán dữ liệu du lịch vì địa điểm và thông tin POI thường không thay đổi liên tục từng giây (IBM, n.d.-g; Google Cloud, n.d.-a).\par
+\subsection{Quy trình xử lý và kiến trúc nhiều lớp}
 
-\subsection{Kiến trúc dữ liệu nhiều lớp}
+Quy trình trích xuất, biến đổi và nạp dữ liệu (ETL) được dùng làm khung xử lý chính cho dự án \cite{ibmETL}. Bước trích xuất lấy dữ liệu từ nguồn bản đồ, API hoặc dữ liệu nội bộ; bước biến đổi làm sạch, chuẩn hóa, kiểm tra và hợp nhất dữ liệu; bước nạp đưa dữ liệu đã xử lý vào hệ thống lưu trữ hoặc lớp phục vụ \cite{ibmETL}. Dự án ưu tiên xử lý theo lô vì dữ liệu địa điểm du lịch thường không yêu cầu cập nhật tức thời như dữ liệu giao dịch hoặc cảm biến \cite{awsStreaming}.\par
 
-Dự án cũng kế thừa tư duy kiến trúc dữ liệu nhiều lớp. Dữ liệu được tổ chức theo các mức độ tin cậy khác nhau: dữ liệu thô, dữ liệu đã chuẩn hóa và dữ liệu sẵn sàng phục vụ. Cách tiếp cận này giúp bảo toàn dữ liệu nguồn, hỗ trợ tái xử lý, tăng khả năng truy vết và kiểm soát chất lượng trước khi dữ liệu được đưa vào lớp phục vụ (Databricks, n.d.; IBM, n.d.-b; W3C, 2013).\par
+Kiến trúc nhiều lớp giúp tách dữ liệu theo mức độ tin cậy: dữ liệu thô, dữ liệu đã chuẩn hóa và dữ liệu sẵn sàng phục vụ \cite{databricksMedallion}. Cách tổ chức này bảo toàn dữ liệu nguồn, hỗ trợ tái xử lý, giảm rủi ro đưa dữ liệu lỗi lên giao diện và giúp truy ngược khi dữ liệu đầu ra có vấn đề \cite{ibmLineage}.\par
 
-Trong dự án, tư duy nhiều lớp được thể hiện qua việc phân tách dữ liệu thô, dữ liệu đã xử lý và dữ liệu đã đủ chất lượng để phục vụ. Cách tổ chức này phù hợp với dữ liệu nhiều nguồn vì mỗi lớp có vai trò riêng: lớp đầu giữ lại dữ liệu gốc để kiểm tra và tái xử lý, lớp giữa chuẩn hóa và hợp nhất dữ liệu, lớp cuối cung cấp dữ liệu đáng tin cậy cho dashboard và API. So với việc xử lý trực tiếp từ dữ liệu thô lên giao diện, kiến trúc nhiều lớp giúp hệ thống dễ kiểm soát lỗi, dễ giải thích và dễ mở rộng hơn (Databricks, n.d.; W3C, 2013).\par
+\subsection{Chất lượng, quản trị và quan sát dữ liệu}
 
-\subsection{Chất lượng, truy vết và quản trị dữ liệu}
+Chất lượng dữ liệu quyết định khả năng sử dụng dữ liệu trong phân tích và ra quyết định \cite{ibmDataQuality}. Với dữ liệu POI, các lỗi thường gặp gồm thiếu tọa độ, thiếu tên, sai danh mục, trùng lặp, thiếu thông tin liên hệ hoặc khác biệt mô tả giữa các nguồn \cite{yeboah2021}. Do đó, dự án sử dụng cơ chế chấm điểm chất lượng và vùng chờ xem xét để kết hợp tự động hóa với kiểm soát thủ công khi cần \cite{ibmDataQuality}.\par
 
-Chất lượng dữ liệu là cơ sở quan trọng của hệ thống. Với dữ liệu điểm quan tâm, các lỗi thường gặp gồm thiếu tọa độ, thiếu tên, sai danh mục, trùng lặp hoặc thiếu thông tin liên hệ. Vì vậy, dự án sử dụng chấm điểm chất lượng và vùng chờ xem xét để kết hợp tự động hóa với kiểm soát thủ công khi cần. Cách này giúp giảm rủi ro đưa dữ liệu kém chất lượng vào báo cáo hoặc gợi ý du lịch (IBM, n.d.-b; ISO, 2008; Barron et al., 2014).\par
+Truy vết dữ liệu giúp hệ thống biết một bản ghi đến từ nguồn nào, được thu thập khi nào, đã đi qua quy tắc xử lý nào và có liên hệ với bản ghi ở các lớp trước ra sao \cite{ibmLineage}. Quản trị dữ liệu bổ sung các nguyên tắc về trách nhiệm, chính sách sử dụng, metadata, bảo mật và khả năng duy trì dữ liệu trong toàn bộ vòng đời hệ thống \cite{damaDmbok}. Quan sát dữ liệu mở rộng giám sát kỹ thuật sang các chỉ số như độ tươi mới, tỷ lệ bản ghi đạt chất lượng, lỗi theo nguồn và trạng thái pipeline \cite{opentelemetrySignals}.\par
 
-Ngoài ra, dự án áp dụng các nguyên tắc quản trị dữ liệu, truy vết dữ liệu, hợp đồng dữ liệu và quan sát vận hành ở mức vừa đủ. Các nguyên tắc này giúp hệ thống không chỉ chạy được, mà còn có khả năng giải thích dữ liệu, kiểm soát thay đổi, theo dõi lỗi và mở rộng về sau (DAMA International, n.d.; IBM, n.d.-e; OpenAPI Initiative, n.d.; OpenTelemetry, n.d.).\par
-
-Truy vết dữ liệu đặc biệt quan trọng trong hệ thống có nhiều bước xử lý. Khi một bản ghi ở lớp phục vụ có vấn đề, hệ thống cần biết bản ghi đó đến từ nguồn nào, đã đi qua bước xử lý nào và bị thay đổi bởi quy tắc nào. Đây là cơ sở để kiểm tra lỗi, đánh giá độ tin cậy và giải thích kết quả dữ liệu. Quản trị dữ liệu bổ sung thêm góc nhìn về trách nhiệm, chính sách sử dụng, bảo mật và khả năng duy trì dữ liệu trong toàn bộ vòng đời hệ thống (IBM, n.d.-f; W3C, 2013; DAMA International, n.d.).\par
-
-\begin{longtable}{@{}p{0.24\textwidth}p{0.31\textwidth}p{0.35\textwidth}@{}}
-\caption{Chất lượng, truy vết và quản trị dữ liệu -- Cơ sở lý thuyết, Ý nghĩa chính, Cách áp dụng trong dự án.}\\
-\toprule
-\textbf{Cơ sở lý thuyết} & \textbf{Ý nghĩa chính} & \textbf{Cách áp dụng trong dự án} \\
-\midrule
-Dữ liệu điểm quan tâm & Dữ liệu địa điểm có giá trị trong hành trình du lịch, thường không đồng nhất giữa các nguồn. & Thu thập POI theo thành phố, danh mục, tọa độ và nguồn dữ liệu. \\
-ETL và batch processing & Quy trình trích xuất, biến đổi và nạp dữ liệu theo từng đợt có kiểm soát. & Chạy các job collect, enrich, transform, promote và nightly sync. \\
-Kiến trúc nhiều lớp & Phân tách dữ liệu thô, dữ liệu đã xử lý và dữ liệu sẵn sàng phục vụ. & Tổ chức dữ liệu theo Bronze, Silver và Gold trong MongoDB. \\
-Chất lượng dữ liệu & Đánh giá độ đầy đủ, hợp lệ, nhất quán, kịp thời và duy nhất của dữ liệu. & Tính quality score, đưa bản ghi vào Gold, Pending Review hoặc Quarantine. \\
-Governance và lineage & Xác định trách nhiệm, chính sách, metadata và khả năng truy vết dữ liệu. & Lưu job state, source run id, metadata, config và quy tắc vận hành. \\
-\bottomrule
-\end{longtable}
-
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Cơ sở lý thuyết của nền tảng dữ liệu du lịch}\\[0.6em]
-\begin{tabular}{c c c}
-ETL / Batch & Chất lượng dữ liệu & Quản trị / Truy vết \\
-Thu thập và biến đổi & Scoring, validation & Metadata, lineage, policy
-\end{tabular}\\[0.8em]
-$\Downarrow$\\[0.4em]
-\textbf{Dữ liệu Gold đáng tin cậy cho dashboard và API}
-\end{minipage}}
-\caption{Các nhóm lý thuyết nền tảng được sử dụng trong dự án.}
-\end{figure}
-
-\subsection{Khoảng trống và định hướng lý thuyết của dự án}
-
-Các nghiên cứu về hệ thống gợi ý du lịch thường tập trung vào thuật toán đề xuất, trong khi chất lượng dữ liệu đầu vào và pipeline chuẩn hóa dữ liệu POI chưa phải lúc nào cũng được trình bày như một thành phần trung tâm. Các nghiên cứu về OpenStreetMap cũng cho thấy dữ liệu cộng đồng có độ đầy đủ và độ chính xác khác nhau tùy khu vực. Vì vậy, dự án định hướng xây dựng một nền tảng dữ liệu POI vừa đủ, có kiểm soát chất lượng, có truy vết và có khả năng tích hợp nhiều nguồn, thay vì chỉ tập trung vào thuật toán hoặc giao diện hiển thị (Borràs et al., 2014; Zhang et al., 2023; Barron et al., 2014; Yeboah et al., 2021).\par
 
 \section{Cơ sở công nghệ}
 
-Về công nghệ lưu trữ, dự án sử dụng MongoDB vì dữ liệu điểm quan tâm thường có cấu trúc linh hoạt, nhiều trường tùy chọn và có thể được lưu gần với dạng JSON gốc từ các API bên ngoài. MongoDB phù hợp hơn cơ sở dữ liệu quan hệ trong giai đoạn này vì dự án cần ưu tiên khả năng tiếp nhận dữ liệu không đồng nhất và xử lý aggregation trực tiếp trên dữ liệu document (MongoDB, n.d.-a; MongoDB, n.d.-c).\par
+Cơ sở công nghệ của dự án được lựa chọn theo nguyên tắc vừa đủ: đáp ứng yêu cầu tích hợp và phục vụ dữ liệu POI trong phạm vi hiện tại, nhưng vẫn giữ khả năng mở rộng khi quy mô dữ liệu hoặc yêu cầu vận hành tăng lên \cite{ibmWarehouseLake}. Nhóm công nghệ chính gồm MongoDB cho lưu trữ document, Python/FastAPI cho xử lý dữ liệu, Node.js/Express cho API trung gian, React cho dashboard và Docker Compose cho đóng gói môi trường \cite{dockerCompose}.\par
 
-\subsection{Lưu trữ và xử lý dữ liệu}
+\subsection{Lưu trữ và xử lý dữ liệu phía máy chủ}
 
-MongoDB được chọn vì phù hợp với dữ liệu bán cấu trúc và dữ liệu JSON từ nhiều nguồn khác nhau. Với dữ liệu POI, không phải bản ghi nào cũng có đầy đủ cùng một tập trường; một số bản ghi có địa chỉ nhưng thiếu website, một số có tọa độ nhưng thiếu số điện thoại hoặc thông tin đánh giá. Nếu dùng mô hình quan hệ chặt chẽ ngay từ đầu, hệ thống phải thiết kế nhiều bảng và ràng buộc phức tạp hơn. MongoDB giúp dự án linh hoạt hơn trong giai đoạn tích hợp và chuẩn hóa dữ liệu (MongoDB, n.d.-c).\par
+MongoDB phù hợp với dữ liệu POI vì mô hình document hỗ trợ dữ liệu bán cấu trúc, nhiều trường tùy chọn và dữ liệu JSON từ các API bên ngoài \cite{mongodbDataModel}. Cách lưu trữ này giúp dự án tiếp nhận dữ liệu thô linh hoạt ở giai đoạn đầu, sau đó chuẩn hóa dần qua các lớp xử lý trước khi phục vụ dashboard hoặc API \cite{mongodbDataModel}. Aggregation pipeline của MongoDB đáp ứng các nhu cầu thống kê hiện tại như đếm theo thành phố, danh mục, nguồn dữ liệu hoặc mức chất lượng \cite{mongodbAggregation}.\par
 
-Lớp xử lý dữ liệu sử dụng Python, FastAPI, Pydantic và Uvicorn. Python phù hợp với các tác vụ xử lý dữ liệu và tích hợp API; FastAPI giúp xây dựng service gọn, có tài liệu API tự động; Pydantic hỗ trợ kiểm tra dữ liệu đầu vào và đầu ra. Nhóm công nghệ này đủ nhẹ cho quy mô hiện tại nhưng vẫn tạo nền tảng tốt để mở rộng pipeline sau này (FastAPI, n.d.; Pydantic, n.d.-b; Uvicorn, n.d.).\par
+Python được dùng cho các tác vụ xử lý dữ liệu, tích hợp API và xây dựng pipeline \cite{pythonApps}. FastAPI hỗ trợ xây dựng service gọn, có tài liệu API tự động và phù hợp với type hint của Python \cite{fastapiFeatures}. Pydantic giúp kiểm tra dữ liệu đầu vào, cấu hình và dữ liệu trả về ở ranh giới dịch vụ \cite{pydanticModels}.\par
 
-\subsection{Giao diện lập trình ứng dụng và giao diện người dùng}
+\subsection{API, giao diện và hợp đồng dữ liệu}
 
-Lớp API trung gian và giao diện sử dụng Node.js, Express, TypeScript, React, Vite và TanStack Query. Cách tổ chức này giúp tách biệt dữ liệu, logic API và giao diện người dùng. TypeScript, OpenAPI, Zod và Orval được sử dụng để giảm sai lệch giữa backend và frontend, đặc biệt khi hệ thống có nhiều endpoint và nhiều kiểu dữ liệu nghiệp vụ (OpenJS Foundation, n.d.; Express, n.d.; TypeScript, n.d.; React, n.d.-a; OpenAPI Initiative, n.d.; Zod, n.d.; Orval, n.d.).\par
+Node.js, Express và TypeScript được dùng cho lớp API trung gian để tách frontend khỏi dữ liệu thô và gom các logic phục vụ dashboard \cite{nodeAbout}. OpenAPI được dùng để mô tả hợp đồng API, bao gồm endpoint, tham số, request, response và schema dữ liệu trao đổi giữa backend và frontend \cite{openapiSpec}. Zod hỗ trợ kiểm tra dữ liệu runtime ở phía TypeScript, giúp phát hiện dữ liệu không đúng cấu trúc trước khi đi sâu vào logic giao diện hoặc API \cite{zodDocs}. Orval hỗ trợ sinh mã client từ đặc tả OpenAPI, qua đó giảm thao tác viết tay và giảm nguy cơ lệch kiểu dữ liệu giữa backend và frontend \cite{orvalDocs}.\par
 
-Về giao diện, Tailwind CSS, Radix UI và Recharts phù hợp với dashboard vì hỗ trợ xây dựng nhanh các thành phần bảng, bộ lọc, biểu đồ và chỉ số vận hành. Docker Compose được dùng để đóng gói nhiều service trong cùng môi trường chạy, giúp việc cài đặt, trình diễn và kiểm thử hệ thống nhất quán hơn (Tailwind CSS, n.d.-a; Radix UI, n.d.; Recharts, n.d.; Docker, n.d.-a).\par
+React, Vite, TanStack Query, Tailwind CSS, Radix UI và Recharts tạo thành nhóm công nghệ phù hợp cho dashboard dạng ứng dụng một trang \cite{reactDocs}. Nhóm này hỗ trợ xây dựng giao diện theo thành phần, quản lý trạng thái dữ liệu server, tạo bảng/bộ lọc/biểu đồ và trình bày các KPI vận hành dữ liệu \cite{tableauKpi}.\par
 
-\begin{longtable}{@{}p{0.22\textwidth}p{0.25\textwidth}p{0.43\textwidth}@{}}
-\caption{Giao diện lập trình ứng dụng và giao diện người dùng -- Nhóm công nghệ, Công nghệ sử dụng, Lý do lựa chọn.}\\
-\toprule
-\textbf{Nhóm công nghệ} & \textbf{Công nghệ sử dụng} & \textbf{Lý do lựa chọn} \\
-\midrule
-Lưu trữ dữ liệu & MongoDB Atlas & Phù hợp dữ liệu POI dạng document, nhiều trường tùy chọn và raw JSON từ nhiều nguồn. \\
-Xử lý dữ liệu & Python, FastAPI, Pydantic, APScheduler & Dễ xây dựng pipeline, validation, job scheduling và API nội bộ cho ETL Service. \\
-API trung gian & Node.js, Express, TypeScript, OpenAPI/Zod & Tách frontend khỏi dữ liệu thô, chuẩn hóa hợp đồng API và giảm sai lệch kiểu dữ liệu. \\
-Giao diện phân tích & React, Vite, Tailwind CSS, Recharts & Phù hợp dashboard KPI, bảng dữ liệu, biểu đồ phân tích và trải nghiệm người dùng dạng SPA. \\
-Đóng gói triển khai & Docker Compose & Cho phép chạy frontend, API, ETL và database trong môi trường nhất quán, dễ trình diễn. \\
-\bottomrule
-\end{longtable}
+\subsection{Đóng gói và hướng mở rộng}
 
-\subsection{Đóng gói và khả năng mở rộng}
+Docker Compose được dùng để chạy nhiều thành phần như frontend, API server, service ETL và cơ sở dữ liệu trong cùng một môi trường thống nhất \cite{dockerCompose}. Cách này giảm khác biệt giữa môi trường phát triển, trình diễn và tài liệu hướng dẫn \cite{dockerMultiContainer}.\par
 
-Dự án chưa sử dụng các công nghệ nặng hơn như Spark, Airflow, Kafka, Iceberg, Trino hoặc Kubernetes trong triển khai chính vì quy mô dữ liệu và yêu cầu thời gian thực hiện tại chưa cần đến hạ tầng phân tán phức tạp. Các công nghệ này được xem là hướng mở rộng khi dữ liệu tăng mạnh hoặc hệ thống cần xử lý thời gian thực, điều phối pipeline phức tạp và phân tích dữ liệu lớn (Apache Spark, n.d.; Apache Airflow, n.d.; Apache Kafka, n.d.; Trino, n.d.).\par
+Các công nghệ như Spark, Airflow, Kafka, Iceberg, Trino hoặc Kubernetes chưa được đưa vào triển khai chính vì phạm vi hiện tại chưa cần hạ tầng phân tán phức tạp \cite{sparkDocs}. Khi dữ liệu tăng mạnh hoặc hệ thống cần xử lý gần thời gian thực, các công nghệ này có thể được bổ sung để xử lý dữ liệu lớn, điều phối DAG phức tạp hoặc mở rộng kiến trúc lakehouse \cite{airflowDocs}.\par
 
-Docker Compose được dùng như giải pháp đóng gói phù hợp với quy mô dự án. Công nghệ này cho phép chạy nhiều thành phần như frontend, API server, service xử lý dữ liệu và các cấu hình môi trường trong một quy trình thống nhất. So với Kubernetes, Docker Compose đơn giản hơn và phù hợp với môi trường phát triển, trình diễn và báo cáo. Khi hệ thống cần triển khai sản xuất ở quy mô lớn hơn, kiến trúc có thể được nâng cấp dần sang orchestration phức tạp hơn (Docker, n.d.-a; Docker, n.d.-b).\par
+\section{Lý do lựa chọn và định hướng áp dụng}
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Nhóm công nghệ triển khai}\\[0.6em]
-\begin{tabular}{c c c c}
-MongoDB & FastAPI & Express & React \\
-Lưu trữ & ETL Service & API Server & Dashboard
-\end{tabular}\\[0.8em]
-Docker Compose dùng để đóng gói và chạy đồng thời các service.
-\end{minipage}}
-\caption{Các công nghệ chính trong kiến trúc Smart Travel Platform.}
-\end{figure}
+Các nghiên cứu về hệ thống gợi ý du lịch thường nhấn mạnh thuật toán đề xuất hơn là nền tảng dữ liệu đầu vào \cite{zhang2023}. Trong thực tế, thuật toán hoặc dashboard khó tạo ra kết quả đáng tin nếu POI bị trùng, thiếu tọa độ, sai danh mục hoặc không rõ nguồn gốc \cite{ibmDataQuality}. Vì vậy, dự án đặt nền tảng dữ liệu POI có kiểm soát chất lượng, truy vết và tích hợp nhiều nguồn làm trọng tâm trước khi phát triển các chức năng phân tích hoặc gợi ý nâng cao \cite{zhang2023}.\par
 
-\section{Lý do lựa chọn hướng tiếp cận}
+\subsection{So sánh với cách xử lý thủ công và lưu trữ trực tiếp}
 
-Hướng tiếp cận của dự án là chọn công nghệ vừa đủ thay vì triển khai ngay một nền tảng dữ liệu lớn hoàn chỉnh. Cách này phù hợp với mục tiêu nghiên cứu ứng dụng: xây dựng được pipeline dữ liệu du lịch có kiểm soát, có dashboard vận hành, có API phục vụ và có khả năng mở rộng khi cần. Việc ưu tiên xử lý theo lô, kiến trúc nhiều lớp nhẹ, MongoDB, FastAPI, Express, React và Docker Compose giúp hệ thống dễ triển khai, dễ giải thích và phù hợp với phạm vi dự án (IBM, n.d.-g; Databricks, n.d.; MongoDB, n.d.-c; Docker, n.d.-a).\par
+Cách làm đơn giản nhất đối với dữ liệu POI là thu thập dữ liệu, lưu vào một bảng hoặc một file trung gian, sau đó cho dashboard đọc trực tiếp \cite{ibmETL}. Ưu điểm của cách này là dễ triển khai, ít thành phần kỹ thuật, phù hợp với kiểm thử nhanh hoặc trình diễn ban đầu \cite{ibmETL}. Tuy nhiên, khi dữ liệu đến từ nhiều nguồn, cách lưu trực tiếp làm tăng nguy cơ trộn lẫn dữ liệu thô với dữ liệu đã xử lý, khiến hệ thống khó biết bản ghi nào đã được kiểm tra và bản ghi nào còn thiếu thông tin \cite{ibmDataQuality}. Nếu không có lớp trung gian để chuẩn hóa và kiểm tra, các lỗi như trùng địa điểm, sai danh mục, thiếu tọa độ hoặc sai nguồn có thể đi thẳng lên dashboard \cite{yeboah2021}.\par
 
-So với các kiến trúc lakehouse hoặc streaming quy mô lớn, lựa chọn hiện tại giảm đáng kể chi phí vận hành và độ phức tạp. Tuy nhiên, dự án vẫn giữ được các nguyên tắc quan trọng như quản trị dữ liệu, truy vết, kiểm soát chất lượng, hợp đồng API và quan sát hệ thống. Đây là nền tảng cần thiết để phát triển các chức năng nâng cao như gợi ý du lịch, phân tích chất lượng nguồn dữ liệu hoặc mở rộng sang nhiều thành phố hơn trong các giai đoạn sau (Borràs et al., 2014; Zhang et al., 2023; DAMA International, n.d.).\par
+Một phương án cũ khác là xử lý thủ công bằng file bảng tính hoặc script rời rạc \cite{ibmETL}. Ưu điểm của hướng này là linh hoạt, dễ sửa nhanh và không cần thiết kế hạ tầng phức tạp \cite{ibmETL}. Nhược điểm là khó tái lập kết quả, khó kiểm soát phiên bản dữ liệu, khó xác định quy tắc nào đã thay đổi bản ghi và khó mở rộng khi số nguồn hoặc số thành phố tăng lên \cite{ibmLineage}. Vì vậy, dự án không chọn cách xử lý thủ công làm hướng chính, mà chuyển các bước thu thập, chuẩn hóa, chấm điểm và phục vụ dữ liệu thành pipeline có cấu trúc \cite{ibmETL}.\par
 
-Tóm lại, cơ sở lý thuyết và công nghệ của dự án không nhằm chứng minh rằng một công nghệ là tối ưu trong mọi trường hợp, mà nhằm lựa chọn tập công nghệ phù hợp với bài toán, dữ liệu và quy mô hiện tại. Những công nghệ lớn hơn vẫn được xem xét trong phụ lục như hướng mở rộng, nhưng phần triển khai chính ưu tiên tính khả thi, khả năng kiểm chứng và khả năng vận hành ổn định trong phạm vi nền tảng dữ liệu du lịch quy mô nhỏ đến trung bình.\par
+\subsection{So sánh với cơ sở dữ liệu quan hệ và data warehouse}
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Lý do lựa chọn hướng tiếp cận}\\[0.6em]
-Dữ liệu POI đa nguồn $\rightarrow$ Kiến trúc nhiều lớp $\rightarrow$ Kiểm soát chất lượng $\rightarrow$ API/Dashboard\\[0.6em]
-\begin{tabular}{c c}
-Ưu tiên hiện tại: đơn giản, dễ vận hành & Hướng mở rộng: Spark, Kafka, Airflow, Lakehouse
-\end{tabular}
-\end{minipage}}
-\caption{Logic lựa chọn công nghệ vừa đủ và định hướng mở rộng.}
-\end{figure}
+Cơ sở dữ liệu quan hệ là lựa chọn quen thuộc vì hỗ trợ ràng buộc dữ liệu, truy vấn có cấu trúc và mô hình bảng rõ ràng \cite{ibmWarehouseLake}. Với dữ liệu nghiệp vụ ổn định, schema quan hệ giúp kiểm soát kiểu dữ liệu và quan hệ giữa các bảng tốt \cite{ibmWarehouseLake}. Tuy nhiên, dữ liệu POI thường có nhiều trường tùy chọn như giờ mở cửa, ảnh, số điện thoại, website, đánh giá, loại hình dịch vụ hoặc metadata theo nguồn \cite{mongodbDataModel}. Nếu ép dữ liệu này vào schema quan hệ chặt ngay từ đầu, dự án phải tạo nhiều bảng phụ, nhiều quan hệ và nhiều lần migration khi nguồn dữ liệu thay đổi \cite{mongodbDataModel}.\par
 
-\clearpage
-\appendix
-\section{Phân tích chi tiết cơ sở lý thuyết}
+MongoDB được chọn vì phù hợp hơn với giai đoạn tích hợp dữ liệu bán cấu trúc \cite{mongodbDataModel}. Dữ liệu thô từ API có thể được lưu gần với dạng ban đầu, sau đó chuẩn hóa dần qua các bước xử lý và đưa bản ghi đủ chất lượng vào lớp phục vụ \cite{mongodbDataModel}. Lựa chọn này không phủ nhận giá trị của cơ sở dữ liệu quan hệ, mà phản ánh đặc điểm hiện tại của bài toán: schema POI còn thay đổi, dữ liệu đến từ nhiều nguồn và cần ưu tiên khả năng tiếp nhận linh hoạt \cite{yeboah2021}.\par
 
-Phụ lục này trình bày chi tiết hơn các cơ sở lý thuyết, cơ sở công nghệ, so sánh phương pháp và định hướng áp dụng của dự án. Phần thân bài giữ vai trò tổng hợp các luận điểm chính, còn phụ lục mở rộng các khía cạnh cần giải thích sâu hơn để làm rõ vì sao dự án lựa chọn pipeline dữ liệu nhiều lớp, xử lý theo lô, MongoDB, API contract, dashboard vận hành và mô hình kiểm soát chất lượng dữ liệu. Cách trình bày trong phụ lục ưu tiên đoạn văn phân tích thay cho liệt kê ngắn, nhằm bảo đảm nội dung có tính diễn giải và liên kết hơn.
+Data warehouse truyền thống mạnh trong phân tích dữ liệu có cấu trúc, báo cáo định kỳ và các mô hình dữ liệu đã ổn định \cite{ibmWarehouseLake}. Ưu điểm của hướng này là khả năng tổ chức dữ liệu phục vụ phân tích tốt, phù hợp với doanh nghiệp có quy trình dữ liệu trưởng thành và yêu cầu báo cáo rõ ràng \cite{ibmWarehouseLake}. Tuy nhiên, với dự án quy mô nhỏ đến trung bình, triển khai warehouse đầy đủ có thể làm tăng chi phí thiết kế mô hình, vận hành và nạp dữ liệu trước khi chứng minh được giá trị của pipeline POI \cite{ibmWarehouseLake}. Vì vậy, dự án chỉ kế thừa tư duy phân lớp dữ liệu và chất lượng dữ liệu, chưa triển khai một data warehouse hoàn chỉnh \cite{databricksMedallion}.\par
 
-\subsection{Phân tích chuyên sâu về kiến trúc và quy trình dữ liệu}
+\subsection{So sánh với streaming, lakehouse và nền tảng dữ liệu lớn}
 
-Trong bài toán du lịch số, dữ liệu điểm quan tâm giữ vai trò là dữ liệu nền cho nhiều chức năng khác nhau, từ tra cứu địa điểm, hiển thị bản đồ, phân tích phân bố dịch vụ, thống kê theo thành phố cho đến gợi ý điểm đến. Một điểm quan tâm có thể là nhà hàng, khách sạn, quán cà phê, điểm tham quan, công viên, trung tâm mua sắm hoặc dịch vụ hỗ trợ hành trình. Vấn đề quan trọng không chỉ nằm ở số lượng điểm dữ liệu, mà còn ở độ đầy đủ và độ tin cậy của từng bản ghi. Một bản ghi có tên nhưng thiếu tọa độ sẽ khó hiển thị trên bản đồ; một bản ghi có tọa độ nhưng thiếu danh mục sẽ khó dùng cho phân tích; một bản ghi trùng với bản ghi khác nhưng khác tên gọi có thể làm sai lệch thống kê. Vì vậy, nền tảng dữ liệu du lịch cần được nhìn nhận như một hệ thống tích hợp và kiểm soát dữ liệu, không đơn thuần là nơi lưu danh sách địa điểm (Borràs et al., 2014; Zhang et al., 2023).
+Streaming phù hợp với hệ thống cần phản ứng gần thời gian thực, ví dụ sự kiện người dùng, log liên tục, cảm biến hoặc dữ liệu giao dịch tốc độ cao \cite{awsStreaming}. Ưu điểm của streaming là giảm độ trễ và cho phép hệ thống xử lý sự kiện ngay khi phát sinh \cite{awsStreaming}. Tuy nhiên, streaming cũng kéo theo độ phức tạp về message broker, checkpoint, retry, xử lý thứ tự sự kiện, giám sát độ trễ và cơ chế phục hồi khi lỗi \cite{awsStreaming}. Với dữ liệu POI du lịch, nhiều thông tin như tên địa điểm, danh mục, địa chỉ hoặc website thường không thay đổi từng giây, nên batch processing hợp lý hơn cho phạm vi hiện tại \cite{ibmETL}.\par
 
-Đặc điểm khó nhất của dữ liệu POI là tính không đồng nhất giữa các nguồn. Dữ liệu từ OpenStreetMap thường có lợi thế về tính mở và khả năng truy cập rộng, nhưng mức độ đầy đủ phụ thuộc vào cộng đồng đóng góp theo từng khu vực. Dữ liệu từ Google Places hoặc các dịch vụ thương mại có thể giàu thông tin hơn về đánh giá, giờ mở cửa, ảnh hoặc thông tin liên hệ, nhưng bị ràng buộc bởi API key, quota, chi phí và điều khoản sử dụng. Khi hai nguồn cùng mô tả một địa điểm, tên gọi có thể khác nhau do dấu tiếng Việt, cách viết tắt, ngôn ngữ, định dạng địa chỉ hoặc sai lệch tọa độ. Do đó, dự án cần một pipeline có khả năng tiếp nhận dữ liệu thô, chuẩn hóa từng trường, đánh giá chất lượng và hợp nhất thực thể trước khi đưa vào lớp phục vụ (W3C, 2017; Barron et al., 2014; Yeboah et al., 2021).
+Lakehouse là hướng hiện đại để kết hợp ưu điểm của data lake và data warehouse trên quy mô lớn \cite{armbrust2021}. Ưu điểm của lakehouse là hỗ trợ dữ liệu lớn, nhiều định dạng, phân tích nâng cao và khả năng mở rộng tốt \cite{armbrust2021}. Tuy nhiên, nếu áp dụng đầy đủ lakehouse ngay từ đầu, dự án phải xử lý thêm nhiều vấn đề về object storage, định dạng bảng, engine truy vấn, orchestration và vận hành hạ tầng \cite{armbrust2021}. Với mục tiêu hiện tại là chứng minh pipeline POI có kiểm soát chất lượng và dashboard vận hành, kiến trúc gọn nhẹ bằng MongoDB, FastAPI, Express, React và Docker Compose phù hợp hơn \cite{dockerCompose}.\par
 
-Quy trình trích xuất, biến đổi và nạp dữ liệu được sử dụng như khung xử lý chính. Có thể hiểu quy trình này theo ba bước liên tiếp: (1) trích xuất dữ liệu từ nguồn bên ngoài hoặc nguồn nội bộ; (2) biến đổi dữ liệu thông qua làm sạch, chuẩn hóa, kết hợp, kiểm tra và làm giàu; (3) nạp dữ liệu đã xử lý vào hệ thống lưu trữ hoặc lớp phục vụ. Trong dự án, bước trích xuất gắn với việc gọi API hoặc truy vấn nguồn bản đồ; bước biến đổi gắn với chuẩn hóa schema, kiểm tra tọa độ, xử lý danh mục, chấm điểm chất lượng và phát hiện trùng lặp; bước nạp gắn với việc lưu dữ liệu vào các lớp Bronze, Silver và Gold. Mô hình này phù hợp với dữ liệu POI vì thông tin địa điểm không thay đổi liên tục từng giây như giao dịch tài chính hoặc sự kiện cảm biến (IBM, n.d.-g; Google Cloud, n.d.-a).
+Các công nghệ như Spark, Airflow, Kafka, Iceberg, Trino hoặc Kubernetes vẫn có giá trị cho giai đoạn mở rộng \cite{sparkDocs}. Spark phù hợp khi khối lượng dữ liệu lớn hơn khả năng xử lý của một service thông thường \cite{sparkDocs}. Airflow phù hợp khi pipeline có nhiều DAG, nhiều phụ thuộc và cần lịch chạy phức tạp \cite{airflowDocs}. Kafka phù hợp khi hệ thống cần event streaming hoặc tích hợp nhiều producer và consumer thời gian thực \cite{awsStreaming}. Tuy nhiên, đưa toàn bộ các công nghệ này vào phiên bản hiện tại sẽ làm tăng độ khó cài đặt, giải thích, kiểm thử và bảo trì mà chưa tạo ra lợi ích tương xứng với quy mô dữ liệu \cite{dockerCompose}.\par
 
-Giữa xử lý theo lô và xử lý dòng, dự án ưu tiên xử lý theo lô vì yêu cầu cập nhật dữ liệu du lịch có thể chấp nhận độ trễ theo chu kỳ. Xử lý dòng có ưu điểm là phản ứng nhanh với sự kiện mới, nhưng cần thêm hàng đợi thông điệp, checkpoint, retry, kiểm soát thứ tự sự kiện, xử lý lỗi và giám sát độ trễ. Với phạm vi hiện tại, các chi phí vận hành này chưa tương xứng với lợi ích thu được. Xử lý theo lô giúp hệ thống dễ kiểm thử, dễ quan sát và dễ giải thích hơn: mỗi lần chạy pipeline có đầu vào, đầu ra, log và chỉ số chất lượng rõ ràng. Khi dữ liệu tăng mạnh hoặc có yêu cầu cập nhật gần thời gian thực, streaming có thể được xem là hướng mở rộng, nhưng không phải điều kiện bắt buộc của phiên bản hiện tại (Amazon Web Services, n.d.; Apache Kafka, n.d.; Kreps et al., 2011).
+\subsection{Lý do chọn hướng kiến trúc vừa đủ}
 
-Kiến trúc nhiều lớp được áp dụng để tách các mức độ tin cậy của dữ liệu. Lớp Bronze lưu dữ liệu thô gần với nguồn ban đầu, giúp bảo toàn thông tin và hỗ trợ kiểm tra lại khi quy tắc xử lý thay đổi. Lớp Silver lưu dữ liệu đã được chuẩn hóa, làm sạch, bổ sung metadata và chuẩn bị cho bước hợp nhất. Lớp Gold lưu dữ liệu đã đủ chất lượng để phục vụ dashboard, API và các phân tích nghiệp vụ. Cách tổ chức này giúp tránh việc giao diện hoặc API phải xử lý trực tiếp dữ liệu thô, đồng thời vẫn giữ khả năng truy ngược khi dữ liệu đầu ra có vấn đề. Đây là lý do dự án mô phỏng tư duy Medallion/Lakehouse ở mức nhẹ, thay vì triển khai toàn bộ hệ sinh thái lakehouse ngay từ đầu (Databricks, n.d.; IBM, n.d.-a; Armbrust et al., 2021).
+Dự án chọn hướng tiếp cận vừa đủ thay vì triển khai ngay một nền tảng dữ liệu lớn hoàn chỉnh \cite{armbrust2021}. Lựa chọn này phù hợp với mục tiêu xây dựng được pipeline dữ liệu du lịch có kiểm soát, có dashboard vận hành, có API phục vụ và có khả năng giải thích trong phạm vi dự án \cite{ibmETL}. Hướng này giữ lại các nguyên tắc quan trọng của hệ thống dữ liệu hiện đại như phân lớp dữ liệu, kiểm soát chất lượng, truy vết, hợp đồng API và quan sát vận hành, nhưng triển khai bằng các công nghệ nhẹ hơn để giảm chi phí vận hành \cite{damaDmbok}.\par
 
-Các công nghệ xử lý phân tán như Spark, Kafka, Airflow, Iceberg hoặc Trino có giá trị tham chiếu cho giai đoạn mở rộng. Spark phù hợp khi khối lượng dữ liệu lớn và cần xử lý phân tán; Kafka phù hợp khi hệ thống cần event log và luồng dữ liệu thời gian thực; Airflow phù hợp với DAG phức tạp, nhiều phụ thuộc và nhu cầu điều phối pipeline lớn; Iceberg và Trino phù hợp với lakehouse trên object storage. Tuy nhiên, trong phạm vi dự án hiện tại, MongoDB aggregation, job theo lịch và Docker Compose đủ để chứng minh mô hình nền tảng dữ liệu POI có kiểm soát. Việc chưa đưa các công nghệ lớn vào triển khai chính là một lựa chọn có chủ đích nhằm giảm độ phức tạp, không phải bỏ qua khả năng mở rộng (Apache Spark, n.d.; Apache Airflow, n.d.; Apache Kafka, n.d.; Trino, n.d.).
+Ưu điểm lớn nhất của hướng vừa đủ là cân bằng giữa tính học thuật, tính kỹ thuật và tính khả thi \cite{ibmWarehouseLake}. Về học thuật, hệ thống vẫn bám vào các khái niệm nền tảng như ETL, chất lượng dữ liệu, lineage, governance và API contract \cite{damaDmbok}. Về kỹ thuật, hệ thống có đủ thành phần để thu thập, xử lý, lưu trữ, phục vụ và quan sát dữ liệu POI \cite{ibmETL}. Về tính khả thi, nhóm phát triển có thể triển khai, kiểm thử và trình diễn hệ thống mà không phải vận hành một cụm dữ liệu phân tán phức tạp \cite{dockerCompose}.\par
 
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Kiến trúc xử lý dữ liệu nhiều lớp}\\[0.6em]
-Nguồn dữ liệu $\rightarrow$ Bronze $\rightarrow$ Silver $\rightarrow$ Gold $\rightarrow$ API / Dashboard\\[0.6em]
-\begin{tabular}{c c c}
-Raw data & Cleaned / scored data & Trusted serving data
-\end{tabular}
-\end{minipage}}
-\caption{Minh họa vai trò của Bronze, Silver và Gold trong pipeline dữ liệu.}
-\end{figure}
+So với các phương pháp cũ, hướng này giảm rủi ro xử lý dữ liệu cảm tính và giảm phụ thuộc vào thao tác thủ công \cite{ibmDataQuality}. So với nền tảng dữ liệu lớn, hướng này tránh được việc triển khai quá mức trong khi vẫn giữ đường mở rộng rõ ràng \cite{armbrust2021}. Khi dữ liệu tăng hoặc yêu cầu vận hành thay đổi, hệ thống có thể bổ sung Airflow để điều phối pipeline, Kafka để xử lý sự kiện, Spark để xử lý dữ liệu lớn hoặc lakehouse để lưu trữ phân tích quy mô lớn \cite{airflowDocs}.\par
 
-\subsection{Quản trị, chất lượng và an toàn dữ liệu}
+\subsection{Định hướng áp dụng trong dự án}
 
-Chất lượng dữ liệu là điều kiện để dữ liệu có thể được dùng cho phân tích và ra quyết định. Với dữ liệu POI, các chiều chất lượng có thể được diễn giải theo nhiều khía cạnh: (1) độ đầy đủ, tức bản ghi có đủ tên, tọa độ, địa chỉ, danh mục và thông tin liên hệ cần thiết hay không; (2) tính hợp lệ, tức tọa độ có nằm trong phạm vi hợp lý, kiểu dữ liệu có đúng và trường bắt buộc có thỏa điều kiện hay không; (3) tính nhất quán, tức cùng một địa điểm không bị mô tả bằng nhiều bản ghi mâu thuẫn; (4) tính kịp thời, tức dữ liệu có còn mới so với thời điểm thu thập hay không; (5) tính duy nhất, tức bản ghi không bị trùng lặp giữa các nguồn. Những chiều này giúp dự án không đánh giá dữ liệu bằng cảm tính, mà chuyển thành tiêu chí có thể đo và kiểm tra được (IBM, n.d.-b; ISO, 2008).
+Định hướng áp dụng của dự án là xây dựng một nền tảng dữ liệu POI có thể vận hành được trong bối cảnh dữ liệu du lịch Việt Nam, bao gồm tên địa điểm có dấu/không dấu, danh mục đa dạng, địa chỉ không đồng nhất và khác biệt chất lượng giữa các nguồn \cite{yeboah2021}. Pipeline cần ưu tiên khả năng tiếp nhận nhiều nguồn, lưu nguồn gốc bản ghi, chuẩn hóa từng trường quan trọng, đánh giá chất lượng và chỉ đưa dữ liệu đủ tin cậy vào lớp phục vụ \cite{ibmDataQuality}. Dashboard không chỉ hiển thị số lượng POI mà còn cần thể hiện trạng thái pipeline, tỷ lệ bản ghi đạt chất lượng, nguồn dữ liệu và các bất thường cần kiểm tra \cite{tableauKpi}.\par
 
-Cơ chế chấm điểm chất lượng được dùng để tự động hóa một phần quyết định bản ghi nào đủ điều kiện vào lớp Gold. Điểm chất lượng có thể dựa trên sự hiện diện của các trường quan trọng, độ hợp lệ của tọa độ, mức độ đầy đủ của thông tin mô tả, nguồn dữ liệu bổ sung và khả năng phục vụ người dùng cuối. Cách làm này có ưu điểm là tạo ra tiêu chuẩn thống nhất giữa nhiều nguồn. Tuy nhiên, điểm số không nên được xem là chân lý tuyệt đối, vì công thức chấm điểm luôn phản ánh giả định thiết kế. Do đó, dự án bổ sung vùng chờ xem xét cho các bản ghi trung gian: bản ghi tốt được đưa vào lớp phục vụ, bản ghi lỗi bị loại khỏi đầu ra chính, còn bản ghi chưa chắc chắn có thể được giữ lại để kiểm tra thủ công hoặc xử lý ở lần chạy sau.
+\subsubsection{Tiêu chí Gold, Pending Review và Quarantine}
 
-Truy vết dữ liệu bổ sung khả năng giải thích cho pipeline. Khi một bản ghi Gold được hiển thị trên dashboard, hệ thống cần biết bản ghi đó xuất phát từ nguồn nào, được thu thập vào thời điểm nào, đã đi qua quy tắc chuẩn hóa nào và có liên hệ với bản ghi Bronze/Silver nào. Về mặt vận hành, lineage giúp rút ngắn thời gian điều tra lỗi. Nếu một thành phố có số lượng điểm du lịch giảm bất thường, nhóm phát triển có thể kiểm tra liệu nguyên nhân đến từ nguồn dữ liệu, bước chuẩn hóa, công thức chấm điểm hay bước hợp nhất. Vì vậy, định danh xuyên suốt giữa các lớp là một yêu cầu quan trọng của kiến trúc dữ liệu nhiều lớp (IBM, n.d.-f; W3C, 2013).
+Bản ghi được đưa vào Gold khi có đủ các trường cốt lõi như tên địa điểm, tọa độ hợp lệ, khu vực hoặc thành phố, danh mục đã chuẩn hóa và nguồn dữ liệu rõ ràng \cite{ibmDataQuality}. Bản ghi Gold cũng cần không trùng lặp hoặc đã được hợp nhất với các bản ghi tương ứng từ nguồn khác, để dashboard và API có thể dùng như dữ liệu phục vụ chính \cite{ibmLineage}. Trạng thái Gold phù hợp với các POI đạt ngưỡng chất lượng đã định và đủ tin cậy để xuất hiện trong thống kê, bộ lọc, bản đồ hoặc endpoint công khai của hệ thống \cite{tableauKpi}.\par
 
-Quản lý dữ liệu chủ được áp dụng ở mức thực thể POI. Trong dự án, mục tiêu không phải chỉ lưu tất cả bản ghi từ mọi nguồn, mà là tạo ra bản ghi đại diện đáng tin cậy cho mỗi địa điểm. Bản ghi chuẩn ở lớp Gold đóng vai trò gần với khái niệm ``golden record'': nó tổng hợp thông tin phù hợp nhất sau khi đã chuẩn hóa, hợp nhất và kiểm tra chất lượng. Cách tiếp cận này giảm tình trạng một quán cà phê, khách sạn hoặc điểm tham quan xuất hiện nhiều lần trong dashboard chỉ vì tên gọi hoặc địa chỉ khác nhau giữa các nguồn. Đồng thời, logic hợp nhất được đặt trong pipeline thay vì phân tán trong từng màn hình giao diện, giúp hệ thống dễ kiểm soát hơn (IBM, n.d.-h; Databricks, n.d.).
+Bản ghi được đưa vào Pending Review khi có giá trị sử dụng nhưng còn thiếu hoặc chưa chắc chắn ở một số trường quan trọng, chẳng hạn thiếu địa chỉ chi tiết, thiếu thông tin liên hệ, danh mục chưa rõ hoặc tọa độ cần kiểm tra thêm \cite{ibmDataQuality}. Nhóm Pending Review giúp hệ thống không loại bỏ quá sớm các bản ghi có tiềm năng, đồng thời tạo vùng kiểm soát cho việc bổ sung dữ liệu, kiểm tra thủ công hoặc xử lý lại ở lần chạy sau \cite{ibmLineage}.\par
 
-Hợp đồng dữ liệu là cơ chế giữ ổn định giữa pipeline, backend, frontend và các thành phần tiêu thụ API. Khi một trường dữ liệu thay đổi tên, kiểu hoặc ý nghĩa, rủi ro không chỉ nằm ở tầng lưu trữ mà còn lan sang dashboard, báo cáo, bộ lọc và các client bên ngoài. OpenAPI phù hợp để mô tả endpoint, request, response và schema API; Pydantic hoặc Zod phù hợp để kiểm tra dữ liệu ở ranh giới dịch vụ; Orval hỗ trợ sinh mã client từ đặc tả API để giảm lệch kiểu dữ liệu giữa backend và frontend. Về tiến hóa lược đồ, dự án ưu tiên thay đổi tương thích ngược: thêm trường mới thường ít rủi ro hơn đổi tên hoặc xóa trường đang được sử dụng (OpenAPI Initiative, n.d.; Pydantic, n.d.-a; Zod, n.d.; Orval, n.d.).
+Bản ghi được đưa vào Quarantine khi có lỗi nghiêm trọng như thiếu tên, thiếu tọa độ, tọa độ nằm ngoài phạm vi hợp lý, nguồn dữ liệu không xác định hoặc xung đột trùng lặp chưa thể hợp nhất \cite{ibmDataQuality}. Dữ liệu trong Quarantine không được dùng trực tiếp cho dashboard hoặc API phục vụ người dùng cho đến khi được sửa lỗi, bổ sung nguồn gốc hoặc xử lý lại bằng quy tắc phù hợp \cite{openapiSpec}.\par
 
-Quản trị dữ liệu định nghĩa cách dữ liệu được sở hữu, sử dụng, chia sẻ và bảo vệ. Với phạm vi dự án, quản trị dữ liệu không cần một bộ máy phức tạp như doanh nghiệp lớn, nhưng vẫn cần các nguyên tắc cơ bản: Gold layer là nguồn dữ liệu chính thức cho dashboard và API; Bronze/Silver là dữ liệu nội bộ phục vụ kiểm tra và tái xử lý; metadata và lineage cần được lưu đủ để giải thích; dữ liệu nhạy cảm như API key hoặc token không được ghi cứng trong mã nguồn. Cách tiếp cận này tương thích với các nguyên tắc FAIR, trong đó dữ liệu nên dễ tìm, dễ truy cập, có khả năng liên thông và có thể tái sử dụng trong phạm vi được kiểm soát (DAMA International, n.d.; IBM, n.d.-e; Wilkinson et al., 2016).
-
-Bảo mật và phân quyền là điều kiện để dữ liệu được khai thác một cách an toàn. Với hệ thống có API và dashboard, phân quyền theo vai trò giúp phân biệt người xem dữ liệu, người quản trị pipeline và người có quyền thực hiện thao tác nhạy cảm. TLS bảo vệ dữ liệu khi truyền qua mạng; quản lý bí mật giúp tránh lộ API key, token hoặc chuỗi kết nối cơ sở dữ liệu; log cần được thiết kế để hỗ trợ điều tra lỗi nhưng không ghi ra thông tin nhạy cảm. Những thực hành này có thể được triển khai từng bước, nhưng nên được đưa vào thiết kế ngay từ đầu để tránh phải sửa kiến trúc khi hệ thống mở rộng (OWASP, n.d.; NIST Computer Security Resource Center, n.d.; NIST, n.d.).
-
-\subsection{Vận hành, quan sát và phân tích hệ thống}
-
-Quan sát dữ liệu khác với quan sát hạ tầng ở chỗ hệ thống có thể vẫn chạy nhưng dữ liệu đầu ra đã sai, cũ hoặc thiếu. Vì vậy, ngoài log lỗi và trạng thái service, nền tảng dữ liệu cần theo dõi các chỉ số phản ánh bản thân dữ liệu. Với dự án, các chỉ số phù hợp gồm data freshness, tỷ lệ bản ghi được làm giàu, tỷ lệ bản ghi đạt Gold, tỷ lệ bản ghi bị đưa vào vùng chờ, số lỗi theo nguồn dữ liệu, thời gian chạy pipeline và số bản ghi thay đổi sau mỗi lần chạy. Những chỉ số này giúp nhóm phát triển phát hiện bất thường như nguồn dữ liệu trả về ít hơn bình thường, pipeline chạy thành công nhưng không tạo Gold record, hoặc công thức chấm điểm làm quá nhiều bản ghi bị loại (OpenTelemetry, n.d.; Google Site Reliability Engineering, n.d.).
-
-Mục tiêu mức dịch vụ có thể được diễn giải cho nền tảng dữ liệu theo hướng thực tế hơn uptime thuần túy. Ví dụ, API có thể đặt mục tiêu phản hồi ổn định trong ngưỡng thời gian nhất định, nhưng Gold layer cũng cần mục tiêu về độ tươi mới. Một dashboard du lịch có thể chấp nhận dữ liệu cập nhật theo ngày hoặc theo tuần, nhưng không nên hiển thị dữ liệu quá cũ mà không có cảnh báo. Tương tự, pipeline có thể được xem là đạt yêu cầu khi tỷ lệ job thất bại nằm dưới ngưỡng, thời gian khôi phục sau lỗi đủ ngắn và tỷ lệ bản ghi chất lượng thấp không vượt quá mức cảnh báo. Việc định nghĩa các mục tiêu này giúp đánh giá hệ thống bằng số liệu thay vì nhận định chung chung.
-
-DataOps là tư duy vận hành dữ liệu bằng tự động hóa, kiểm thử, quan sát và cải tiến liên tục. Trong dự án, DataOps có thể được áp dụng thông qua các bước như kiểm tra schema trước khi nạp, chạy validation sau khi biến đổi, sinh client API từ OpenAPI, kiểm thử endpoint, ghi log có cấu trúc và đóng gói môi trường bằng Docker Compose. Mục tiêu không phải xây dựng một quy trình doanh nghiệp nặng, mà là giảm lỗi thủ công và làm cho mỗi lần thay đổi pipeline có thể được kiểm chứng. Khi nhóm thay đổi quy tắc chấm điểm hoặc bổ sung nguồn dữ liệu mới, các kiểm tra tự động giúp phát hiện sớm việc vỡ schema hoặc giảm chất lượng đầu ra (IBM, n.d.-d; Docker, n.d.-a).
-
-Dashboard và KPI là lớp chuyển dữ liệu đã xử lý thành thông tin phục vụ quản trị. Với nền tảng du lịch, dashboard không chỉ hiển thị số lượng POI mà còn cần phản ánh chất lượng dữ liệu và trạng thái pipeline. Các nhóm chỉ số có thể gồm: (1) chỉ số bao phủ, như số POI theo thành phố, danh mục và nguồn; (2) chỉ số chất lượng, như tỷ lệ bản ghi có tọa độ, địa chỉ, danh mục hoặc liên hệ; (3) chỉ số vận hành, như thời gian chạy job, số lỗi, số bản ghi bị quarantine; (4) chỉ số phục vụ, như số endpoint hoạt động và thời gian phản hồi API. Nhờ đó, dashboard trở thành công cụ giám sát dữ liệu, không chỉ là giao diện trình bày kết quả (Tableau, n.d.; Recharts, n.d.).
-
-Ghi log có cấu trúc giúp dữ liệu vận hành dễ phân tích hơn. Thay vì chỉ ghi chuỗi văn bản tự do, log nên có các trường như thời điểm, service, job id, nguồn dữ liệu, số bản ghi xử lý, trạng thái, mã lỗi và thời lượng. Khi log có cấu trúc, hệ thống có thể lọc theo một lần chạy pipeline, theo nguồn dữ liệu hoặc theo loại lỗi. Pino phù hợp với API Node.js vì hỗ trợ log JSON hiệu quả, trong khi các service Python có thể dùng logging có cấu trúc tương tự. Cùng với metrics và traces, log giúp hình thành nền tảng quan sát đủ dùng cho môi trường phát triển, trình diễn và mở rộng sau này (Pino, n.d.; OpenTelemetry, n.d.).
-
-\subsection{Cơ sở công nghệ mở rộng}
-
-MongoDB được lựa chọn vì mô hình document phù hợp với dữ liệu POI nhiều trường tùy chọn và dữ liệu JSON từ các API bên ngoài. Trong giai đoạn đầu, schema của POI có thể thay đổi khi bổ sung nguồn dữ liệu mới, ví dụ thêm giờ mở cửa, đánh giá, hình ảnh, website hoặc metadata về nguồn. Nếu dùng cơ sở dữ liệu quan hệ quá sớm, hệ thống có thể phải thiết kế nhiều bảng phụ và migration phức tạp. MongoDB cho phép lưu dữ liệu gần dạng nguồn ở lớp Bronze, sau đó chuẩn hóa dần qua Silver và Gold. Aggregation pipeline cũng đủ đáp ứng các nhu cầu thống kê hiện tại như đếm theo thành phố, danh mục, chất lượng hoặc nguồn dữ liệu (MongoDB, n.d.-a; MongoDB, n.d.-c).
-
-Python, FastAPI, Pydantic và Uvicorn phù hợp với lớp xử lý dữ liệu phía máy chủ. Python có hệ sinh thái mạnh cho xử lý dữ liệu, thao tác JSON, tích hợp API và viết pipeline. FastAPI hỗ trợ xây dựng service nhanh, có tài liệu API tự động và tận dụng type hint của Python. Pydantic giúp kiểm tra dữ liệu đầu vào, dữ liệu cấu hình và dữ liệu trả về, qua đó giảm lỗi do dữ liệu không đúng kiểu. Uvicorn cung cấp máy chủ ASGI nhẹ cho service FastAPI. Nhóm công nghệ này đủ đơn giản cho phạm vi dự án nhưng vẫn có thể mở rộng khi pipeline phức tạp hơn (Python Software Foundation, n.d.; FastAPI, n.d.; Pydantic, n.d.-b; Uvicorn, n.d.).
-
-Node.js, Express và TypeScript phù hợp với API trung gian và các logic phục vụ frontend. Express là framework gọn, dễ tổ chức route, middleware và xử lý lỗi. TypeScript giúp kiểm soát kiểu dữ liệu ở phía backend JavaScript, đặc biệt khi API có nhiều response shape liên quan đến dashboard, thành phố, POI và trạng thái pipeline. Kết hợp OpenAPI, Zod và Orval giúp ràng buộc rõ hơn giữa backend và frontend: OpenAPI mô tả hợp đồng, Zod kiểm tra dữ liệu runtime, Orval sinh client để frontend gọi API nhất quán. Điều này giảm rủi ro khi backend thay đổi mà frontend không được cập nhật tương ứng (OpenJS Foundation, n.d.; Express, n.d.; TypeScript, n.d.; OpenAPI Initiative, n.d.; Zod, n.d.; Orval, n.d.).
-
-React, Vite, TanStack Query, Tailwind CSS, Radix UI và Recharts tạo thành nhóm công nghệ phù hợp cho dashboard dạng ứng dụng một trang. React hỗ trợ xây dựng giao diện theo thành phần; Vite giúp môi trường phát triển nhanh và đơn giản; TanStack Query quản lý trạng thái dữ liệu server như cache, loading, refetch và lỗi; Tailwind CSS hỗ trợ xây dựng giao diện nhất quán bằng utility class; Radix UI cung cấp các primitive có chú ý đến accessibility; Recharts phù hợp để thể hiện biểu đồ KPI và xu hướng. Sự kết hợp này giúp dự án tập trung vào workflow dữ liệu và dashboard thay vì phải xây dựng hạ tầng giao diện từ đầu (React, n.d.-a; Vite, n.d.-a; TanStack, n.d.; Tailwind CSS, n.d.-a; Radix UI, n.d.; Recharts, n.d.).
-
-Docker Compose được dùng để đóng gói nhiều thành phần của hệ thống trong cùng một môi trường chạy. Với dự án có frontend, API server, service ETL và cơ sở dữ liệu, Docker Compose giúp giảm khác biệt môi trường giữa máy phát triển, máy trình diễn và tài liệu hướng dẫn. Người dùng có thể khởi động nhiều service bằng một quy trình thống nhất, thay vì cài đặt thủ công từng thành phần. So với Kubernetes, Docker Compose không cung cấp orchestration sản xuất ở quy mô lớn, nhưng phù hợp hơn với mục tiêu hiện tại là triển khai gọn, dễ kiểm thử và dễ giải thích (Docker, n.d.-a; Docker, n.d.-b; Docker, n.d.-c).
-
-\begin{figure}[htbp]
-\centering
-\fbox{\begin{minipage}{0.92\textwidth}
-\centering
-\textbf{Cơ sở công nghệ mở rộng}\\[0.6em]
-\begin{tabular}{c c c}
-Hiện tại & Khi dữ liệu tăng & Khi cần realtime \\
-MongoDB / Docker Compose & Spark / Trino / Object storage & Kafka / Stream processing
-\end{tabular}
-\end{minipage}}
-\caption{Quan hệ giữa công nghệ hiện tại và các hướng mở rộng trong tương lai.}
-\end{figure}
-
-\subsection{So sánh và định hướng áp dụng}
-
-\begin{longtable}{|p{0.23\textwidth}|p{0.21\textwidth}|p{0.21\textwidth}|p{0.27\textwidth}|}
-\caption{So sánh và định hướng áp dụng -- Hạng mục, Phương án A, Phương án B, Nhận xét.}\\
-\hline
-\textbf{Hạng mục} & \textbf{Phương án A} & \textbf{Phương án B} & \textbf{Nhận xét} \\
-\hline
-Mô hình lưu trữ & Data warehouse & Data lake / lakehouse & Data warehouse mạnh về dữ liệu có cấu trúc; lakehouse linh hoạt hơn với dữ liệu bán cấu trúc. Dự án chọn hướng nhẹ hơn, kết hợp document model và logic nhiều lớp. \\
-\hline
-Xử lý dữ liệu & Batch & Streaming & Batch đơn giản hơn và phù hợp dữ liệu POI cập nhật theo chu kỳ; streaming phù hợp dữ liệu thời gian thực nhưng phức tạp hơn. Dự án chọn batch. \\
-\hline
-Cơ sở dữ liệu & Quan hệ & Document & Quan hệ phù hợp dữ liệu chặt chẽ; document phù hợp dữ liệu POI nhiều trường tùy chọn. \\
-\hline
-API & REST & GraphQL & REST đơn giản, dễ cache và phù hợp dashboard có endpoint rõ; GraphQL linh hoạt hơn nhưng tăng độ phức tạp. Dự án chọn REST. \\
-\hline
-Điều phối pipeline & APScheduler & Airflow & APScheduler nhẹ và đủ cho job định kỳ; Airflow mạnh hơn với DAG phức tạp. Dự án chưa cần Airflow. \\
-\hline
-Xử lý quy mô lớn & MongoDB aggregation & Spark & Aggregation đủ cho khối lượng hiện tại; Spark phù hợp dữ liệu lớn và cluster. Dự án chưa cần Spark. \\
-\hline
-Streaming & Job theo lịch & Kafka & Job theo lịch phù hợp nguồn dữ liệu cập nhật định kỳ; Kafka phù hợp event realtime. Dự án chưa cần Kafka. \\
-\hline
-\end{longtable}
-
-\subsection{Khoảng trống nghiên cứu và định hướng áp dụng}
-
-Các nghiên cứu về hệ thống gợi ý du lịch đã đóng góp nhiều phương pháp quan trọng về mô hình hóa sở thích người dùng, khai thác dữ liệu ngữ cảnh và đề xuất điểm đến. Tuy nhiên, nhiều nghiên cứu tập trung vào thuật toán đề xuất hơn là pipeline chuẩn hóa dữ liệu đầu vào. Trong thực tế, chất lượng thuật toán phụ thuộc mạnh vào chất lượng POI: nếu địa điểm bị trùng, thiếu tọa độ, sai danh mục hoặc thiếu thông tin mô tả, kết quả phân tích và gợi ý đều bị ảnh hưởng. Vì vậy, khoảng trống đầu tiên mà dự án hướng tới là đặt nền tảng dữ liệu POI làm thành phần trung tâm trước khi phát triển các mô hình đề xuất nâng cao (Borràs et al., 2014; Zhang et al., 2023).
-
-Khoảng trống thứ hai nằm ở sự khác biệt giữa nguồn dữ liệu mở và nguồn dữ liệu thương mại. OpenStreetMap có ưu điểm về tính mở, khả năng truy cập và sự phù hợp với các nghiên cứu cộng đồng, nhưng chất lượng dữ liệu thay đổi theo khu vực và mức độ đóng góp. Google Places hoặc các dịch vụ thương mại có thể cung cấp dữ liệu phong phú hơn, nhưng bị ràng buộc bởi chi phí, quota và điều khoản sử dụng. Một nền tảng dữ liệu du lịch thực tế cần có khả năng kết hợp cả hai hướng, đồng thời lưu rõ nguồn gốc và mức độ tin cậy của từng bản ghi để tránh xem mọi dữ liệu là tương đương (Barron et al., 2014; Yeboah et al., 2021; Overpass API, n.d.).
-
-Khoảng trống thứ ba liên quan đến mức độ phù hợp của kiến trúc dữ liệu lớn. Lakehouse, Spark, Kafka, Airflow, Iceberg và Trino là các công nghệ mạnh cho doanh nghiệp hoặc dữ liệu lớn, nhưng có thể quá nặng cho một dự án quy mô nhỏ đến trung bình. Nếu áp dụng toàn bộ ngay từ đầu, chi phí học tập, cấu hình, vận hành và giải thích hệ thống có thể vượt quá lợi ích. Dự án chọn hướng ``vừa đủ'': giữ các nguyên tắc quan trọng như nhiều lớp dữ liệu, truy vết, metadata, chất lượng và API contract, nhưng triển khai bằng các công nghệ gọn hơn như MongoDB, FastAPI, Express, React và Docker Compose. Đây là cách cân bằng giữa tính học thuật, tính kỹ thuật và tính khả thi (Armbrust et al., 2021; IBM, n.d.-a; Docker, n.d.-a).
-
-Khoảng trống thứ tư là thiếu quan sát vận hành dữ liệu trong nhiều hệ thống trình diễn. Một hệ thống có thể hiển thị bản đồ và biểu đồ, nhưng nếu không có chỉ số về trạng thái pipeline, tỷ lệ lỗi, độ tươi mới và chất lượng dữ liệu, người dùng khó biết dữ liệu có đáng tin hay không. Dự án giải quyết bằng cách đưa dashboard vận hành vào phạm vi thiết kế, trong đó dữ liệu Gold không chỉ được dùng cho hiển thị POI mà còn được đánh giá thông qua KPI về chất lượng và pipeline. Nhờ vậy, hệ thống hỗ trợ cả người dùng cuối lẫn người quản trị dữ liệu.
-
-Từ các khoảng trống trên, định hướng áp dụng của dự án là xây dựng một nền tảng dữ liệu POI có kiểm soát chất lượng, có truy vết, có khả năng làm giàu từ nhiều nguồn và có dashboard vận hành. Mục tiêu của dự án không phải chứng minh một công nghệ là tối ưu trong mọi bối cảnh, mà là thiết kế một kiến trúc phù hợp với dữ liệu du lịch Việt Nam, xử lý được tiếng Việt, tên địa điểm có dấu/không dấu, danh mục đa dạng, địa chỉ không đồng nhất và yêu cầu mở rộng theo giai đoạn. Khi hệ thống phát triển, các thành phần như Airflow, Kafka, Spark hoặc lakehouse có thể được bổ sung, nhưng nền tảng lý thuyết hiện tại vẫn giữ vai trò định hướng: dữ liệu cần được thu thập có kiểm soát, xử lý có truy vết, đánh giá có tiêu chí và phục vụ qua hợp đồng rõ ràng.
-\section*{Tài liệu tham khảo}
+Trong giai đoạn hiện tại, hệ thống tập trung vào quy trình batch có kiểm soát, lưu trữ document linh hoạt, API rõ hợp đồng và dashboard vận hành \cite{ibmETL}. Trong giai đoạn tiếp theo, hệ thống có thể mở rộng theo ba hướng: thêm nguồn dữ liệu mới, mở rộng địa bàn thu thập và bổ sung năng lực phân tích nâng cao \cite{zhang2023}. Khi các hướng này phát triển, nền tảng hiện tại vẫn giữ vai trò định hướng: dữ liệu cần được thu thập có kiểm soát, xử lý có truy vết, đánh giá có tiêu chí và phục vụ qua hợp đồng rõ ràng \cite{openapiSpec}.\par
+\renewcommand{\refname}{Tài liệu tham khảo}
+\begin{thebibliography}{99}
 \addcontentsline{toc}{section}{Tài liệu tham khảo}
-
-Amazon Web Services. (n.d.). \textit{What is streaming data?} Retrieved May 18, 2026, from \url{https://aws.amazon.com/streaming-data/}\par
-
-Apache Airflow. (n.d.). \textit{Apache Airflow documentation}. Retrieved May 18, 2026, from \url{https://airflow.apache.org/docs/}\par
-
-Apache Iceberg. (n.d.). \textit{Spec}. Retrieved May 18, 2026, from \url{https://apache.github.io/iceberg/spec/}\par
-
-Apache Kafka. (n.d.). \textit{Introduction}. Retrieved May 18, 2026, from \url{https://kafka.apache.org/intro/}\par
-
-Apache Spark. (n.d.). \textit{Apache Spark overview}. Retrieved May 18, 2026, from \url{https://spark.apache.org/docs/latest/}\par
-
-Armbrust, M., Ghodsi, A., Xin, R., \& Zaharia, M. (2021). \textit{Lakehouse: A new generation of open platforms that unify data warehousing and advanced analytics}. CIDR. \url{https://www.databricks.com/sites/default/files/2020/12/cidr_lakehouse.pdf}\par
-
-Barron, C., Neis, P., \& Zipf, A. (2014). A comprehensive framework for intrinsic OpenStreetMap quality analysis. \textit{Transactions in GIS, 18}(6), 877-895. \url{https://doi.org/10.1111/tgis.12073}\par
-
-Borràs, J., Moreno, A., \& Valls, A. (2014). Intelligent tourism recommender systems: A survey. \textit{Expert Systems with Applications, 41}(16), 7370-7389. \url{https://doi.org/10.1016/j.eswa.2014.06.007}\par
-
-DAMA International. (n.d.). \textit{DAMA-DMBOK data management body of knowledge}. Retrieved May 18, 2026, from \url{https://dama.org/learning-resources/dama-data-management-body-of-knowledge-dmbok/}\par
-
-Databricks. (n.d.). \textit{What is the medallion lakehouse architecture?} Retrieved May 18, 2026, from \url{https://docs.databricks.com/en/lakehouse/medallion.html}\par
-
-Docker. (n.d.-a). \textit{Docker Compose}. Retrieved May 18, 2026, from \url{https://docs.docker.com/compose/}\par
-
-Docker. (n.d.-b). \textit{Multi-container applications}. Retrieved May 18, 2026, from \url{https://docs.docker.com/get-started/docker-concepts/running-containers/multi-container-applications/}\par
-
-Docker. (n.d.-c). \textit{What is Docker?} Retrieved May 18, 2026, from \url{https://docs.docker.com/engine/docker-overview/}\par
-
-Ericsson. (2015). \textit{Data processing architectures: Lambda and Kappa}. \url{https://www.ericsson.com/en/blog/2015/11/data-processing-architectures--lambda-and-kappa}\par
-
-Express. (n.d.). \textit{Node.js web application framework}. Retrieved May 18, 2026, from \url{https://expressjs.com/}\par
-
-FastAPI. (n.d.). \textit{Features}. Retrieved May 18, 2026, from \url{https://fastapi.tiangolo.com/features/}\par
-
-Fielding, R. T. (2000). \textit{Architectural styles and the design of network-based software architectures} [Doctoral dissertation, University of California, Irvine]. \url{https://ics.uci.edu/~fielding/pubs/dissertation/abstract.htm}\par
-
-Gilbert, S., \& Lynch, N. (2002). Brewer's conjecture and the feasibility of consistent, available, partition-tolerant web services. \textit{ACM SIGACT News, 33}(2), 51-59. \url{https://doi.org/10.1145/564585.564601}\par
-
-Google Cloud. (n.d.-a). \textit{Dataflow: Streaming analytics}. Retrieved May 18, 2026, from \url{https://cloud.google.com/products/dataflow}\par
-
-Google Cloud. (n.d.-b). \textit{What is data governance?} Retrieved May 18, 2026, from \url{https://cloud.google.com/learn/what-is-data-governance}\par
-
-Google Site Reliability Engineering. (n.d.). \textit{Service level objectives}. Retrieved May 18, 2026, from \url{https://sre.google/sre-book/service-level-objectives/}\par
-
-IBM. (n.d.-a). \textit{Data warehouses vs. data lakes vs. data lakehouses}. Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/data-warehouse-vs-data-lake-vs-data-lakehouse}\par
-
-IBM. (n.d.-b). \textit{What are data quality dimensions?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/data-quality-dimensions}\par
-
-IBM. (n.d.-c). \textit{What is a data lakehouse?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/data-lakehouse}\par
-
-IBM. (n.d.-d). \textit{What is DataOps?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/dataops}\par
-
-IBM. (n.d.-e). \textit{What is data governance?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/data-governance}\par
-
-IBM. (n.d.-f). \textit{What is data lineage?} Retrieved May 18, 2026, from \url{https://www.ibm.com/topics/data-lineage}\par
-
-IBM. (n.d.-g). \textit{What is ETL (extract, transform, load)?} Retrieved May 18, 2026, from \url{https://www.ibm.com/topics/etl}\par
-
-IBM. (n.d.-h). \textit{What is master data management?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/master-data-management}\par
-
-IBM. (n.d.-i). \textit{What is the CAP theorem?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/cap-theorem}\par
-
-ISO. (2008). \textit{ISO/IEC 25012:2008: Software engineering - Software product quality requirements and evaluation (SQuaRE) - Data quality model}. \url{https://www.iso.org/standard/35736.html}\par
-
-Kreps, J. (2014). \textit{Questioning the Lambda Architecture}. O'Reilly Radar. \url{https://www.oreilly.com/radar/questioning-the-lambda-architecture/}\par
-
-Kreps, J., Narkhede, N., \& Rao, J. (2011). \textit{Kafka: A distributed messaging system for log processing}. NetDB. \url{https://www.microsoft.com/en-us/research/wp-content/uploads/2017/09/Kafka.pdf}\par
-
-MDN Web Docs. (n.d.). \textit{Express/Node introduction}. Retrieved May 18, 2026, from \url{https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Express_Nodejs/Introduction}\par
-
-MinIO. (n.d.). \textit{MinIO for Kubernetes}. Retrieved May 18, 2026, from \url{https://min.io/docs/minio/kubernetes/upstream/index.html}\par
-
-MongoDB. (n.d.-a). \textit{Aggregation pipeline}. Retrieved May 18, 2026, from \url{https://www.mongodb.com/docs/manual/core/aggregation-pipeline/}\par
-
-MongoDB. (n.d.-b). \textit{Aggregation pipeline optimization}. Retrieved May 18, 2026, from \url{https://www.mongodb.com/docs/current/core/aggregation-pipeline-optimization/}\par
-
-MongoDB. (n.d.-c). \textit{Data modeling in MongoDB}. Retrieved May 18, 2026, from \url{https://www.mongodb.com/docs/master/core/data-model-design/}\par
-
-NIST. (2015). \textit{NIST big data interoperability framework: Volume 1, definitions}. \url{https://www.nist.gov/publications/nist-big-data-interoperability-framework-volume-1-definitions}\par
-
-NIST. (n.d.). \textit{The CSF 1.1 five functions}. Retrieved May 18, 2026, from \url{https://www.nist.gov/cyberframework/getting-started/online-learning/five-functions}\par
-
-NIST Computer Security Resource Center. (n.d.). \textit{Role based access control}. Retrieved May 18, 2026, from \url{https://csrc.nist.gov/Projects/Role-Based-Access-Control}\par
-
-OpenAPI Initiative. (n.d.). \textit{The OpenAPI Specification explained}. Retrieved May 18, 2026, from \url{https://learn.openapis.org/specification/}\par
-
-OpenJS Foundation. (n.d.). \textit{About Node.js}. Retrieved May 18, 2026, from \url{https://nodejs.org/en/about}\par
-
-OpenTelemetry. (n.d.). \textit{Signals}. Retrieved May 18, 2026, from \url{https://opentelemetry.io/docs/concepts/signals/}\par
-
-Orval. (n.d.). \textit{Overview}. Retrieved May 18, 2026, from \url{https://orval.dev/docs}\par
-
-Overpass API. (n.d.). \textit{Overpass API user's manual}. Retrieved May 18, 2026, from \url{https://dev.overpass-api.de/overpass-doc/en/}\par
-
-OWASP. (n.d.). \textit{OWASP API Security Top 10}. Retrieved May 18, 2026, from \url{https://owasp.org/API-Security/}\par
-
-Pino. (n.d.). \textit{pino}. Retrieved May 18, 2026, from \url{https://github.com/pinojs/pino}\par
-
-pnpm. (n.d.). \textit{Workspace}. Retrieved May 18, 2026, from \url{https://pnpm.io/workspaces}\par
-
-Pydantic. (n.d.-a). \textit{JSON Schema}. Retrieved May 18, 2026, from \url{https://docs.pydantic.dev/latest/concepts/json_schema/}\par
-
-Pydantic. (n.d.-b). \textit{Models}. Retrieved May 18, 2026, from \url{https://docs.pydantic.dev/latest/concepts/models/}\par
-
-Python Package Index. (n.d.). \textit{APScheduler}. Retrieved May 18, 2026, from \url{https://pypi.org/pypi/APScheduler}\par
-
-Python Software Foundation. (n.d.). \textit{Applications for Python}. Retrieved May 18, 2026, from \url{https://www.python.org/about/apps/}\par
-
-Radix UI. (n.d.). \textit{Accessibility}. Retrieved May 18, 2026, from \url{https://www.radix-ui.com/primitives/docs/overview/accessibility}\par
-
-RapidAPI. (n.d.). \textit{RapidAPI Hub documentation}. Retrieved May 18, 2026, from \url{https://docs.rapidapi.com/}\par
-
-React. (n.d.-a). \textit{React documentation}. Retrieved May 18, 2026, from \url{https://react.dev/}\par
-
-React. (n.d.-b). \textit{Your first component}. Retrieved May 18, 2026, from \url{https://react.dev/learn/your-first-component}\par
-
-Recharts. (n.d.). \textit{Recharts}. Retrieved May 18, 2026, from \url{https://recharts.github.io/}\par
-
-Tableau. (n.d.). \textit{What is a KPI dashboard?} Retrieved May 18, 2026, from \url{https://www.tableau.com/kpi/what-is-kpi-dashboard}\par
-
-Tailwind CSS. (n.d.-a). \textit{Documentation}. Retrieved May 18, 2026, from \url{https://tailwindcss.com/docs}\par
-
-Tailwind CSS. (n.d.-b). \textit{Styling with utility classes}. Retrieved May 18, 2026, from \url{https://tailwindcss.com/docs/utility-first}\par
-
-TanStack. (n.d.). \textit{TanStack Query}. Retrieved May 18, 2026, from \url{https://tanstack.com/query/}\par
-
-Trino. (n.d.). \textit{Overview}. Retrieved May 18, 2026, from \url{https://trino.io/docs/current/overview.html}\par
-
-TypeScript. (n.d.). \textit{Basic types}. Retrieved May 18, 2026, from \url{https://www.typescriptlang.org/docs/handbook/basic-types.html}\par
-
-Uvicorn. (n.d.). \textit{ASGI}. Retrieved May 18, 2026, from \url{https://www.uvicorn.org/concepts/asgi/}\par
-
-Vite. (n.d.-a). \textit{Getting started}. Retrieved May 18, 2026, from \url{https://main.vite.dev/guide/}\par
-
-Vite. (n.d.-b). \textit{Why Vite}. Retrieved May 18, 2026, from \url{https://vite.dev/guide/why.html}\par
-
-W3C. (2013). \textit{PROV-overview: An overview of the PROV family of documents}. \url{https://www.w3.org/TR/prov-overview/}\par
-
-W3C. (2017). \textit{Data on the Web best practices}. \url{https://www.w3.org/TR/dwbp/}\par
-
-Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., Appleton, G., Axton, M., Baak, A., Blomberg, N., Boiten, J. W., da Silva Santos, L. B., Bourne, P. E., Bouwman, J., Brookes, A. J., Clark, T., Crosas, M., Dillo, I., Dumon, O., Edmunds, S., Evelo, C. T., Finkers, R., \& Mons, B. (2016). The FAIR Guiding Principles for scientific data management and stewardship. \textit{Scientific Data, 3}, Article 160018. \url{https://doi.org/10.1038/sdata.2016.18}\par
-
-Yeboah, G., Porto de Albuquerque, J., Troilo, R., Tregonning, G., Perera, S., \& Ahmed, S. A. K. S. (2021). Analysis of OpenStreetMap data quality at different stages of a participatory mapping process. \textit{ISPRS International Journal of Geo-Information, 10}(4), Article 265. \url{https://www.mdpi.com/2220-9964/10/4/265}\par
-
-Zaharia, M., Xin, R. S., Wendell, P., Das, T., Armbrust, M., Dave, A., Meng, X., Rosen, J., Venkataraman, S., Franklin, M. J., Ghodsi, A., Gonzalez, J., Shenker, S., \& Stoica, I. (2016). Apache Spark: A unified engine for big data processing. \textit{Communications of the ACM, 59}(11), 56-65. \url{https://cacm.acm.org/research/apache-spark/}\par
-
-Zhang, J., Chow, C.-Y., \& Li, Y. (2023). \textit{A survey on point-of-interest recommendations leveraging heterogeneous data}. arXiv. \url{https://arxiv.org/abs/2308.07426}\par
-
-Zod. (n.d.). \textit{Introduction}. Retrieved May 18, 2026, from \url{https://zod.dev/}\par
+\item[]\textbf{Nhóm tài liệu lý thuyết, nghiên cứu và tiêu chuẩn}
+
+\bibitem{armbrust2021} Armbrust, M., Ghodsi, A., Xin, R., \& Zaharia, M. (2021). \textit{Lakehouse: A new generation of open platforms that unify data warehousing and advanced analytics}. CIDR. \url{https://www.databricks.com/sites/default/files/2020/12/cidr_lakehouse.pdf}
+\bibitem{damaDmbok} DAMA International. (n.d.). \textit{DAMA-DMBOK data management body of knowledge}. Retrieved May 18, 2026, from \url{https://dama.org/learning-resources/dama-data-management-body-of-knowledge-dmbok/}
+\bibitem{ibmWarehouseLake} IBM. (n.d.). \textit{Data warehouses vs. data lakes vs. data lakehouses}. Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/data-warehouse-vs-data-lake-vs-data-lakehouse}
+\bibitem{ibmDataQuality} IBM. (n.d.). \textit{What are data quality dimensions?} Retrieved May 18, 2026, from \url{https://www.ibm.com/think/topics/data-quality-dimensions}
+\bibitem{ibmLineage} IBM. (n.d.). \textit{What is data lineage?} Retrieved May 18, 2026, from \url{https://www.ibm.com/topics/data-lineage}
+\bibitem{ibmETL} IBM. (n.d.). \textit{What is ETL (extract, transform, load)?} Retrieved May 18, 2026, from \url{https://www.ibm.com/topics/etl}
+\bibitem{openapiSpec} OpenAPI Initiative. (n.d.). \textit{The OpenAPI Specification explained}. Retrieved May 18, 2026, from \url{https://learn.openapis.org/specification/}
+\bibitem{opentelemetrySignals} OpenTelemetry. (n.d.). \textit{Signals}. Retrieved May 18, 2026, from \url{https://opentelemetry.io/docs/concepts/signals/}
+\bibitem{tableauKpi} Tableau. (n.d.). \textit{What is a KPI dashboard?} Retrieved May 18, 2026, from \url{https://www.tableau.com/kpi/what-is-kpi-dashboard}
+\bibitem{yeboah2021} Yeboah, G., Porto de Albuquerque, J., Troilo, R., Tregonning, G., Perera, S., \& Ahmed, S. A. K. S. (2021). Analysis of OpenStreetMap data quality at different stages of a participatory mapping process. \textit{ISPRS International Journal of Geo-Information, 10}(4), Article 265. \url{https://www.mdpi.com/2220-9964/10/4/265}
+\bibitem{zhang2023} Zhang, J., Chow, C.-Y., \& Li, Y. (2023). \textit{A survey on point-of-interest recommendations leveraging heterogeneous data}. arXiv. \url{https://arxiv.org/abs/2308.07426}
+\item[]\textbf{Nhóm tài liệu công nghệ và công cụ}
+
+\bibitem{awsStreaming} Amazon Web Services. (n.d.). \textit{What is streaming data?} Retrieved May 18, 2026, from \url{https://aws.amazon.com/streaming-data/}
+\bibitem{airflowDocs} Apache Airflow. (n.d.). \textit{Apache Airflow documentation}. Retrieved May 18, 2026, from \url{https://airflow.apache.org/docs/}
+\bibitem{sparkDocs} Apache Spark. (n.d.). \textit{Apache Spark overview}. Retrieved May 18, 2026, from \url{https://spark.apache.org/docs/latest/}
+\bibitem{databricksMedallion} Databricks. (n.d.). \textit{What is the medallion lakehouse architecture?} Retrieved May 18, 2026, from \url{https://docs.databricks.com/en/lakehouse/medallion.html}
+\bibitem{dockerCompose} Docker. (n.d.). \textit{Docker Compose}. Retrieved May 18, 2026, from \url{https://docs.docker.com/compose/}
+\bibitem{dockerMultiContainer} Docker. (n.d.). \textit{Multi-container applications}. Retrieved May 18, 2026, from \url{https://docs.docker.com/get-started/docker-concepts/running-containers/multi-container-applications/}
+\bibitem{fastapiFeatures} FastAPI. (n.d.). \textit{Features}. Retrieved May 18, 2026, from \url{https://fastapi.tiangolo.com/features/}
+\bibitem{mongodbAggregation} MongoDB. (n.d.). \textit{Aggregation pipeline}. Retrieved May 18, 2026, from \url{https://www.mongodb.com/docs/manual/core/aggregation-pipeline/}
+\bibitem{mongodbDataModel} MongoDB. (n.d.). \textit{Data modeling in MongoDB}. Retrieved May 18, 2026, from \url{https://www.mongodb.com/docs/master/core/data-model-design/}
+\bibitem{nodeAbout} OpenJS Foundation. (n.d.). \textit{About Node.js}. Retrieved May 18, 2026, from \url{https://nodejs.org/en/about}
+\bibitem{orvalDocs} Orval. (n.d.). \textit{Overview}. Retrieved May 18, 2026, from \url{https://orval.dev/overview}
+\bibitem{pydanticModels} Pydantic. (n.d.). \textit{Models}. Retrieved May 18, 2026, from \url{https://docs.pydantic.dev/latest/concepts/models/}
+\bibitem{pythonApps} Python Software Foundation. (n.d.). \textit{Applications for Python}. Retrieved May 18, 2026, from \url{https://www.python.org/about/apps/}
+\bibitem{reactDocs} React. (n.d.). \textit{React documentation}. Retrieved May 18, 2026, from \url{https://react.dev/}
+\bibitem{zodDocs} Zod. (n.d.). \textit{Introduction}. Retrieved May 18, 2026, from \url{https://zod.dev/}
+
+\end{thebibliography}
 
 \end{document}

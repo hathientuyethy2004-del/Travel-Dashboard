@@ -12,7 +12,7 @@ import {
   MapPin, Phone, Globe, Award, Shuffle, Download,
   CheckCircle2, LayoutGrid, Star, Info, Database,
 } from "lucide-react";
-import { CHART_COLOR_LIST, CHART_COLORS } from "@/lib/constants";
+import { CHART_COLOR_LIST, CHART_COLORS, formatCityName } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 const MODES = [
@@ -99,7 +99,7 @@ export default function Recommendations() {
         <h1 className="font-bold text-2xl">Recommendations</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Browse {overviewData?.goldPois?.toLocaleString() ?? "…"} gold-layer POIs across{" "}
-          {overviewData?.cities ?? "…"} Vietnamese cities — filter by completeness, contact, or category
+          {overviewData?.cities ?? "…"} cities in Vietnam — filter by completeness, contact, or category
         </p>
       </div>
 
@@ -158,7 +158,7 @@ export default function Recommendations() {
           >
             <option value="">All Cities</option>
             {(citiesData ?? []).map((c) => (
-              <option key={c.cityCode} value={c.cityCode}>{c.name}</option>
+              <option key={c.cityCode} value={c.cityCode}>{formatCityName(c.name, c.cityCode)}</option>
             ))}
           </select>
         </div>
@@ -223,7 +223,7 @@ export default function Recommendations() {
                       <p className="font-semibold text-sm leading-tight truncate">{poi.name}</p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-                        <span className="text-xs text-muted-foreground">{poi.cityName}</span>
+                        <span className="text-xs text-muted-foreground">{formatCityName(poi.cityName, poi.city)}</span>
                         <Badge variant="secondary" className="text-xs capitalize h-4 px-1.5">{poi.category}</Badge>
                       </div>
                     </div>
@@ -322,7 +322,7 @@ export default function Recommendations() {
                           >
                             {i + 1}
                           </div>
-                          <p className="text-xs font-semibold truncate flex-1">{h.cityName}</p>
+                          <p className="text-xs font-semibold truncate flex-1">{formatCityName(h.cityName, h.city)}</p>
                           <span className="text-xs tabular-nums text-muted-foreground">{h.totalPois.toLocaleString()}</span>
                         </div>
 

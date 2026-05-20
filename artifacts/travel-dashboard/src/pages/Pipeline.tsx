@@ -17,7 +17,7 @@ import {
   useGetPoiByCity,
   useGetPoiByCategory,
 } from "@workspace/api-client-react";
-import { CHART_COLORS, CHART_COLOR_LIST } from "@/lib/constants";
+import { CHART_COLORS, CHART_COLOR_LIST, formatCityName } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 const API = "/api";
@@ -788,7 +788,7 @@ export default function Pipeline() {
               {(() => {
                 const etlCities = citiesList.length > 0
                   ? citiesList.map((c) => ({ code: c.code, name: c.name ?? c.code }))
-                  : (poiByCity ?? []).map((c) => ({ code: c.city, name: c.cityName ?? c.city }));
+                  : (poiByCity ?? []).map((c) => ({ code: c.city, name: formatCityName(c.cityName, c.city) }));
                 return etlCities.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">Loading cities…</p>
                 ) : (
@@ -1053,7 +1053,7 @@ export default function Pipeline() {
                   <div className="space-y-2">
                     {schedules.map((s: Record<string, unknown>) => {
                       const isEnabled = !!s.enabled;
-                      const lastRun   = s.lastRun ? new Date(s.lastRun as string).toLocaleString("vi-VN") : "Never";
+                      const lastRun   = s.lastRun ? new Date(s.lastRun as string).toLocaleString("en-GB") : "Never";
                       return (
                         <div
                           key={s.scheduleId as string}

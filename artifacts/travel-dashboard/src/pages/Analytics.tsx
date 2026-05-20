@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { CSVLink } from "react-csv";
 import { Download, MapPin, Phone, Globe, Star, Database, AlertTriangle } from "lucide-react";
-import { CHART_COLORS, CHART_COLOR_LIST, formatNumber } from "@/lib/constants";
+import { CHART_COLORS, CHART_COLOR_LIST, formatCityName, formatNumber } from "@/lib/constants";
 import { useTheme } from "@/lib/theme-provider";
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
@@ -82,7 +82,7 @@ export default function Analytics() {
   const cityTotals = (() => {
     const map: Record<string, { cityName: string; count: number }> = {};
     (matrix ?? []).forEach((r) => {
-      if (!map[r.city]) map[r.city] = { cityName: r.cityName ?? r.city, count: 0 };
+      if (!map[r.city]) map[r.city] = { cityName: formatCityName(r.cityName, r.city), count: 0 };
       map[r.city].count += r.count;
     });
     return Object.values(map).sort((a, b) => b.count - a.count);
@@ -247,7 +247,7 @@ export default function Analytics() {
                 <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground border-t border-border">
                   <div className="flex items-center gap-1.5">
                     <Database className="w-3 h-3" />
-                    <span>No-contact POIs</span>
+                    <span>POIs without contact data</span>
                   </div>
                   <span className="font-semibold text-foreground">
                     {(gold - (overview?.withPhone ?? 0) - (overview?.withWebsite ?? 0) + Math.min(overview?.withPhone ?? 0, overview?.withWebsite ?? 0)).toLocaleString()}
@@ -264,7 +264,7 @@ export default function Analytics() {
         <CardHeader className="px-4 pt-4 pb-2 flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="text-base">Gold POIs by City</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">Total quality-approved POIs per Vietnamese city</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Total quality-approved POIs per city in Vietnam</p>
           </div>
           {!mLoading && cityTotals.length > 0 && (
             <CSVLink data={cityTotals} filename="pois-by-city.csv"
